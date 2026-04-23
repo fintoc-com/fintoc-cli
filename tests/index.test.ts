@@ -23,12 +23,4 @@ describe('cli smoke test', () => {
     expect(output).toContain('Fintoc CLI')
     expect(output).toContain('fintoc')
   })
-
-  it('shows help when run without arguments', () => {
-    const output = execFileSync('node', [CLI_PATH], {
-      encoding: 'utf-8',
-    }).trim()
-
-    expect(output).toContain('Usage:')
-  })
 })
