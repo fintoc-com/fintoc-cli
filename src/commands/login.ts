@@ -40,7 +40,7 @@ export const loginCommand = (program: Command): void => {
           process.exit(1)
         }
 
-        success(`Authenticated as ${info.organization_name} (${info.mode} mode)`)
+        success(`Authenticated as ${info.organizationName} (${info.mode} mode)`)
         log(`  Key stored in ${CONFIG_PATH}`)
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error'

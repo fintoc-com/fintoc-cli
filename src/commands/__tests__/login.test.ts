@@ -50,9 +50,9 @@ describe('login command', () => {
   test('authenticates successfully with interactive prompt', async () => {
     vi.mocked(password).mockResolvedValue('sk_test_valid123')
     vi.mocked(whoami).mockResolvedValue({
-      organization_name: 'Acme Corp',
+      organizationName: 'Acme Corp',
       mode: 'test',
-      api_version: '2023-03-15',
+      apiVersion: '2023-03-15',
     })
 
     const program = createProgram()
@@ -69,9 +69,9 @@ describe('login command', () => {
     vi.mocked(password).mockResolvedValue('sk_test_new')
     vi.mocked(readConfig).mockReturnValue({ jws_private_key: '/path/to/key.pem' })
     vi.mocked(whoami).mockResolvedValue({
-      organization_name: 'Acme Corp',
+      organizationName: 'Acme Corp',
       mode: 'test',
-      api_version: '2023-03-15',
+      apiVersion: '2023-03-15',
     })
 
     const program = createProgram()
@@ -120,9 +120,9 @@ describe('login command', () => {
   test('authenticates with --api-key flag skipping prompt', async () => {
     vi.mocked(readConfig).mockReturnValue({})
     vi.mocked(whoami).mockResolvedValue({
-      organization_name: 'Acme Corp',
+      organizationName: 'Acme Corp',
       mode: 'test',
-      api_version: '2023-03-15',
+      apiVersion: '2023-03-15',
     })
 
     const program = createProgram()

@@ -10,9 +10,9 @@ export type ResolvedAuth = {
 }
 
 export type WhoamiResponse = {
-  organization_name: string
+  organizationName: string
   mode: string
-  api_version: string
+  apiVersion: string
 }
 
 export const resolveAuth = (options?: { apiKey?: string }): ResolvedAuth => {
@@ -51,9 +51,12 @@ export const whoami = async (secretKey: string): Promise<WhoamiResponse> => {
   const client = createClient(secretKey)
   const result = await client.whoami.get('whoami')
   return {
-    organization_name: result.organization_name,
-    mode: result.mode,
-    api_version: result.api_version,
+    organizationName: result.organization.name,
+    mode: result.api_key.mode,
+    apiVersion:
+      result.organization.api_version instanceof Date
+        ? result.organization.api_version.toISOString().slice(0, 10)
+        : String(result.organization.api_version),
   }
 }
 
