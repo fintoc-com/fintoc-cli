@@ -50,7 +50,11 @@ export const createClient = (secretKey: string, jwsPrivateKey?: string): Fintoc 
 export const whoami = async (secretKey: string): Promise<WhoamiResponse> => {
   const client = createClient(secretKey)
   const result = await client.whoami.get('whoami')
-  return result as unknown as WhoamiResponse
+  return {
+    organization_name: result.organization_name,
+    mode: result.mode,
+    api_version: result.api_version,
+  }
 }
 
 export const maskKey = (key: string): string => {
