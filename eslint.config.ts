@@ -32,6 +32,7 @@ export default antfu(
       'ts/consistent-type-imports': 'error',
       'no-console': 'error',
       'node/prefer-global/process': 'off',
+      'test/consistent-test-it': ['error', { fn: 'test', withinDescribe: 'test' }],
     },
   },
 )

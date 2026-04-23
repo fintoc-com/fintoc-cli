@@ -18,7 +18,7 @@
 - `src/resources/` — resource registry + command factory
 - `src/lib/` — shared utilities (auth, config, output, errors)
 - `src/types.ts` — shared type definitions
-- `tests/` — Vitest tests
+- `src/**/__tests__/` — Vitest tests, colocated with source files
 
 ## Conventions
 - ESLint config uses `@antfu/eslint-config` (same as dashboard)
