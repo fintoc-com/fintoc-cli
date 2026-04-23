@@ -1,5 +1,6 @@
 import { Command } from 'commander'
 
+import { configCommand } from './commands/config.js'
 import { loginCommand } from './commands/login.js'
 import { logoutCommand } from './commands/logout.js'
 
@@ -16,5 +17,6 @@ program
 
 loginCommand(program)
 logoutCommand(program)
+configCommand(program)
 
 program.parse()
