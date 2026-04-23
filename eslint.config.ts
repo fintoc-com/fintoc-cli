@@ -30,6 +30,7 @@ export default antfu(
       'ts/no-explicit-any': 'error',
       'ts/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'ts/consistent-type-imports': 'error',
+      'ts/consistent-type-definitions': ['error', 'type'],
       'no-console': 'error',
       'node/prefer-global/process': 'off',
       'test/consistent-test-it': ['error', { fn: 'test', withinDescribe: 'test' }],
