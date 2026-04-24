@@ -43,7 +43,9 @@ vi.mock('@inquirer/prompts', () => ({
 // Mock async generator helper
 const asyncGenerator = (items: { serialize: () => Record<string, unknown> }[]) => {
   return (async function* () {
-    for (const item of items) yield item
+    for (const item of items) {
+      yield item
+    }
   })()
 }
 

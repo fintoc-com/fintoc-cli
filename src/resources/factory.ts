@@ -30,9 +30,15 @@ const getManager = (client: Fintoc, resource: ResourceDef) => {
 
 // Parse flag value according to its type
 const parseFlagValue = (value: string, flag: FlagDef) => {
-  if (flag.type === 'number') return Number(value)
-  if (flag.type === 'boolean') return value === 'true'
-  if (flag.type === 'string[]') return value.split(',').map((s) => s.trim())
+  if (flag.type === 'number') {
+    return Number(value)
+  }
+  if (flag.type === 'boolean') {
+    return value === 'true'
+  }
+  if (flag.type === 'string[]') {
+    return value.split(',').map((s) => s.trim())
+  }
   return value
 }
 
@@ -99,8 +105,12 @@ const isSerializable = (obj: unknown): obj is Serializable =>
 
 // Serialize SDK resource object to plain object
 const serialize = (obj: unknown): Record<string, unknown> => {
-  if (isSerializable(obj)) return obj.serialize()
-  if (typeof obj === 'object' && obj !== null) return { ...obj } as Record<string, unknown>
+  if (isSerializable(obj)) {
+    return obj.serialize()
+  }
+  if (typeof obj === 'object' && obj !== null) {
+    return { ...obj } as Record<string, unknown>
+  }
   return {}
 }
 
@@ -118,7 +128,9 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
       const client = resolveClient(rootOpts, resource)
       const manager = getManager(client, resource)
 
-      if (!manager.create) throw new Error(`${resource.name} does not support create`)
+      if (!manager.create) {
+        throw new Error(`${resource.name} does not support create`)
+      }
       const result = await manager.create(body)
       const data = serialize(result)
 
@@ -145,7 +157,9 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
         const client = resolveClient(rootOpts, resource)
         const manager = getManager(client, resource)
 
-        if (!manager.get) throw new Error(`${resource.name} does not support get`)
+        if (!manager.get) {
+          throw new Error(`${resource.name} does not support get`)
+        }
         const result = await manager.get(id)
         const data = serialize(result)
 
@@ -182,13 +196,17 @@ const registerList = (parent: Command, resource: ResourceDef) => {
       const client = resolveClient(rootOpts, resource)
       const manager = getManager(client, resource)
 
-      if (!manager.list) throw new Error(`${resource.name} does not support list`)
+      if (!manager.list) {
+        throw new Error(`${resource.name} does not support list`)
+      }
       const generator = (await manager.list({ ...filters, lazy: true })) as AsyncIterable<unknown>
       const items: Record<string, unknown>[] = []
 
       for await (const item of generator) {
         items.push(serialize(item))
-        if (items.length >= limit) break
+        if (items.length >= limit) {
+          break
+        }
       }
 
       if (rootOpts.json) {
@@ -232,7 +250,9 @@ const registerDelete = (parent: Command, resource: ResourceDef) => {
         const client = resolveClient(rootOpts, resource)
         const manager = getManager(client, resource)
 
-        if (!manager.delete) throw new Error(`${resource.name} does not support delete`)
+        if (!manager.delete) {
+          throw new Error(`${resource.name} does not support delete`)
+        }
         await manager.delete(id)
         success(`${resource.displayName} '${id}' deleted`)
       } catch (err) {
