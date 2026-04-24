@@ -11,12 +11,12 @@ export const loginCommand = (program: Command) => {
   program
     .command('login')
     .description('Authenticate with your Fintoc API key')
-    .option('--api-key <key>', 'API secret key (skips interactive prompt)')
-    .action(async (opts: { apiKey?: string }) => {
+    .action(async (_opts: unknown, actionCmd: Command) => {
       let secretKey: string
 
-      if (opts.apiKey) {
-        secretKey = opts.apiKey
+      const rootApiKey = actionCmd.parent?.opts().apiKey as string | undefined
+      if (rootApiKey) {
+        secretKey = rootApiKey
       } else if (process.stdin.isTTY) {
         secretKey = await password({ message: 'Enter your Fintoc secret key:' })
       } else {
