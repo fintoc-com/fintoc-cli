@@ -15,19 +15,19 @@ export type WhoamiResponse = {
   apiVersion: string
 }
 
-export const resolveAuth = (options?: { apiKey?: string }): ResolvedAuth => {
+export const resolveAuth = (options?: { apiKey?: string }) => {
   if (options?.apiKey) {
-    return { secretKey: options.apiKey, source: 'flag' }
+    return { secretKey: options.apiKey, source: 'flag' as const }
   }
 
   const envKey = process.env.FINTOC_SECRET_KEY
   if (envKey) {
-    return { secretKey: envKey, source: 'env' }
+    return { secretKey: envKey, source: 'env' as const }
   }
 
   const config = readConfig()
   if (config.secret_key) {
-    return { secretKey: config.secret_key, source: 'config' }
+    return { secretKey: config.secret_key, source: 'config' as const }
   }
 
   throw new Error(
@@ -43,11 +43,11 @@ export const resolveAuth = (options?: { apiKey?: string }): ResolvedAuth => {
   )
 }
 
-export const createClient = (secretKey: string, jwsPrivateKey?: string): Fintoc => {
+export const createClient = (secretKey: string, jwsPrivateKey?: string) => {
   return new Fintoc(secretKey, jwsPrivateKey)
 }
 
-export const whoami = async (secretKey: string): Promise<WhoamiResponse> => {
+export const whoami = async (secretKey: string) => {
   const client = createClient(secretKey)
   const result = await client.whoami.get('whoami')
   return {
@@ -60,7 +60,7 @@ export const whoami = async (secretKey: string): Promise<WhoamiResponse> => {
   }
 }
 
-export const maskKey = (key: string): string => {
+export const maskKey = (key: string) => {
   const prefixMatch = key.match(/^(sk_(?:test|live)_)/)
   if (prefixMatch) {
     return `${prefixMatch[1]}····`

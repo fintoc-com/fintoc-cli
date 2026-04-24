@@ -1,28 +1,28 @@
 /* eslint-disable no-console */
 
-export const log = (message: string): void => {
+export const log = (message: string) => {
   console.log(message)
 }
 
-export const success = (message: string): void => {
+export const success = (message: string) => {
   console.log(`✔ ${message}`)
 }
 
-export const error = (message: string): void => {
+export const error = (message: string) => {
   console.error(`✘ ${message}`)
 }
 
-export const warn = (message: string): void => {
+export const warn = (message: string) => {
   console.error(`⚠ ${message}`)
 }
 
 // ANSI color helpers
-const green = (text: string): string => `\x1B[32m${text}\x1B[0m`
-const yellow = (text: string): string => `\x1B[33m${text}\x1B[0m`
-const red = (text: string): string => `\x1B[31m${text}\x1B[0m`
-const dim = (text: string): string => `\x1B[2m${text}\x1B[0m`
+const green = (text: string) => `\x1B[32m${text}\x1B[0m`
+const yellow = (text: string) => `\x1B[33m${text}\x1B[0m`
+const red = (text: string) => `\x1B[31m${text}\x1B[0m`
+const dim = (text: string) => `\x1B[2m${text}\x1B[0m`
 
-const STATUS_ICONS: Record<string, (text: string) => string> = {
+const STATUS_COLORS = {
   succeeded: green,
   active: green,
   paid: green,
@@ -36,16 +36,16 @@ const STATUS_ICONS: Record<string, (text: string) => string> = {
   expired: red,
   inactive: red,
   disabled: red,
-}
+} satisfies Record<string, (text: string) => string>
 
-export const colorizeStatus = (status: string): string => {
-  const colorFn = STATUS_ICONS[status]
-  return colorFn ? colorFn(status) : status
+export const colorizeStatus = (status: string) => {
+  if (!(status in STATUS_COLORS)) return status
+  return STATUS_COLORS[status as keyof typeof STATUS_COLORS](status)
 }
 
 // Strip ANSI codes for width calculation
 // eslint-disable-next-line no-control-regex
-const stripAnsi = (str: string): string => str.replace(/\x1B\[[0-9;]*m/g, '')
+const stripAnsi = (str: string) => str.replace(/\x1B\[[0-9;]*m/g, '')
 
 export type TableOptions = {
   columns: string[]
@@ -53,7 +53,7 @@ export type TableOptions = {
   total?: number
 }
 
-export const formatValue = (key: string, value: unknown): string => {
+export const formatValue = (key: string, value: unknown) => {
   if (value === null || value === undefined) return dim('—')
   if (key === 'status') return colorizeStatus(String(value))
   if (value instanceof Date) return value.toISOString().slice(0, 10)
@@ -61,7 +61,7 @@ export const formatValue = (key: string, value: unknown): string => {
   return String(value)
 }
 
-export const printTable = ({ columns, rows, total }: TableOptions): void => {
+export const printTable = ({ columns, rows, total }: TableOptions) => {
   if (rows.length === 0) {
     log('No results found.')
     return
@@ -102,12 +102,14 @@ export const printTable = ({ columns, rows, total }: TableOptions): void => {
   }
 }
 
-export const printJson = (data: unknown): void => {
+export const printJson = (data: unknown) => {
   console.log(JSON.stringify(data, null, 2))
 }
 
-export const printDetail = (data: Record<string, unknown>, columns?: string[]): void => {
+export const printDetail = (data: Record<string, unknown>, columns?: string[]) => {
   const keys = columns ?? Object.keys(data)
+  if (keys.length === 0) return
+
   const maxKeyLen = Math.max(...keys.map((k) => k.length))
 
   for (const key of keys) {

@@ -3,7 +3,7 @@ import type { Command } from 'commander'
 import { clearConfig, CONFIG_PATH } from '../lib/config.js'
 import { success } from '../lib/output.js'
 
-export const logoutCommand = (program: Command): void => {
+export const logoutCommand = (program: Command) => {
   program
     .command('logout')
     .description('Remove stored credentials')

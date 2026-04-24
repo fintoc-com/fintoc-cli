@@ -6,7 +6,7 @@ import { whoami } from '../lib/auth.js'
 import { CONFIG_PATH, readConfig, writeConfig } from '../lib/config.js'
 import { error, log, success } from '../lib/output.js'
 
-export const loginCommand = (program: Command): void => {
+export const loginCommand = (program: Command) => {
   program
     .command('login')
     .description('Authenticate with your Fintoc API key')
