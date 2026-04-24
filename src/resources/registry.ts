@@ -7,27 +7,8 @@ export const resources: ResourceDef[] = [
     cliCommand: 'payment_intents',
     sdkMethod: 'paymentIntents',
     sdkNamespace: 'v1',
-    verbs: ['create', 'get', 'list'],
+    verbs: ['get', 'list'],
     priorityColumns: ['id', 'amount', 'currency', 'status', 'created_at'],
-    createFlags: [
-      {
-        name: 'amount',
-        type: 'number',
-        required: true,
-        description: 'Amount in smallest currency unit',
-      },
-      {
-        name: 'currency',
-        type: 'string',
-        required: true,
-        description: 'Currency code (e.g., CLP, MXN)',
-      },
-      {
-        name: 'customer-email',
-        type: 'string',
-        description: 'Customer email address',
-      },
-    ],
     listFlags: [
       {
         name: 'status',
@@ -54,7 +35,7 @@ export const resources: ResourceDef[] = [
     sdkNamespace: 'v2',
     verbs: ['create', 'get', 'list'],
     needsJws: true,
-    priorityColumns: ['id', 'amount', 'currency', 'status', 'created_at'],
+    priorityColumns: ['id', 'amount', 'currency', 'status', 'transaction_date'],
     createFlags: [
       {
         name: 'amount',
@@ -147,7 +128,13 @@ export const resources: ResourceDef[] = [
         name: 'currency',
         type: 'string',
         required: true,
-        description: 'Currency code (e.g., CLP, MXN)',
+        description: 'Currency code (e.g., CLP)',
+      },
+      {
+        name: 'subscription-id',
+        type: 'string',
+        required: true,
+        description: 'Subscription ID to charge',
       },
     ],
     listFlags: [
@@ -211,13 +198,94 @@ export const resources: ResourceDef[] = [
     ],
   },
   {
+    name: 'checkout_sessions',
+    displayName: 'checkout session',
+    cliCommand: 'checkout_sessions',
+    sdkMethod: 'checkoutSessions',
+    sdkNamespace: 'v1',
+    verbs: ['create', 'get', 'expire'],
+    priorityColumns: ['id', 'amount', 'currency', 'status', 'created_at'],
+    createFlags: [
+      {
+        name: 'amount',
+        type: 'number',
+        required: true,
+        description: 'Amount to pay in smallest currency unit (must be > 0 and < 7000000)',
+      },
+      {
+        name: 'currency',
+        type: 'string',
+        required: true,
+        description: 'Currency code (CLP, MXN)',
+      },
+      {
+        name: 'success-url',
+        type: 'string',
+        description: 'Redirect URL after successful payment',
+      },
+      {
+        name: 'cancel-url',
+        type: 'string',
+        description: 'Redirect URL if customer cancels',
+      },
+      {
+        name: 'customer-email',
+        type: 'string',
+        description: 'Customer email for refund notifications',
+      },
+      {
+        name: 'recipient-account-type',
+        type: 'string',
+        description: 'Recipient account type (checking_account, sight_account)',
+        nestedPath: 'payment_method_options.payment_intent.recipient_account.type',
+      },
+      {
+        name: 'recipient-account-number',
+        type: 'string',
+        description: 'Recipient account number',
+        nestedPath: 'payment_method_options.payment_intent.recipient_account.number',
+      },
+      {
+        name: 'recipient-account-holder-id',
+        type: 'string',
+        description: 'Recipient account holder ID (e.g., RUT in Chile)',
+        nestedPath: 'payment_method_options.payment_intent.recipient_account.holder_id',
+      },
+      {
+        name: 'recipient-account-institution-id',
+        type: 'string',
+        description: 'Recipient bank institution ID (e.g., cl_banco_estado)',
+        nestedPath: 'payment_method_options.payment_intent.recipient_account.institution_id',
+      },
+      {
+        name: 'business-profile-tax-id',
+        type: 'string',
+        description: 'Merchant tax ID (e.g., RUT in Chile)',
+        nestedPath: 'business_profile.tax_id',
+      },
+      {
+        name: 'business-profile-name',
+        type: 'string',
+        description: 'Merchant display name',
+        nestedPath: 'business_profile.name',
+      },
+      {
+        name: 'business-profile-category',
+        type: 'string',
+        description: 'Merchant activity code (6 characters in Chile)',
+        nestedPath: 'business_profile.category',
+      },
+    ],
+    listFlags: [],
+  },
+  {
     name: 'api_keys',
     displayName: 'API key',
     cliCommand: 'api_keys',
     sdkMethod: 'apiKeys',
     sdkNamespace: 'v1',
     verbs: ['list'],
-    priorityColumns: ['id', 'name', 'mode', 'last_four', 'created_at'],
+    priorityColumns: ['token', 'mode', 'is_public', 'created_at'],
     listFlags: [],
   },
 ]
