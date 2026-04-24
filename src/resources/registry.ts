@@ -53,6 +53,7 @@ export const resources: ResourceDef[] = [
     sdkMethod: 'transfers',
     sdkNamespace: 'v2',
     verbs: ['create', 'get', 'list'],
+    needsJws: true,
     priorityColumns: ['id', 'amount', 'currency', 'status', 'created_at'],
     createFlags: [
       {

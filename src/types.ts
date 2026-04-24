@@ -21,6 +21,7 @@ export type ResourceDef = {
   sdkMethod: string
   sdkNamespace: 'v1' | 'v2'
   verbs: Verb[]
+  needsJws?: boolean
   priorityColumns: string[]
   createFlags?: FlagDef[]
   listFlags?: FlagDef[]

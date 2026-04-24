@@ -82,13 +82,12 @@ const validateRequired = (cmd: Command, flags: FlagDef[], resourceName: string, 
   }
 }
 
-// Resolve auth + create SDK client, handling errors
-const resolveClient = (parentOpts: RootOpts) => {
+// Resolve auth + create SDK client, reading JWS only when the resource requires it
+const resolveClient = (parentOpts: RootOpts, resource: ResourceDef) => {
   const auth = resolveAuth(parentOpts)
-  const config = readConfig()
-  const jwsPrivateKey = config.jws_private_key
+  const jwsPrivateKey = resource.needsJws ? readConfig().jws_private_key : undefined
   const client = createClient(auth.secretKey, jwsPrivateKey)
-  return { client, jwsPrivateKey }
+  return { client }
 }
 
 // Type predicate for SDK objects with a serialize() method
@@ -115,7 +114,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
     validateRequired(actionCmd, resource.createFlags ?? [], resource.cliCommand, 'create')
 
     const body = collectSetOptions(actionCmd, resource.createFlags ?? [])
-    const { client } = resolveClient(rootOpts)
+    const { client } = resolveClient(rootOpts, resource)
     const manager = getManager(client, resource)
 
     if (!manager.create) throw new Error(`${resource.name} does not support create`)
@@ -138,7 +137,7 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
     .description(`Get a ${resource.displayName} by ID`)
     .action(async (id: string, _opts: unknown, actionCmd: Command) => {
       const rootOpts = getRootOpts(actionCmd)
-      const { client } = resolveClient(rootOpts)
+      const { client } = resolveClient(rootOpts, resource)
       const manager = getManager(client, resource)
 
       if (!manager.get) throw new Error(`${resource.name} does not support get`)
@@ -171,7 +170,7 @@ const registerList = (parent: Command, resource: ResourceDef) => {
     }
 
     const filters = collectSetOptions(actionCmd, resource.listFlags ?? [])
-    const { client } = resolveClient(rootOpts)
+    const { client } = resolveClient(rootOpts, resource)
     const manager = getManager(client, resource)
 
     if (!manager.list) throw new Error(`${resource.name} does not support list`)
@@ -217,7 +216,7 @@ const registerDelete = (parent: Command, resource: ResourceDef) => {
         }
       }
 
-      const { client } = resolveClient(rootOpts)
+      const { client } = resolveClient(rootOpts, resource)
       const manager = getManager(client, resource)
 
       if (!manager.delete) throw new Error(`${resource.name} does not support delete`)
@@ -234,7 +233,7 @@ const verbRegistrars = {
 } satisfies Record<string, (parent: Command, resource: ResourceDef) => void>
 
 export const registerResourceCommands = (program: Command, resourceDefs: ResourceDef[]) => {
-  for (const resource of resourceDefs) {
+  resourceDefs.forEach((resource) => {
     if (resource.verbs.includes('create') && !resource.createFlags?.length) {
       throw new Error(`Resource ${resource.name} has 'create' verb but no createFlags`)
     }
@@ -243,11 +242,8 @@ export const registerResourceCommands = (program: Command, resourceDefs: Resourc
       .command(resource.cliCommand)
       .description(`Manage ${resource.name.replace(/_/g, ' ')}`)
 
-    for (const verb of resource.verbs) {
-      const registrar = verbRegistrars[verb]
-      if (registrar) {
-        registrar(resourceCmd, resource)
-      }
-    }
-  }
+    resource.verbs.forEach((verb) => {
+      verbRegistrars[verb]?.(resourceCmd, resource)
+    })
+  })
 }
