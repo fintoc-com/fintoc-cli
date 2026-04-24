@@ -39,7 +39,9 @@ const STATUS_COLORS = {
 } satisfies Record<string, (text: string) => string>
 
 export const colorizeStatus = (status: string) => {
-  if (!(status in STATUS_COLORS)) return status
+  if (!(status in STATUS_COLORS)) {
+    return status
+  }
   return STATUS_COLORS[status as keyof typeof STATUS_COLORS](status)
 }
 
@@ -54,10 +56,18 @@ export type TableOptions = {
 }
 
 export const formatValue = (key: string, value: unknown) => {
-  if (value === null || value === undefined) return dim('—')
-  if (key === 'status') return colorizeStatus(String(value))
-  if (value instanceof Date) return value.toISOString().slice(0, 10)
-  if (Array.isArray(value)) return value.join(', ')
+  if (value === null || value === undefined) {
+    return dim('—')
+  }
+  if (key === 'status') {
+    return colorizeStatus(String(value))
+  }
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10)
+  }
+  if (Array.isArray(value)) {
+    return value.join(', ')
+  }
   return String(value)
 }
 
@@ -108,12 +118,16 @@ export const printJson = (data: unknown) => {
 
 export const printDetail = (data: Record<string, unknown>, columns?: string[]) => {
   const keys = columns ?? Object.keys(data)
-  if (keys.length === 0) return
+  if (keys.length === 0) {
+    return
+  }
 
   const maxKeyLen = Math.max(...keys.map((k) => k.length))
 
   for (const key of keys) {
-    if (!(key in data)) continue
+    if (!(key in data)) {
+      continue
+    }
     const label = key.padEnd(maxKeyLen)
     const value = formatValue(key, data[key])
     log(`${label}  ${value}`)

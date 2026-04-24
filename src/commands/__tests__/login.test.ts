@@ -96,7 +96,7 @@ describe('login command', () => {
     await expect(program.parseAsync(['login'], { from: 'user' })).rejects.toThrow('process.exit')
 
     expect(writeConfig).not.toHaveBeenCalled()
-    expect(error).toHaveBeenCalledWith('Authentication failed: Invalid API key')
+    expect(error).toHaveBeenCalledWith('Invalid API key')
 
     exitSpy.mockRestore()
   })

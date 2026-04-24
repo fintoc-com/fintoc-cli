@@ -17,7 +17,9 @@ export const readConfig = (): FintocConfig => {
     const content = readFileSync(CONFIG_PATH, 'utf-8')
     return parse(content) as FintocConfig
   } catch (err) {
-    if (isFileNotFound(err)) return {}
+    if (isFileNotFound(err)) {
+      return {}
+    }
     throw err
   }
 }
@@ -34,7 +36,9 @@ export const clearConfig = () => {
   try {
     unlinkSync(CONFIG_PATH)
   } catch (err) {
-    if (isFileNotFound(err)) return
+    if (isFileNotFound(err)) {
+      return
+    }
     throw err
   }
 }
