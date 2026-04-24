@@ -289,44 +289,14 @@ describe('factory: list command', () => {
     expect(printTable).not.toHaveBeenCalled()
   })
 
-  test('exits with error when --limit is not a valid number', async () => {
+  test.each(['abc', '0', '-5'])('exits with error when --limit is %s', async (value) => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit')
     })
 
     const program = createProgram()
     await expect(
-      program.parseAsync(['payment_intents', 'list', '--limit', 'abc'], { from: 'user' }),
-    ).rejects.toThrow('process.exit')
-
-    expect(error).toHaveBeenCalledWith('--limit must be a positive number')
-    expect(mockManager.list).not.toHaveBeenCalled()
-    exitSpy.mockRestore()
-  })
-
-  test('exits with error when --limit is zero', async () => {
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit')
-    })
-
-    const program = createProgram()
-    await expect(
-      program.parseAsync(['payment_intents', 'list', '--limit', '0'], { from: 'user' }),
-    ).rejects.toThrow('process.exit')
-
-    expect(error).toHaveBeenCalledWith('--limit must be a positive number')
-    expect(mockManager.list).not.toHaveBeenCalled()
-    exitSpy.mockRestore()
-  })
-
-  test('exits with error when --limit is negative', async () => {
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit')
-    })
-
-    const program = createProgram()
-    await expect(
-      program.parseAsync(['payment_intents', 'list', '--limit', '-5'], { from: 'user' }),
+      program.parseAsync(['payment_intents', 'list', '--limit', value], { from: 'user' }),
     ).rejects.toThrow('process.exit')
 
     expect(error).toHaveBeenCalledWith('--limit must be a positive number')

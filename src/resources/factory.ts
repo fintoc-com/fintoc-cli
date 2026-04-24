@@ -4,6 +4,7 @@ import type { FlagDef, ResourceDef, SdkManager, Serializable } from '../types.js
 import { confirm } from '@inquirer/prompts'
 import { createClient, resolveAuth } from '../lib/auth.js'
 import { readConfig } from '../lib/config.js'
+import { handleError } from '../lib/errors.js'
 import { error, log, printDetail, printJson, printTable, success } from '../lib/output.js'
 
 type RootOpts = {
@@ -86,8 +87,7 @@ const validateRequired = (cmd: Command, flags: FlagDef[], resourceName: string, 
 const resolveClient = (parentOpts: RootOpts, resource: ResourceDef) => {
   const auth = resolveAuth(parentOpts)
   const jwsPrivateKey = resource.needsJws ? readConfig().jws_private_key : undefined
-  const client = createClient(auth.secretKey, jwsPrivateKey)
-  return { client }
+  return createClient(auth.secretKey, jwsPrivateKey)
 }
 
 // Type predicate for SDK objects with a serialize() method
@@ -113,20 +113,24 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
     const rootOpts = getRootOpts(actionCmd)
     validateRequired(actionCmd, resource.createFlags ?? [], resource.cliCommand, 'create')
 
-    const body = collectSetOptions(actionCmd, resource.createFlags ?? [])
-    const { client } = resolveClient(rootOpts, resource)
-    const manager = getManager(client, resource)
+    try {
+      const body = collectSetOptions(actionCmd, resource.createFlags ?? [])
+      const client = resolveClient(rootOpts, resource)
+      const manager = getManager(client, resource)
 
-    if (!manager.create) throw new Error(`${resource.name} does not support create`)
-    const result = await manager.create(body)
-    const data = serialize(result)
+      if (!manager.create) throw new Error(`${resource.name} does not support create`)
+      const result = await manager.create(body)
+      const data = serialize(result)
 
-    if (rootOpts.json) {
-      printJson(data)
-    } else {
-      success(`${resource.displayName} created`)
-      log('')
-      printDetail(data, resource.priorityColumns)
+      if (rootOpts.json) {
+        printJson(data)
+      } else {
+        success(`${resource.displayName} created`)
+        log('')
+        printDetail(data, resource.priorityColumns)
+      }
+    } catch (err) {
+      handleError(err, { resourceName: resource.cliCommand, verb: 'create' })
     }
   })
 }
@@ -136,18 +140,22 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
     .command('get <id>')
     .description(`Get a ${resource.displayName} by ID`)
     .action(async (id: string, _opts: unknown, actionCmd: Command) => {
-      const rootOpts = getRootOpts(actionCmd)
-      const { client } = resolveClient(rootOpts, resource)
-      const manager = getManager(client, resource)
+      try {
+        const rootOpts = getRootOpts(actionCmd)
+        const client = resolveClient(rootOpts, resource)
+        const manager = getManager(client, resource)
 
-      if (!manager.get) throw new Error(`${resource.name} does not support get`)
-      const result = await manager.get(id)
-      const data = serialize(result)
+        if (!manager.get) throw new Error(`${resource.name} does not support get`)
+        const result = await manager.get(id)
+        const data = serialize(result)
 
-      if (rootOpts.json) {
-        printJson(data)
-      } else {
-        printDetail(data, resource.priorityColumns)
+        if (rootOpts.json) {
+          printJson(data)
+        } else {
+          printDetail(data, resource.priorityColumns)
+        }
+      } catch (err) {
+        handleError(err, { resourceName: resource.cliCommand, verb: 'get', id })
       }
     })
 }
@@ -169,26 +177,30 @@ const registerList = (parent: Command, resource: ResourceDef) => {
       process.exit(1)
     }
 
-    const filters = collectSetOptions(actionCmd, resource.listFlags ?? [])
-    const { client } = resolveClient(rootOpts, resource)
-    const manager = getManager(client, resource)
+    try {
+      const filters = collectSetOptions(actionCmd, resource.listFlags ?? [])
+      const client = resolveClient(rootOpts, resource)
+      const manager = getManager(client, resource)
 
-    if (!manager.list) throw new Error(`${resource.name} does not support list`)
-    const generator = (await manager.list({ ...filters, lazy: true })) as AsyncIterable<unknown>
-    const items: Record<string, unknown>[] = []
+      if (!manager.list) throw new Error(`${resource.name} does not support list`)
+      const generator = (await manager.list({ ...filters, lazy: true })) as AsyncIterable<unknown>
+      const items: Record<string, unknown>[] = []
 
-    for await (const item of generator) {
-      items.push(serialize(item))
-      if (items.length >= limit) break
-    }
+      for await (const item of generator) {
+        items.push(serialize(item))
+        if (items.length >= limit) break
+      }
 
-    if (rootOpts.json) {
-      printJson(items)
-    } else {
-      printTable({
-        columns: resource.priorityColumns,
-        rows: items,
-      })
+      if (rootOpts.json) {
+        printJson(items)
+      } else {
+        printTable({
+          columns: resource.priorityColumns,
+          rows: items,
+        })
+      }
+    } catch (err) {
+      handleError(err, { resourceName: resource.cliCommand, verb: 'list' })
     }
   })
 }
@@ -216,12 +228,16 @@ const registerDelete = (parent: Command, resource: ResourceDef) => {
         }
       }
 
-      const { client } = resolveClient(rootOpts, resource)
-      const manager = getManager(client, resource)
+      try {
+        const client = resolveClient(rootOpts, resource)
+        const manager = getManager(client, resource)
 
-      if (!manager.delete) throw new Error(`${resource.name} does not support delete`)
-      await manager.delete(id)
-      success(`${resource.displayName} '${id}' deleted`)
+        if (!manager.delete) throw new Error(`${resource.name} does not support delete`)
+        await manager.delete(id)
+        success(`${resource.displayName} '${id}' deleted`)
+      } catch (err) {
+        handleError(err, { resourceName: resource.cliCommand, verb: 'delete', id })
+      }
     })
 }
 
