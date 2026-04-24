@@ -49,6 +49,7 @@ const asyncGenerator = (items: { serialize: () => Record<string, unknown> }[]) =
 
 const testResource: ResourceDef = {
   name: 'payment_intents',
+  displayName: 'payment intent',
   cliCommand: 'payment_intents',
   sdkMethod: 'paymentIntents',
   sdkNamespace: 'v1',
@@ -406,6 +407,7 @@ describe('factory: v2 namespace', () => {
 
     const v2Resource: ResourceDef = {
       name: 'transfers',
+      displayName: 'transfer',
       cliCommand: 'transfers',
       sdkMethod: 'transfers',
       sdkNamespace: 'v2',
