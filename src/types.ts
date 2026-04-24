@@ -3,7 +3,7 @@ export type FintocConfig = {
   jws_private_key?: string
 }
 
-export type Verb = 'create' | 'get' | 'list' | 'delete'
+export type Verb = 'create' | 'get' | 'list' | 'delete' | 'expire'
 
 export type FlagType = 'string' | 'number' | 'boolean' | 'string[]'
 
@@ -12,6 +12,7 @@ export type FlagDef = {
   type: FlagType
   required?: boolean
   description?: string
+  nestedPath?: string
 }
 
 export type ResourceDef = {
@@ -32,6 +33,7 @@ export type SdkManager = {
   get?: (id: string) => Promise<unknown>
   list?: (params: Record<string, unknown>) => Promise<unknown>
   delete?: (id: string) => Promise<unknown>
+  expire?: (id: string) => Promise<unknown>
 }
 
 export type Serializable = {
