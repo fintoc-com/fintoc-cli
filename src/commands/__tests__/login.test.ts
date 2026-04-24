@@ -31,6 +31,7 @@ vi.mock('@inquirer/prompts', () => ({
 const createProgram = () => {
   const program = new Command()
   program.exitOverride()
+  program.option('--api-key <key>', 'Override API key for this command')
   loginCommand(program)
   return program
 }

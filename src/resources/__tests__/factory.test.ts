@@ -194,6 +194,68 @@ describe('factory: create command', () => {
     expect(printJson).toHaveBeenCalledWith({ id: 'pi_123', amount: 10000 })
     expect(printDetail).not.toHaveBeenCalled()
   })
+
+  test('assembles nested flags into nested objects via nestedPath', async () => {
+    const nestedResource: ResourceDef = {
+      name: 'checkout_sessions',
+      displayName: 'checkout session',
+      cliCommand: 'checkout_sessions',
+      sdkMethod: 'paymentIntents',
+      sdkNamespace: 'v1',
+      verbs: ['create'],
+      priorityColumns: ['id'],
+      createFlags: [
+        { name: 'amount', type: 'number', required: true },
+        { name: 'currency', type: 'string', required: true },
+        {
+          name: 'recipient-account-type',
+          type: 'string',
+          nestedPath: 'payment_method_options.payment_intent.recipient_account.type',
+        },
+        {
+          name: 'business-profile-tax-id',
+          type: 'string',
+          nestedPath: 'business_profile.tax_id',
+        },
+      ],
+      listFlags: [],
+    }
+
+    const mockResult = { serialize: () => ({ id: 'cs_123' }) }
+    mockManager.create.mockResolvedValue(mockResult)
+
+    const program = createProgram(nestedResource)
+    await program.parseAsync(
+      [
+        'checkout_sessions',
+        'create',
+        '--amount',
+        '5000',
+        '--currency',
+        'CLP',
+        '--recipient-account-type',
+        'checking_account',
+        '--business-profile-tax-id',
+        '11111111-1',
+      ],
+      { from: 'user' },
+    )
+
+    expect(mockManager.create).toHaveBeenCalledWith({
+      amount: 5000,
+      currency: 'CLP',
+      payment_method_options: {
+        payment_intent: {
+          recipient_account: {
+            type: 'checking_account',
+          },
+        },
+      },
+      business_profile: {
+        tax_id: '11111111-1',
+      },
+    })
+  })
 })
 
 describe('factory: get command', () => {

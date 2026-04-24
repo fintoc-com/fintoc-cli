@@ -3,8 +3,8 @@ import { describe, expect, test } from 'vitest'
 import { resources } from '../registry.js'
 
 describe('resource registry', () => {
-  test('contains all 8 resources', () => {
-    expect(resources).toHaveLength(8)
+  test('contains all 9 resources', () => {
+    expect(resources).toHaveLength(9)
 
     const names = resources.map((r) => r.name)
     expect(names).toEqual([
@@ -15,6 +15,7 @@ describe('resource registry', () => {
       'charges',
       'subscriptions',
       'links',
+      'checkout_sessions',
       'api_keys',
     ])
   })
@@ -32,7 +33,7 @@ describe('resource registry', () => {
   })
 
   test('verbs are valid', () => {
-    const validVerbs = new Set(['create', 'get', 'list', 'delete'])
+    const validVerbs = new Set(['create', 'get', 'list', 'delete', 'expire'])
     resources.forEach((resource) => {
       resource.verbs.forEach((verb) => {
         expect(validVerbs.has(verb)).toBe(true)
@@ -50,8 +51,8 @@ describe('resource registry', () => {
   })
 
   test('createFlags with required=true exist for resources that need them', () => {
-    const paymentIntents = resources.find((r) => r.name === 'payment_intents')!
-    const requiredFlags = paymentIntents.createFlags!.filter((f) => f.required)
+    const checkoutSessions = resources.find((r) => r.name === 'checkout_sessions')!
+    const requiredFlags = checkoutSessions.createFlags!.filter((f) => f.required)
     expect(requiredFlags.map((f) => f.name)).toEqual(['amount', 'currency'])
   })
 

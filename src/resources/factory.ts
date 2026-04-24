@@ -52,6 +52,20 @@ const addFlags = (cmd: Command, flags: FlagDef[]) => {
   }
 }
 
+// Set a value at a dot-separated path in a nested object
+const setNestedValue = (obj: Record<string, unknown>, path: string, value: unknown) => {
+  const keys = path.split('.')
+  let current = obj
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i]
+    if (!(key in current) || typeof current[key] !== 'object' || current[key] === null) {
+      current[key] = {}
+    }
+    current = current[key] as Record<string, unknown>
+  }
+  current[keys[keys.length - 1]] = value
+}
+
 // Collect only explicitly-set option values (skip Commander defaults)
 const collectSetOptions = (cmd: Command, flags: FlagDef[]) => {
   const opts = cmd.opts()
@@ -60,8 +74,13 @@ const collectSetOptions = (cmd: Command, flags: FlagDef[]) => {
   for (const flag of flags) {
     const camelName = toCamelCase(flag.name)
     if (opts[camelName] !== undefined) {
-      const snakeName = toSnakeCase(flag.name)
-      result[snakeName] = parseFlagValue(String(opts[camelName]), flag)
+      const value = parseFlagValue(String(opts[camelName]), flag)
+      if (flag.nestedPath) {
+        setNestedValue(result, flag.nestedPath, value)
+      } else {
+        const snakeName = toSnakeCase(flag.name)
+        result[snakeName] = value
+      }
     }
   }
 
@@ -128,10 +147,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
       const client = resolveClient(rootOpts, resource)
       const manager = getManager(client, resource)
 
-      if (!manager.create) {
-        throw new Error(`${resource.name} does not support create`)
-      }
-      const result = await manager.create(body)
+      const result = await manager.create!(body)
       const data = serialize(result)
 
       if (rootOpts.json) {
@@ -157,10 +173,7 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
         const client = resolveClient(rootOpts, resource)
         const manager = getManager(client, resource)
 
-        if (!manager.get) {
-          throw new Error(`${resource.name} does not support get`)
-        }
-        const result = await manager.get(id)
+        const result = await manager.get!(id)
         const data = serialize(result)
 
         if (rootOpts.json) {
@@ -196,10 +209,7 @@ const registerList = (parent: Command, resource: ResourceDef) => {
       const client = resolveClient(rootOpts, resource)
       const manager = getManager(client, resource)
 
-      if (!manager.list) {
-        throw new Error(`${resource.name} does not support list`)
-      }
-      const generator = (await manager.list({ ...filters, lazy: true })) as AsyncIterable<unknown>
+      const generator = (await manager.list!({ ...filters, lazy: true })) as AsyncIterable<unknown>
       const items: Record<string, unknown>[] = []
 
       for await (const item of generator) {
@@ -250,13 +260,45 @@ const registerDelete = (parent: Command, resource: ResourceDef) => {
         const client = resolveClient(rootOpts, resource)
         const manager = getManager(client, resource)
 
-        if (!manager.delete) {
-          throw new Error(`${resource.name} does not support delete`)
-        }
-        await manager.delete(id)
+        await manager.delete!(id)
         success(`${resource.displayName} '${id}' deleted`)
       } catch (err) {
         handleError(err, { resourceName: resource.cliCommand, verb: 'delete', id })
+      }
+    })
+}
+
+const registerExpire = (parent: Command, resource: ResourceDef) => {
+  parent
+    .command('expire <id>')
+    .description(`Expire a ${resource.displayName}`)
+    .option('--yes', 'Skip confirmation prompt')
+    .action(async (id: string, opts: { yes?: boolean }, actionCmd: Command) => {
+      const rootOpts = getRootOpts(actionCmd)
+
+      if (!opts.yes) {
+        if (!process.stdin.isTTY) {
+          error(`Confirmation required to expire '${id}'. Use --yes to skip.`)
+          process.exit(1)
+        }
+        const confirmed = await confirm({
+          message: `Are you sure you want to expire '${id}'?`,
+          default: false,
+        })
+        if (!confirmed) {
+          log('Aborted.')
+          return
+        }
+      }
+
+      try {
+        const client = resolveClient(rootOpts, resource)
+        const manager = getManager(client, resource)
+
+        await manager.expire!(id)
+        success(`${resource.displayName} '${id}' expired`)
+      } catch (err) {
+        handleError(err, { resourceName: resource.cliCommand, verb: 'expire', id })
       }
     })
 }
@@ -266,6 +308,7 @@ const verbRegistrars = {
   get: registerGet,
   list: registerList,
   delete: registerDelete,
+  expire: registerExpire,
 } satisfies Record<string, (parent: Command, resource: ResourceDef) => void>
 
 export const registerResourceCommands = (program: Command, resourceDefs: ResourceDef[]) => {
