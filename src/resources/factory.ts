@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import type { Fintoc } from 'fintoc'
 import type { FlagDef, ResourceDef, SdkManager, Serializable } from '../types.js'
+import { readFileSync } from 'node:fs'
 import { confirm } from '@inquirer/prompts'
 import { createClient, resolveAuth } from '../lib/auth.js'
 import { readConfig } from '../lib/config.js'
@@ -87,6 +88,61 @@ const collectSetOptions = (cmd: Command, flags: FlagDef[]) => {
   return result
 }
 
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+
+// Deep merge two objects, where source values override target values
+const deepMerge = (
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+): Record<string, unknown> => {
+  const result = { ...target }
+  for (const key of Object.keys(source)) {
+    const sourceVal = source[key]
+    const targetVal = result[key]
+    if (isPlainObject(sourceVal) && isPlainObject(targetVal)) {
+      result[key] = deepMerge(targetVal, sourceVal)
+    } else {
+      result[key] = sourceVal
+    }
+  }
+  return result
+}
+
+// Read JSON body from file path or stdin ("-")
+const readJsonBody = (fromJson: string): Record<string, unknown> => {
+  if (fromJson === '-' && process.stdin.isTTY) {
+    error('--from-json -: no input on stdin. Pipe a file or use a path instead')
+    process.exit(1)
+  }
+
+  let raw: string
+  try {
+    raw = fromJson === '-' ? readFileSync(0, 'utf-8') : readFileSync(fromJson, 'utf-8')
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
+      error(`--from-json: file '${fromJson}' not found`)
+      process.exit(1)
+    }
+    throw err
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    error(`--from-json: invalid JSON${fromJson !== '-' ? ` in ${fromJson}` : ''}`)
+    process.exit(1)
+  }
+
+  if (!isPlainObject(parsed)) {
+    error('--from-json must contain a JSON object')
+    process.exit(1)
+  }
+
+  return parsed as Record<string, unknown>
+}
+
 // Validate required flags are present
 const validateRequired = (cmd: Command, flags: FlagDef[], resourceName: string, verb: string) => {
   const opts = cmd.opts()
@@ -136,14 +192,25 @@ const serialize = (obj: unknown): Record<string, unknown> => {
 const registerCreate = (parent: Command, resource: ResourceDef) => {
   const cmd = parent.command('create').description(`Create a new ${resource.displayName}`)
 
+  cmd.option(
+    '--from-json <path>',
+    'Read request body from a JSON file (use "-" for stdin). JSON keys must match the API body format (see https://docs.fintoc.com)',
+  )
   addFlags(cmd, resource.createFlags ?? [])
 
   cmd.action(async (_opts: unknown, actionCmd: Command) => {
     const rootOpts = getRootOpts(actionCmd)
-    validateRequired(actionCmd, resource.createFlags ?? [], resource.cliCommand, 'create')
+    const localOpts = actionCmd.opts<{ fromJson?: string }>()
+
+    if (!localOpts.fromJson) {
+      validateRequired(actionCmd, resource.createFlags ?? [], resource.cliCommand, 'create')
+    }
 
     try {
-      const body = collectSetOptions(actionCmd, resource.createFlags ?? [])
+      const jsonBody = localOpts.fromJson ? readJsonBody(localOpts.fromJson) : {}
+      const flagBody = collectSetOptions(actionCmd, resource.createFlags ?? [])
+      const body = deepMerge(jsonBody, flagBody)
+
       const client = resolveClient(rootOpts, resource)
       const manager = getManager(client, resource)
 
