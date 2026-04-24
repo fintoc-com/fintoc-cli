@@ -33,20 +33,20 @@ describe('resource registry', () => {
 
   test('verbs are valid', () => {
     const validVerbs = new Set(['create', 'get', 'list', 'delete'])
-    for (const resource of resources) {
-      for (const verb of resource.verbs) {
+    resources.forEach((resource) => {
+      resource.verbs.forEach((verb) => {
         expect(validVerbs.has(verb)).toBe(true)
-      }
-    }
+      })
+    })
   })
 
   test('resources with create verb have createFlags', () => {
-    for (const resource of resources) {
-      if (resource.verbs.includes('create')) {
+    resources
+      .filter((resource) => resource.verbs.includes('create'))
+      .forEach((resource) => {
         expect(resource.createFlags).toBeDefined()
         expect(resource.createFlags!.length).toBeGreaterThan(0)
-      }
-    }
+      })
   })
 
   test('createFlags with required=true exist for resources that need them', () => {

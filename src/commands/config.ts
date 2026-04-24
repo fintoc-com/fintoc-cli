@@ -4,7 +4,7 @@ import { maskKey, resolveAuth, whoami } from '../lib/auth.js'
 import { CONFIG_PATH } from '../lib/config.js'
 import { log, warn } from '../lib/output.js'
 
-export const configCommand = (program: Command): void => {
+export const configCommand = (program: Command) => {
   program
     .command('config')
     .description('Show current configuration')
@@ -12,11 +12,11 @@ export const configCommand = (program: Command): void => {
       let secretKey: string
       let source: string
 
-      const sourceLabels: Record<string, string> = {
+      const sourceLabels = {
         flag: 'inline flag (--api-key)',
         env: 'env var (FINTOC_SECRET_KEY)',
         config: 'config file',
-      }
+      } satisfies Record<string, string>
 
       try {
         const auth = resolveAuth()

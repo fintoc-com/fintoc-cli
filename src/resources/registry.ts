@@ -3,6 +3,7 @@ import type { ResourceDef } from '../types.js'
 export const resources: ResourceDef[] = [
   {
     name: 'payment_intents',
+    displayName: 'payment intent',
     cliCommand: 'payment_intents',
     sdkMethod: 'paymentIntents',
     sdkNamespace: 'v1',
@@ -47,10 +48,12 @@ export const resources: ResourceDef[] = [
   },
   {
     name: 'transfers',
+    displayName: 'transfer',
     cliCommand: 'transfers',
     sdkMethod: 'transfers',
     sdkNamespace: 'v2',
     verbs: ['create', 'get', 'list'],
+    needsJws: true,
     priorityColumns: ['id', 'amount', 'currency', 'status', 'created_at'],
     createFlags: [
       {
@@ -92,6 +95,7 @@ export const resources: ResourceDef[] = [
   },
   {
     name: 'accounts',
+    displayName: 'account',
     cliCommand: 'accounts',
     sdkMethod: 'accounts',
     sdkNamespace: 'v2',
@@ -101,6 +105,7 @@ export const resources: ResourceDef[] = [
   },
   {
     name: 'webhook_endpoints',
+    displayName: 'webhook endpoint',
     cliCommand: 'webhook_endpoints',
     sdkMethod: 'webhookEndpoints',
     sdkNamespace: 'v1',
@@ -125,6 +130,7 @@ export const resources: ResourceDef[] = [
   },
   {
     name: 'charges',
+    displayName: 'charge',
     cliCommand: 'charges',
     sdkMethod: 'charges',
     sdkNamespace: 'v1',
@@ -169,6 +175,7 @@ export const resources: ResourceDef[] = [
   },
   {
     name: 'subscriptions',
+    displayName: 'subscription',
     cliCommand: 'subscriptions',
     sdkMethod: 'subscriptions',
     sdkNamespace: 'v1',
@@ -189,6 +196,7 @@ export const resources: ResourceDef[] = [
   },
   {
     name: 'links',
+    displayName: 'link',
     cliCommand: 'links',
     sdkMethod: 'links',
     sdkNamespace: 'v1',
@@ -204,6 +212,7 @@ export const resources: ResourceDef[] = [
   },
   {
     name: 'api_keys',
+    displayName: 'API key',
     cliCommand: 'api_keys',
     sdkMethod: 'apiKeys',
     sdkNamespace: 'v1',

@@ -16,11 +16,24 @@ export type FlagDef = {
 
 export type ResourceDef = {
   name: string
+  displayName: string
   cliCommand: string
   sdkMethod: string
   sdkNamespace: 'v1' | 'v2'
   verbs: Verb[]
+  needsJws?: boolean
   priorityColumns: string[]
   createFlags?: FlagDef[]
   listFlags?: FlagDef[]
+}
+
+export type SdkManager = {
+  create?: (body: Record<string, unknown>) => Promise<unknown>
+  get?: (id: string) => Promise<unknown>
+  list?: (params: Record<string, unknown>) => Promise<unknown>
+  delete?: (id: string) => Promise<unknown>
+}
+
+export type Serializable = {
+  serialize: () => Record<string, unknown>
 }
