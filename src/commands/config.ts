@@ -8,7 +8,7 @@ export const configCommand = (program: Command) => {
   program
     .command('config')
     .description('Show current configuration')
-    .action(async () => {
+    .action(async (_opts: unknown, cmd: Command) => {
       let secretKey: string
       let source: string
 
@@ -18,8 +18,10 @@ export const configCommand = (program: Command) => {
         config: 'config file',
       } satisfies Record<string, string>
 
+      const rootOpts = cmd.parent!.opts<{ apiKey?: string }>()
+
       try {
-        const auth = resolveAuth()
+        const auth = resolveAuth(rootOpts)
         secretKey = auth.secretKey
         source = sourceLabels[auth.source]
       } catch {
