@@ -134,9 +134,7 @@ const serialize = (obj: unknown): Record<string, unknown> => {
 }
 
 const registerCreate = (parent: Command, resource: ResourceDef) => {
-  const cmd = parent
-    .command('create')
-    .description(`Create a new ${resource.displayName}`)
+  const cmd = parent.command('create').description(`Create a new ${resource.displayName}`)
 
   addFlags(cmd, resource.createFlags ?? [])
 
