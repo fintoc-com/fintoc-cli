@@ -4,6 +4,7 @@ import { password } from '@inquirer/prompts'
 
 import { whoami } from '../lib/auth.js'
 import { CONFIG_PATH, readConfig, writeConfig } from '../lib/config.js'
+import { handleError } from '../lib/errors.js'
 import { error, log, success } from '../lib/output.js'
 
 export const loginCommand = (program: Command) => {
@@ -43,12 +44,7 @@ export const loginCommand = (program: Command) => {
         success(`Authenticated as ${info.organizationName} (${info.mode} mode)`)
         log(`  Key stored in ${CONFIG_PATH}`)
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error'
-        error(`Authentication failed: ${message}`)
-        log('')
-        log('  Check your API key and try again.')
-        log('  Get your API keys at: https://dashboard.fintoc.com/api-keys')
-        process.exit(1)
+        handleError(err)
       }
     })
 }
