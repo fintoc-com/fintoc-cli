@@ -1,13 +1,20 @@
 import type { Command } from 'commander'
-
+import type { FintocConfig } from '../types.js'
 import { maskKey, resolveAuth, whoami } from '../lib/auth.js'
-import { CONFIG_PATH } from '../lib/config.js'
-import { log, warn } from '../lib/output.js'
+import { CONFIG_PATH, readConfig, writeConfig } from '../lib/config.js'
+import { error, log, success, warn } from '../lib/output.js'
+
+const ALLOWED_KEYS: readonly string[] = [
+  'secret_key',
+  'jws_private_key',
+] satisfies readonly (keyof FintocConfig)[]
+
+const isConfigKey = (key: string): key is keyof FintocConfig => ALLOWED_KEYS.includes(key)
 
 export const configCommand = (program: Command) => {
-  program
+  const configCmd = program
     .command('config')
-    .description('Show current configuration')
+    .description('Show or update CLI configuration')
     .action(async (_opts: unknown, cmd: Command) => {
       let secretKey: string
       let source: string
@@ -50,5 +57,25 @@ export const configCommand = (program: Command) => {
       log(`  API version:   ${apiVersion}`)
       log(`  Config path:   ${CONFIG_PATH}`)
       log(`  Source:        ${source}`)
+    })
+
+  configCmd
+    .command('set <key> <value>')
+    .description('Set a config value (allowed keys: secret_key, jws_private_key)')
+    .action((key: string, value: string) => {
+      if (!isConfigKey(key)) {
+        error(`Unknown config key: '${key}'`)
+        log('')
+        log(`  Allowed keys: ${ALLOWED_KEYS.join(', ')}`)
+        log(`  Example: fintoc config set jws_private_key /path/to/key.pem`)
+        process.exit(1)
+      }
+
+      const config = readConfig()
+      config[key] = value
+      writeConfig(config)
+
+      success(`Config updated: ${key}`)
+      log(`  Saved to ${CONFIG_PATH}`)
     })
 }
