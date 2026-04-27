@@ -680,6 +680,90 @@ describe('factory: delete command', () => {
   })
 })
 
+describe('factory: --jws-private-key flag', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  test('adds --jws-private-key flag when resource.needsJws is true', () => {
+    const jwsResource: ResourceDef = {
+      name: 'transfers',
+      displayName: 'transfer',
+      cliCommand: 'transfers',
+      sdkMethod: 'paymentIntents',
+      sdkNamespace: 'v2',
+      verbs: ['create'],
+      needsJws: true,
+      priorityColumns: ['id'],
+      createFlags: [
+        { name: 'amount', type: 'number', required: true },
+        { name: 'currency', type: 'string', required: true },
+      ],
+      listFlags: [],
+    }
+
+    const program = createProgram(jwsResource)
+    const resourceCmd = program.commands.find((c) => c.name() === 'transfers')!
+    const createCmd = resourceCmd.commands.find((c) => c.name() === 'create')!
+    const options = createCmd.options.map((o) => o.long)
+
+    expect(options).toContain('--jws-private-key')
+  })
+
+  test('does not add --jws-private-key flag when resource.needsJws is false', () => {
+    const program = createProgram()
+    const resourceCmd = program.commands.find((c) => c.name() === 'payment_intents')!
+    const createCmd = resourceCmd.commands.find((c) => c.name() === 'create')!
+    const options = createCmd.options.map((o) => o.long)
+
+    expect(options).not.toContain('--jws-private-key')
+  })
+
+  test('passes jws key path to createClient when flag is provided', async () => {
+    const { createClient } = await import('../../lib/auth.js')
+
+    const jwsResource: ResourceDef = {
+      name: 'transfers',
+      displayName: 'transfer',
+      cliCommand: 'transfers',
+      sdkMethod: 'paymentIntents',
+      sdkNamespace: 'v1',
+      verbs: ['create'],
+      needsJws: true,
+      priorityColumns: ['id'],
+      createFlags: [
+        { name: 'amount', type: 'number', required: true },
+        { name: 'currency', type: 'string', required: true },
+      ],
+      listFlags: [],
+    }
+
+    const mockResult = { serialize: () => ({ id: 'tr_123' }) }
+    mockManager.create.mockResolvedValue(mockResult)
+
+    const program = createProgram(jwsResource)
+    await program.parseAsync(
+      [
+        'transfers',
+        'create',
+        '--amount',
+        '10000',
+        '--currency',
+        'CLP',
+        '--jws-private-key',
+        '/path/to/key.pem',
+      ],
+      { from: 'user' },
+    )
+
+    expect(createClient).toHaveBeenCalledWith('sk_test_123', '/path/to/key.pem')
+  })
+})
+
 describe('factory: v2 namespace', () => {
   beforeEach(() => {
     vi.clearAllMocks()

@@ -109,13 +109,15 @@ describe('resource registry', () => {
   })
 
   describe('transfers create flags', () => {
-    test('requires amount, currency, and counterparty-account-number', () => {
+    test('requires amount, currency, account-id, counterparty-account-number, and counterparty-institution-id', () => {
       const transfers = resources.find((r) => r.name === 'transfers')!
       const requiredFlags = transfers.createFlags!.filter((f) => f.required)
       expect(requiredFlags.map((f) => f.name)).toEqual([
         'amount',
         'currency',
+        'account-id',
         'counterparty-account-number',
+        'counterparty-institution-id',
       ])
     })
   })
