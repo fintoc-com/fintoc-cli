@@ -12,7 +12,7 @@ import {
   warn,
 } from '../output.js'
 
-describe('output', () => {
+describe('console wrappers', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -101,62 +101,68 @@ describe('printTable', () => {
     vi.restoreAllMocks()
   })
 
-  test('prints no results message for empty rows', () => {
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    printTable({ columns: ['id'], rows: [] })
-    expect(spy).toHaveBeenCalledWith('No results found.')
+  describe('when rows are empty', () => {
+    test('prints no results message', () => {
+      const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      printTable({ columns: ['id'], rows: [] })
+      expect(spy).toHaveBeenCalledWith('No results found.')
+    })
   })
 
-  test('prints header and rows', () => {
-    const calls: string[] = []
-    vi.spyOn(console, 'log').mockImplementation((msg: string) => {
-      calls.push(msg)
+  describe('when rows have data', () => {
+    test('prints header and rows', () => {
+      const calls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
+        calls.push(msg)
+      })
+
+      printTable({
+        columns: ['id', 'status'],
+        rows: [
+          { id: 'pi_123', status: 'pending' },
+          { id: 'pi_456', status: 'succeeded' },
+        ],
+      })
+
+      expect(calls[0]).toContain('ID')
+      expect(calls[0]).toContain('STATUS')
+      expect(calls[1]).toContain('pi_123')
+      expect(calls[2]).toContain('pi_456')
+      expect(calls[4]).toContain('Showing 2 results')
     })
 
-    printTable({
-      columns: ['id', 'status'],
-      rows: [
-        { id: 'pi_123', status: 'pending' },
-        { id: 'pi_456', status: 'succeeded' },
-      ],
-    })
+    test('uses singular "result" for single row', () => {
+      const calls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
+        calls.push(msg)
+      })
 
-    expect(calls[0]).toContain('ID')
-    expect(calls[0]).toContain('STATUS')
-    expect(calls[1]).toContain('pi_123')
-    expect(calls[2]).toContain('pi_456')
-    expect(calls[4]).toContain('Showing 2 results')
+      printTable({
+        columns: ['id'],
+        rows: [{ id: 'pi_123' }],
+      })
+
+      const footer = calls.find((c) => c.includes('Showing'))
+      expect(footer).toContain('1 result')
+    })
   })
 
-  test('shows "X of Y" when total exceeds shown', () => {
-    const calls: string[] = []
-    vi.spyOn(console, 'log').mockImplementation((msg: string) => {
-      calls.push(msg)
+  describe('when total exceeds shown', () => {
+    test('shows "X of Y" in footer', () => {
+      const calls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
+        calls.push(msg)
+      })
+
+      printTable({
+        columns: ['id'],
+        rows: [{ id: 'pi_123' }],
+        total: 50,
+      })
+
+      const footer = calls.find((c) => c.includes('Showing'))
+      expect(footer).toContain('1 of 50')
     })
-
-    printTable({
-      columns: ['id'],
-      rows: [{ id: 'pi_123' }],
-      total: 50,
-    })
-
-    const footer = calls.find((c) => c.includes('Showing'))
-    expect(footer).toContain('1 of 50')
-  })
-
-  test('uses singular "result" for single row', () => {
-    const calls: string[] = []
-    vi.spyOn(console, 'log').mockImplementation((msg: string) => {
-      calls.push(msg)
-    })
-
-    printTable({
-      columns: ['id'],
-      rows: [{ id: 'pi_123' }],
-    })
-
-    const footer = calls.find((c) => c.includes('Showing'))
-    expect(footer).toContain('1 result')
   })
 })
 
@@ -177,29 +183,33 @@ describe('printDetail', () => {
     vi.restoreAllMocks()
   })
 
-  test('prints key-value pairs', () => {
-    const calls: string[] = []
-    vi.spyOn(console, 'log').mockImplementation((msg: string) => {
-      calls.push(msg)
+  describe('rendering', () => {
+    test('prints key-value pairs', () => {
+      const calls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
+        calls.push(msg)
+      })
+
+      printDetail({ id: 'pi_123', amount: 10000 })
+
+      expect(calls[0]).toContain('id')
+      expect(calls[0]).toContain('pi_123')
+      expect(calls[1]).toContain('amount')
+      expect(calls[1]).toContain('10000')
     })
-
-    printDetail({ id: 'pi_123', amount: 10000 })
-
-    expect(calls[0]).toContain('id')
-    expect(calls[0]).toContain('pi_123')
-    expect(calls[1]).toContain('amount')
-    expect(calls[1]).toContain('10000')
   })
 
-  test('respects column filter', () => {
-    const calls: string[] = []
-    vi.spyOn(console, 'log').mockImplementation((msg: string) => {
-      calls.push(msg)
+  describe('when column filter is provided', () => {
+    test('only shows filtered columns', () => {
+      const calls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
+        calls.push(msg)
+      })
+
+      printDetail({ id: 'pi_123', amount: 10000, secret: 'hidden' }, ['id', 'amount'])
+
+      expect(calls).toHaveLength(2)
+      expect(calls.every((c) => !c.includes('hidden'))).toBe(true)
     })
-
-    printDetail({ id: 'pi_123', amount: 10000, secret: 'hidden' }, ['id', 'amount'])
-
-    expect(calls).toHaveLength(2)
-    expect(calls.every((c) => !c.includes('hidden'))).toBe(true)
   })
 })
