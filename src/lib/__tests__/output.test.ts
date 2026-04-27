@@ -94,6 +94,16 @@ describe('formatValue', () => {
   test('converts other values to string', () => {
     expect(formatValue('amount', 10000)).toBe('10000')
   })
+
+  test('formats object with name property using name', () => {
+    const institution = { id: 'cl_banco_de_chile', name: 'Banco de Chile', country: 'cl' }
+    expect(formatValue('institution', institution)).toBe('Banco de Chile')
+  })
+
+  test('formats object without name as JSON', () => {
+    const obj = { id: 'abc', country: 'cl' }
+    expect(formatValue('metadata', obj)).toBe(JSON.stringify(obj))
+  })
 })
 
 describe('printTable', () => {

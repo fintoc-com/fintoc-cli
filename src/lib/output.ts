@@ -68,6 +68,13 @@ export const formatValue = (key: string, value: unknown) => {
   if (Array.isArray(value)) {
     return value.join(', ')
   }
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>
+    if (typeof obj.name === 'string') {
+      return obj.name
+    }
+    return JSON.stringify(value)
+  }
   return String(value)
 }
 
