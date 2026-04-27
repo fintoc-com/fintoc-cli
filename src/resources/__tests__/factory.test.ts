@@ -17,6 +17,11 @@ const { mockManager, mockClient } = vi.hoisted(() => {
   return { mockManager, mockClient }
 })
 
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return { ...actual, readFileSync: vi.fn() }
+})
+
 vi.mock('../../lib/auth.js', () => ({
   resolveAuth: vi.fn(() => ({ secretKey: 'sk_test_123', source: 'config' })),
   createClient: vi.fn(() => mockClient),
@@ -258,6 +263,256 @@ describe('factory: create command', () => {
   })
 })
 
+describe('factory: create --from-json', () => {
+  let readFileSyncMock: ReturnType<typeof vi.fn>
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    const fs = await import('node:fs')
+    readFileSyncMock = vi.mocked(fs.readFileSync)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  test('reads JSON body from file and passes to SDK', async () => {
+    readFileSyncMock.mockReturnValue(JSON.stringify({ amount: 10000, currency: 'CLP' }))
+
+    const mockResult = { serialize: () => ({ id: 'pi_123', amount: 10000 }) }
+    mockManager.create.mockResolvedValue(mockResult)
+
+    const program = createProgram()
+    await program.parseAsync(['payment_intents', 'create', '--from-json', 'payload.json'], {
+      from: 'user',
+    })
+
+    expect(readFileSyncMock).toHaveBeenCalledWith('payload.json', 'utf-8')
+    expect(mockManager.create).toHaveBeenCalledWith({ amount: 10000, currency: 'CLP' })
+    expect(success).toHaveBeenCalled()
+  })
+
+  test('reads JSON body from stdin when path is "-"', async () => {
+    readFileSyncMock.mockReturnValue(JSON.stringify({ amount: 5000, currency: 'MXN' }))
+
+    const mockResult = { serialize: () => ({ id: 'pi_456' }) }
+    mockManager.create.mockResolvedValue(mockResult)
+
+    const program = createProgram()
+    await program.parseAsync(['payment_intents', 'create', '--from-json', '-'], { from: 'user' })
+
+    expect(readFileSyncMock).toHaveBeenCalledWith(0, 'utf-8')
+    expect(mockManager.create).toHaveBeenCalledWith({ amount: 5000, currency: 'MXN' })
+  })
+
+  test('flags override JSON values', async () => {
+    readFileSyncMock.mockReturnValue(JSON.stringify({ amount: 10000, currency: 'CLP' }))
+
+    const mockResult = { serialize: () => ({ id: 'pi_789' }) }
+    mockManager.create.mockResolvedValue(mockResult)
+
+    const program = createProgram()
+    await program.parseAsync(
+      ['payment_intents', 'create', '--from-json', 'base.json', '--currency', 'MXN'],
+      { from: 'user' },
+    )
+
+    expect(mockManager.create).toHaveBeenCalledWith({
+      amount: 10000,
+      currency: 'MXN',
+    })
+  })
+
+  test('skips required flag validation when --from-json is provided', async () => {
+    readFileSyncMock.mockReturnValue(JSON.stringify({ amount: 10000, currency: 'CLP' }))
+
+    const mockResult = { serialize: () => ({ id: 'pi_abc' }) }
+    mockManager.create.mockResolvedValue(mockResult)
+
+    const program = createProgram()
+    await program.parseAsync(['payment_intents', 'create', '--from-json', 'payload.json'], {
+      from: 'user',
+    })
+
+    expect(error).not.toHaveBeenCalled()
+    expect(mockManager.create).toHaveBeenCalledWith({ amount: 10000, currency: 'CLP' })
+  })
+
+  test('JSON preserves extra fields not in createFlags', async () => {
+    readFileSyncMock.mockReturnValue(
+      JSON.stringify({
+        amount: 10000,
+        currency: 'CLP',
+        line_items: [{ name: 'Item 1', amount: 5000 }],
+        metadata: { order_id: 'ord_123' },
+      }),
+    )
+
+    const mockResult = { serialize: () => ({ id: 'pi_complex' }) }
+    mockManager.create.mockResolvedValue(mockResult)
+
+    const program = createProgram()
+    await program.parseAsync(['payment_intents', 'create', '--from-json', 'complex.json'], {
+      from: 'user',
+    })
+
+    expect(mockManager.create).toHaveBeenCalledWith({
+      amount: 10000,
+      currency: 'CLP',
+      line_items: [{ name: 'Item 1', amount: 5000 }],
+      metadata: { order_id: 'ord_123' },
+    })
+  })
+
+  test('deep merges nested flag values over JSON', async () => {
+    const nestedResource: ResourceDef = {
+      name: 'checkout_sessions',
+      displayName: 'checkout session',
+      cliCommand: 'checkout_sessions',
+      sdkMethod: 'paymentIntents',
+      sdkNamespace: 'v1',
+      verbs: ['create'],
+      priorityColumns: ['id'],
+      createFlags: [
+        { name: 'amount', type: 'number', required: true },
+        { name: 'currency', type: 'string', required: true },
+        {
+          name: 'recipient-account-type',
+          type: 'string',
+          nestedPath: 'payment_method_options.payment_intent.recipient_account.type',
+        },
+      ],
+      listFlags: [],
+    }
+
+    readFileSyncMock.mockReturnValue(
+      JSON.stringify({
+        amount: 5000,
+        currency: 'CLP',
+        payment_method_options: {
+          payment_intent: {
+            recipient_account: {
+              type: 'checking_account',
+              number: '12345678',
+            },
+          },
+        },
+      }),
+    )
+
+    const mockResult = { serialize: () => ({ id: 'cs_123' }) }
+    mockManager.create.mockResolvedValue(mockResult)
+
+    const program = createProgram(nestedResource)
+    await program.parseAsync(
+      [
+        'checkout_sessions',
+        'create',
+        '--from-json',
+        'base.json',
+        '--recipient-account-type',
+        'savings_account',
+      ],
+      { from: 'user' },
+    )
+
+    expect(mockManager.create).toHaveBeenCalledWith({
+      amount: 5000,
+      currency: 'CLP',
+      payment_method_options: {
+        payment_intent: {
+          recipient_account: {
+            type: 'savings_account',
+            number: '12345678',
+          },
+        },
+      },
+    })
+  })
+
+  describe('error cases', () => {
+    let exitSpy: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit')
+      })
+    })
+
+    afterEach(() => {
+      exitSpy.mockRestore()
+    })
+
+    test('exits with error on invalid JSON', async () => {
+      readFileSyncMock.mockReturnValue('not valid json')
+
+      const program = createProgram()
+      await expect(
+        program.parseAsync(['payment_intents', 'create', '--from-json', 'bad.json'], {
+          from: 'user',
+        }),
+      ).rejects.toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('invalid JSON'))
+    })
+
+    test('exits with error when file does not exist', async () => {
+      const enoent = new Error(
+        "ENOENT: no such file or directory, open 'missing.json'",
+      ) as Error & {
+        code: string
+      }
+      enoent.code = 'ENOENT'
+      readFileSyncMock.mockImplementation(() => {
+        throw enoent
+      })
+
+      const program = createProgram()
+      await expect(
+        program.parseAsync(['payment_intents', 'create', '--from-json', 'missing.json'], {
+          from: 'user',
+        }),
+      ).rejects.toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith("--from-json: file 'missing.json' not found")
+    })
+
+    test('exits with error when stdin is a TTY', async () => {
+      const originalIsTTY = process.stdin.isTTY
+      Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true })
+
+      const program = createProgram()
+      await expect(
+        program.parseAsync(['payment_intents', 'create', '--from-json', '-'], {
+          from: 'user',
+        }),
+      ).rejects.toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith(
+        '--from-json -: no input on stdin. Pipe a file or use a path instead',
+      )
+
+      Object.defineProperty(process.stdin, 'isTTY', {
+        value: originalIsTTY,
+        configurable: true,
+      })
+    })
+
+    test('exits with error when JSON is not an object', async () => {
+      readFileSyncMock.mockReturnValue(JSON.stringify([1, 2, 3]))
+
+      const program = createProgram()
+      await expect(
+        program.parseAsync(['payment_intents', 'create', '--from-json', 'array.json'], {
+          from: 'user',
+        }),
+      ).rejects.toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith('--from-json must contain a JSON object')
+    })
+  })
+})
+
 describe('factory: get command', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -394,7 +649,7 @@ describe('factory: delete command', () => {
     })
 
     const originalIsTTY = process.stdin.isTTY
-    process.stdin.isTTY = false
+    Object.defineProperty(process.stdin, 'isTTY', { value: false, configurable: true })
 
     const program = createProgram()
     await expect(
@@ -404,7 +659,7 @@ describe('factory: delete command', () => {
     expect(mockManager.delete).not.toHaveBeenCalled()
     expect(error).toHaveBeenCalledWith(expect.stringContaining('--yes'))
 
-    process.stdin.isTTY = originalIsTTY
+    Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true })
     exitSpy.mockRestore()
   })
 
@@ -413,7 +668,7 @@ describe('factory: delete command', () => {
     vi.mocked(confirm).mockResolvedValue(false)
 
     const originalIsTTY = process.stdin.isTTY
-    process.stdin.isTTY = true
+    Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true })
 
     const program = createProgram()
     await program.parseAsync(['payment_intents', 'delete', 'pi_123'], { from: 'user' })
@@ -421,7 +676,7 @@ describe('factory: delete command', () => {
     expect(mockManager.delete).not.toHaveBeenCalled()
     expect(log).toHaveBeenCalledWith('Aborted.')
 
-    process.stdin.isTTY = originalIsTTY
+    Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true })
   })
 })
 

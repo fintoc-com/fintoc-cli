@@ -16,11 +16,14 @@ Requires Node.js >= 22.
 # Authenticate with your API key
 fintoc login
 
-# Check your current configuration
-fintoc config
+# List payment intents
+fintoc payment_intents list
 
-# Remove stored credentials
-fintoc logout
+# Create a charge from a JSON file
+fintoc charges create --from-json payload.json
+
+# Check your setup
+fintoc doctor
 ```
 
 ## Authentication
@@ -31,32 +34,79 @@ The CLI resolves your API key in this order:
 2. `FINTOC_SECRET_KEY` environment variable
 3. `~/.fintoc/config.toml` (saved via `fintoc login`)
 
-### `fintoc login`
+```bash
+# Interactive login
+fintoc login
 
-Interactive prompt to save your API key. Validates the key against the Fintoc API before storing it.
+# Non-interactive
+fintoc login --api-key sk_test_...
+
+# One-off override
+fintoc payment_intents list --api-key sk_test_...
+
+# Show active configuration
+fintoc config
+
+# Remove stored credentials
+fintoc logout
+```
+
+## Resources
+
+| Resource | create | get | list | delete | expire |
+|----------|:------:|:---:|:----:|:------:|:------:|
+| `payment_intents` | | ✔ | ✔ | | |
+| `transfers` | ✔ | ✔ | ✔ | | |
+| `accounts` | | ✔ | ✔ | | |
+| `webhook_endpoints` | ✔ | ✔ | ✔ | ✔ | |
+| `charges` | ✔ | ✔ | ✔ | | |
+| `subscriptions` | | ✔ | ✔ | | |
+| `links` | | ✔ | ✔ | ✔ | |
+| `checkout_sessions` | ✔ | ✔ | | | ✔ |
+| `api_keys` | | | ✔ | | |
+
+### Examples
 
 ```bash
-fintoc login
-# Or non-interactively:
-fintoc login --api-key sk_test_...
+# Get a resource by ID
+fintoc payment_intents get pi_test_abc123
+
+# List with filters
+fintoc charges list --status succeeded --since 2026-01-01
+
+# Create with flags
+fintoc transfers create --amount 10000 --currency CLP --counterparty-account-number 12345678
+
+# Create from a JSON file
+fintoc checkout_sessions create --from-json session.json
+
+# Pipe from stdin
+cat payload.json | fintoc charges create --from-json -
+
+# Mix JSON body with flag overrides
+fintoc charges create --from-json base.json --amount 5000
+
+# Delete with confirmation skip
+fintoc webhook_endpoints delete we_test_abc123 --yes
 ```
 
-### `fintoc logout`
+### Output
 
-Removes stored credentials from `~/.fintoc/config.toml`.
+By default the CLI prints a formatted table. Use `--json` for machine-readable output:
 
-### `fintoc config`
-
-Displays the active configuration: organization, mode (test/live), masked API key, and credential source.
-
+```bash
+fintoc payment_intents list --json
+fintoc charges get ch_test_abc123 --json
 ```
-$ fintoc config
-  Organization:  Acme Corp
-  Mode:          test
-  Secret key:    sk_test_····
-  API version:   2023-11-15
-  Config path:   ~/.fintoc/config.toml
-  Source:        config file
+
+## Utilities
+
+```bash
+# Diagnose setup and connectivity
+fintoc doctor
+
+# Open the Fintoc dashboard in your browser
+fintoc open dashboard
 ```
 
 ## Development
