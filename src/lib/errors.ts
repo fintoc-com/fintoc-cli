@@ -1,3 +1,4 @@
+import { API_HOST, DASHBOARD_API_KEYS_URL, DOCS_TRANSFERS_URL } from './constants.js'
 import { error, log } from './output.js'
 
 type ErrorContext = {
@@ -95,14 +96,14 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       'Or:    export FINTOC_SECRET_KEY=sk_test_...',
       'Or:    fintoc --api-key sk_test_... <command>',
       '',
-      'Get your API keys at: https://dashboard.fintoc.com/api-keys',
+      `Get your API keys at: ${DASHBOARD_API_KEYS_URL}`,
     ])
     return process.exit(1)
   }
 
   // Network / connectivity failure
   if (isConnectivityError(err)) {
-    error('Could not connect to api.fintoc.com')
+    error(`Could not connect to ${API_HOST}`)
     printNextSteps(['Check your internet connection, or run: fintoc doctor'])
     return process.exit(1)
   }
@@ -113,7 +114,7 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     printNextSteps([
       'Set it with:  fintoc config set jws_private_key <path>',
       'Or pass:      --jws-private-key <path>',
-      'More info:    https://docs.fintoc.com/docs/transfers',
+      `More info:    ${DOCS_TRANSFERS_URL}`,
     ])
     return process.exit(1)
   }
@@ -137,7 +138,7 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       error(`Authentication failed: ${fields.message ?? 'Invalid API key'}`)
       printNextSteps([
         'Check your API key and try again.',
-        'Get your API keys at: https://dashboard.fintoc.com/api-keys',
+        `Get your API keys at: ${DASHBOARD_API_KEYS_URL}`,
       ])
       return process.exit(1)
     }

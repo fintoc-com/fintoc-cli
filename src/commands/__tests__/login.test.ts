@@ -48,90 +48,102 @@ describe('login command', () => {
     process.stdin.isTTY = originalIsTTY
   })
 
-  test('authenticates successfully with interactive prompt', async () => {
-    vi.mocked(password).mockResolvedValue('sk_test_valid123')
-    vi.mocked(whoami).mockResolvedValue({
-      organizationName: 'Acme Corp',
-      mode: 'test',
-      apiVersion: '2023-03-15',
+  describe('when authenticating interactively', () => {
+    test('prompts for key, validates via whoami, and saves config', async () => {
+      vi.mocked(password).mockResolvedValue('sk_test_valid123')
+      vi.mocked(whoami).mockResolvedValue({
+        organizationName: 'Acme Corp',
+        mode: 'test',
+        apiVersion: '2023-03-15',
+      })
+
+      const program = createProgram()
+      await program.parseAsync(['login'], { from: 'user' })
+
+      expect(password).toHaveBeenCalled()
+      expect(whoami).toHaveBeenCalledWith('sk_test_valid123')
+      expect(readConfig).toHaveBeenCalled()
+      expect(writeConfig).toHaveBeenCalledWith({ secret_key: 'sk_test_valid123' })
+      expect(success).toHaveBeenCalledWith('Authenticated as Acme Corp (test mode)')
     })
 
-    const program = createProgram()
-    await program.parseAsync(['login'], { from: 'user' })
+    test('preserves existing config fields when writing', async () => {
+      vi.mocked(password).mockResolvedValue('sk_test_new')
+      vi.mocked(readConfig).mockReturnValue({ jws_private_key: '/path/to/key.pem' })
+      vi.mocked(whoami).mockResolvedValue({
+        organizationName: 'Acme Corp',
+        mode: 'test',
+        apiVersion: '2023-03-15',
+      })
 
-    expect(password).toHaveBeenCalled()
-    expect(whoami).toHaveBeenCalledWith('sk_test_valid123')
-    expect(readConfig).toHaveBeenCalled()
-    expect(writeConfig).toHaveBeenCalledWith({ secret_key: 'sk_test_valid123' })
-    expect(success).toHaveBeenCalledWith('Authenticated as Acme Corp (test mode)')
+      const program = createProgram()
+      await program.parseAsync(['login'], { from: 'user' })
+
+      expect(writeConfig).toHaveBeenCalledWith({
+        jws_private_key: '/path/to/key.pem',
+        secret_key: 'sk_test_new',
+      })
+    })
   })
 
-  test('preserves existing config fields when writing', async () => {
-    vi.mocked(password).mockResolvedValue('sk_test_new')
-    vi.mocked(readConfig).mockReturnValue({ jws_private_key: '/path/to/key.pem' })
-    vi.mocked(whoami).mockResolvedValue({
-      organizationName: 'Acme Corp',
-      mode: 'test',
-      apiVersion: '2023-03-15',
-    })
+  describe('when key validation fails', () => {
+    test('exits with error and does not save config', async () => {
+      vi.mocked(password).mockResolvedValue('sk_test_invalid')
+      vi.mocked(whoami).mockRejectedValue(new Error('Invalid API key'))
 
-    const program = createProgram()
-    await program.parseAsync(['login'], { from: 'user' })
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit')
+      })
 
-    expect(writeConfig).toHaveBeenCalledWith({
-      jws_private_key: '/path/to/key.pem',
-      secret_key: 'sk_test_new',
+      const program = createProgram()
+
+      await expect(program.parseAsync(['login'], { from: 'user' })).rejects.toThrow('process.exit')
+
+      expect(writeConfig).not.toHaveBeenCalled()
+      expect(error).toHaveBeenCalledWith('Invalid API key')
+
+      exitSpy.mockRestore()
     })
   })
 
-  test('exits with error on invalid key', async () => {
-    vi.mocked(password).mockResolvedValue('sk_test_invalid')
-    vi.mocked(whoami).mockRejectedValue(new Error('Invalid API key'))
-
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit')
+  describe('when running in non-TTY environment', () => {
+    beforeEach(() => {
+      process.stdin.isTTY = false as unknown as boolean
     })
 
-    const program = createProgram()
+    test('exits with error when --api-key is not provided', async () => {
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit')
+      })
 
-    await expect(program.parseAsync(['login'], { from: 'user' })).rejects.toThrow('process.exit')
+      const program = createProgram()
 
-    expect(writeConfig).not.toHaveBeenCalled()
-    expect(error).toHaveBeenCalledWith('Invalid API key')
+      await expect(program.parseAsync(['login'], { from: 'user' })).rejects.toThrow('process.exit')
 
-    exitSpy.mockRestore()
+      expect(error).toHaveBeenCalledWith(
+        'Non-interactive terminal detected. Pass the key via flag:',
+      )
+
+      exitSpy.mockRestore()
+    })
   })
 
-  test('exits with error on non-TTY without --api-key', async () => {
-    process.stdin.isTTY = false as unknown as boolean
+  describe('when using --api-key flag', () => {
+    test('skips prompt and authenticates directly', async () => {
+      vi.mocked(readConfig).mockReturnValue({})
+      vi.mocked(whoami).mockResolvedValue({
+        organizationName: 'Acme Corp',
+        mode: 'test',
+        apiVersion: '2023-03-15',
+      })
 
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit')
+      const program = createProgram()
+      await program.parseAsync(['login', '--api-key', 'sk_test_flag123'], { from: 'user' })
+
+      expect(password).not.toHaveBeenCalled()
+      expect(whoami).toHaveBeenCalledWith('sk_test_flag123')
+      expect(writeConfig).toHaveBeenCalledWith({ secret_key: 'sk_test_flag123' })
+      expect(success).toHaveBeenCalledWith('Authenticated as Acme Corp (test mode)')
     })
-
-    const program = createProgram()
-
-    await expect(program.parseAsync(['login'], { from: 'user' })).rejects.toThrow('process.exit')
-
-    expect(error).toHaveBeenCalledWith('Non-interactive terminal detected. Pass the key via flag:')
-
-    exitSpy.mockRestore()
-  })
-
-  test('authenticates with --api-key flag skipping prompt', async () => {
-    vi.mocked(readConfig).mockReturnValue({})
-    vi.mocked(whoami).mockResolvedValue({
-      organizationName: 'Acme Corp',
-      mode: 'test',
-      apiVersion: '2023-03-15',
-    })
-
-    const program = createProgram()
-    await program.parseAsync(['login', '--api-key', 'sk_test_flag123'], { from: 'user' })
-
-    expect(password).not.toHaveBeenCalled()
-    expect(whoami).toHaveBeenCalledWith('sk_test_flag123')
-    expect(writeConfig).toHaveBeenCalledWith({ secret_key: 'sk_test_flag123' })
-    expect(success).toHaveBeenCalledWith('Authenticated as Acme Corp (test mode)')
   })
 })

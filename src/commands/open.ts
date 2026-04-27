@@ -1,9 +1,8 @@
 import type { Command } from 'commander'
 import { exec } from 'node:child_process'
 
+import { DASHBOARD_URL } from '../lib/constants.js'
 import { error, success } from '../lib/output.js'
-
-const DASHBOARD_URL = 'https://dashboard.fintoc.com/'
 
 const openInBrowser = (url: string): Promise<void> => {
   const commands: Record<string, string> = {
