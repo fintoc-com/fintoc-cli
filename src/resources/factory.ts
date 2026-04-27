@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs'
 import { confirm } from '@inquirer/prompts'
 import { createClient, resolveAuth } from '../lib/auth.js'
 import { readConfig } from '../lib/config.js'
+import { DEFAULT_LIST_LIMIT } from '../lib/constants.js'
 import { handleError } from '../lib/errors.js'
 import { error, log, printDetail, printJson, printTable, success } from '../lib/output.js'
 
@@ -258,7 +259,7 @@ const registerList = (parent: Command, resource: ResourceDef) => {
   const cmd = parent
     .command('list')
     .description(`List ${resource.name.replace(/_/g, ' ')}`)
-    .option('--limit <number>', 'Max results to show', '10')
+    .option('--limit <number>', 'Max results to show', String(DEFAULT_LIST_LIMIT))
 
   addFlags(cmd, resource.listFlags ?? [])
 

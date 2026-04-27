@@ -4,13 +4,14 @@ import { existsSync, statSync } from 'node:fs'
 
 import { maskKey, resolveAuth, whoami } from '../lib/auth.js'
 import { CONFIG_PATH, readConfig } from '../lib/config.js'
+import { API_HOST, NPM_PACKAGE_NAME } from '../lib/constants.js'
 import { error, log, success, warn } from '../lib/output.js'
 import { getCliVersion } from '../lib/version.js'
 
 const checkCliVersion = () => {
   const currentVersion = getCliVersion()
   try {
-    const latest = execSync('npm view @fintoc/cli version', {
+    const latest = execSync(`npm view ${NPM_PACKAGE_NAME} version`, {
       encoding: 'utf-8',
       timeout: 10_000,
     }).trim()
@@ -59,10 +60,10 @@ const checkApiKey = (options?: { apiKey?: string }) => {
 const checkConnectivity = async (secretKey: string) => {
   try {
     const info = await whoami(secretKey)
-    success(`Connectivity        api.fintoc.com reachable`)
+    success(`Connectivity        ${API_HOST} reachable`)
     success(`Organization        ${info.organizationName} (${info.mode} mode)`)
   } catch {
-    error('Connectivity        could not reach api.fintoc.com')
+    error(`Connectivity        could not reach ${API_HOST}`)
     log('                    Check your internet connection and API key')
   }
 }
