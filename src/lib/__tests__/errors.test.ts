@@ -80,12 +80,17 @@ describe('handleError', () => {
 
   describe('missing JWS key', () => {
     test('formats JWS-related error with next steps', () => {
-      const err = new Error('JWS private key is required')
+      const err = createFintocError('AuthenticationError', {
+        type: 'authentication_error',
+        code: 'missing_jws_signature_header',
+        message:
+          "Missing signature in 'Fintoc-JWS-Signature' header. This request requires a valid JWS Signature.",
+      })
 
       expect(() => handleError(err)).toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith('JWS private key required for transfer operations')
-      expect(log).toHaveBeenCalledWith('  More info:    https://docs.fintoc.com/docs/transfers')
+      expect(log).toHaveBeenCalledWith('  More info:  https://docs.fintoc.com/docs/transfers')
     })
   })
 
@@ -151,6 +156,68 @@ describe('handleError', () => {
       expect(() => handleError(err)).toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith('This value must be a positive integer.')
+    })
+  })
+
+  describe('AxiosError with structured response', () => {
+    test('extracts message from response.data.error', () => {
+      const err = new Error('Request failed with status code 400')
+      ;(err as unknown as Record<string, unknown>).response = {
+        status: 400,
+        data: {
+          error: {
+            type: 'invalid_request_error',
+            code: 'invalid_enum',
+            param: 'status',
+            message: "Invalid status: foo. Must be one of 'succeeded', 'failed'.",
+          },
+        },
+      }
+
+      expect(() => handleError(err)).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith(
+        "Invalid status: foo. Must be one of 'succeeded', 'failed'.",
+      )
+    })
+
+    test('handles AxiosError with missing_resource code as 404', () => {
+      const err = new Error('Request failed with status code 404')
+      ;(err as unknown as Record<string, unknown>).response = {
+        status: 404,
+        data: {
+          error: {
+            type: 'invalid_request_error',
+            code: 'missing_resource',
+            param: 'id',
+            message: 'No such resource',
+          },
+        },
+      }
+
+      expect(() =>
+        handleError(err, { resourceName: 'payment_intents', verb: 'get', id: 'pi_bad' }),
+      ).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith("Error (404): 'pi_bad' not found")
+    })
+
+    test('handles AxiosError with JWS missing code', () => {
+      const err = new Error('Request failed with status code 401')
+      ;(err as unknown as Record<string, unknown>).response = {
+        status: 401,
+        data: {
+          error: {
+            type: 'authentication_error',
+            code: 'missing_jws_signature_header',
+            message: "Missing signature in 'Fintoc-JWS-Signature' header.",
+          },
+        },
+      }
+
+      expect(() => handleError(err)).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith('JWS private key required for transfer operations')
     })
   })
 

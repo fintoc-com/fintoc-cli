@@ -166,10 +166,12 @@ const validateRequired = (cmd: Command, flags: FlagDef[], resourceName: string, 
 }
 
 // Resolve auth + create SDK client, reading JWS only when the resource requires it
-const resolveClient = (parentOpts: RootOpts, resource: ResourceDef) => {
+// JWS precedence: --jws-private-key flag > config.toml
+const resolveClient = (parentOpts: RootOpts, resource: ResourceDef, jwsKeyPath?: string) => {
   const auth = resolveAuth(parentOpts)
-  const jwsPrivateKey = resource.needsJws ? readConfig().jws_private_key : undefined
-  return createClient(auth.secretKey, jwsPrivateKey)
+  const configJwsPath = resource.needsJws ? readConfig().jws_private_key : undefined
+  const resolvedPath = jwsKeyPath ?? configJwsPath
+  return createClient(auth.secretKey, resolvedPath)
 }
 
 // Type predicate for SDK objects with a serialize() method
@@ -197,11 +199,14 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
     '--from-json <path>',
     'Read request body from a JSON file (use "-" for stdin). JSON keys must match the API body format (see https://docs.fintoc.com)',
   )
+  if (resource.needsJws) {
+    cmd.option('--jws-private-key <path>', 'Path to JWS private key PEM file')
+  }
   addFlags(cmd, resource.createFlags ?? [])
 
   cmd.action(async (_opts: unknown, actionCmd: Command) => {
     const rootOpts = getRootOpts(actionCmd)
-    const localOpts = actionCmd.opts<{ fromJson?: string }>()
+    const localOpts = actionCmd.opts<{ fromJson?: string; jwsPrivateKey?: string }>()
 
     if (!localOpts.fromJson) {
       validateRequired(actionCmd, resource.createFlags ?? [], resource.cliCommand, 'create')
@@ -212,7 +217,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
       const flagBody = collectSetOptions(actionCmd, resource.createFlags ?? [])
       const body = deepMerge(jsonBody, flagBody)
 
-      const client = resolveClient(rootOpts, resource)
+      const client = resolveClient(rootOpts, resource, localOpts.jwsPrivateKey)
       const manager = getManager(client, resource)
 
       const result = await manager.create!(body)

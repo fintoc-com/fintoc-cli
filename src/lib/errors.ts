@@ -40,25 +40,39 @@ const isFintocError = (err: unknown): err is Error =>
 // Parse structured fields from a FintocError message.
 // Format: "type[: code][ (param)]\nmessage[\nCheck the docs for more info: url]"
 const parseFintocError = (err: unknown): FintocErrorFields | undefined => {
-  if (!isFintocError(err)) {
-    return undefined
+  // Try parsing as FintocError (SDK wraps API errors)
+  if (isFintocError(err)) {
+    const lines = err.message.split('\n')
+    const firstLine = lines[0] ?? ''
+
+    const match = firstLine.match(/^(\w+)(?::\s*(\w+))?(?:\s*\((\w+)\))?$/)
+    if (!match) {
+      return { type: firstLine }
+    }
+
+    return {
+      type: match[1],
+      code: match[2],
+      param: match[3],
+      message: lines[1],
+    }
   }
 
-  const lines = err.message.split('\n')
-  const firstLine = lines[0] ?? ''
-
-  // Parse "type[: code][ (param)]"
-  const match = firstLine.match(/^(\w+)(?::\s*(\w+))?(?:\s*\((\w+)\))?$/)
-  if (!match) {
-    return { type: firstLine }
+  // Try parsing as AxiosError with structured response data
+  if (err instanceof Error) {
+    const { response } = err as { response?: { data?: { error?: Record<string, string> } } }
+    const apiError = response?.data?.error
+    if (apiError && typeof apiError.type === 'string') {
+      return {
+        type: apiError.type,
+        code: apiError.code,
+        param: apiError.param,
+        message: apiError.message,
+      }
+    }
   }
 
-  return {
-    type: match[1],
-    code: match[2],
-    param: match[3],
-    message: lines[1],
-  }
+  return undefined
 }
 
 // Detect "No API key" error thrown by resolveAuth
@@ -72,14 +86,6 @@ const isConnectivityError = (err: unknown): boolean => {
   }
   const code = (err as { code?: string }).code
   return typeof code === 'string' && CONNECTIVITY_CODES.has(code)
-}
-
-const isJwsMissingError = (err: unknown): boolean => {
-  if (!(err instanceof Error)) {
-    return false
-  }
-  const msg = err.message.toLowerCase()
-  return msg.includes('jws private key') || msg.includes('jws_private_key')
 }
 
 const printNextSteps = (steps: string[]) => {
@@ -108,21 +114,21 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     return process.exit(1)
   }
 
-  // JWS private key missing (for transfers)
-  if (isJwsMissingError(err)) {
-    error('JWS private key required for transfer operations')
-    printNextSteps([
-      'Set it with:  fintoc config set jws_private_key <path>',
-      'Or pass:      --jws-private-key <path>',
-      `More info:    ${DOCS_TRANSFERS_URL}`,
-    ])
-    return process.exit(1)
-  }
-
-  // Parse structured fields from FintocError
+  // Parse structured fields from FintocError or AxiosError
   const fields = parseFintocError(err)
 
   if (fields) {
+    // JWS private key missing (for transfers)
+    if (fields.code === 'missing_jws_signature_header') {
+      error('JWS private key required for transfer operations')
+      printNextSteps([
+        'Pass:       --jws-private-key <path>',
+        'Or set in:  ~/.fintoc/config.toml (jws_private_key = "<path>")',
+        `More info:  ${DOCS_TRANSFERS_URL}`,
+      ])
+      return process.exit(1)
+    }
+
     // Resource not found (404) — API returns code "missing_resource"
     if (fields.code === 'missing_resource') {
       const label = context?.id ? `'${context.id}' not found` : 'Resource not found'
