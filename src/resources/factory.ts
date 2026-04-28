@@ -241,7 +241,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
         printDetail(data)
       }
     } catch (err) {
-      handleError(err, { cliPath: resourceCliPath(resource), verb: 'create' })
+      handleError(err, { cliPath: resourceCliPath(resource), verb: 'create', json: rootOpts.json })
     }
   })
 }
@@ -251,8 +251,8 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
     .command('get <id>')
     .description(`Get a ${resource.displayName} by ID`)
     .action(async (id: string, _opts: unknown, actionCmd: Command) => {
+      const rootOpts = getRootOpts(actionCmd)
       try {
-        const rootOpts = getRootOpts(actionCmd)
         const client = resolveClient(rootOpts, resource)
         const manager = getManager(client, resource)
 
@@ -265,7 +265,12 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
           printDetail(data)
         }
       } catch (err) {
-        handleError(err, { cliPath: resourceCliPath(resource), verb: 'get', id })
+        handleError(err, {
+          cliPath: resourceCliPath(resource),
+          verb: 'get',
+          id,
+          json: rootOpts.json,
+        })
       }
     })
 }
@@ -311,7 +316,7 @@ const registerList = (parent: Command, resource: ResourceDef) => {
         })
       }
     } catch (err) {
-      handleError(err, { cliPath: resourceCliPath(resource), verb: 'list' })
+      handleError(err, { cliPath: resourceCliPath(resource), verb: 'list', json: rootOpts.json })
     }
   })
 }
@@ -346,7 +351,12 @@ const registerDelete = (parent: Command, resource: ResourceDef) => {
         await manager.delete!(id)
         success(`${resource.displayName} '${id}' deleted`)
       } catch (err) {
-        handleError(err, { cliPath: resourceCliPath(resource), verb: 'delete', id })
+        handleError(err, {
+          cliPath: resourceCliPath(resource),
+          verb: 'delete',
+          id,
+          json: rootOpts.json,
+        })
       }
     })
 }
@@ -381,7 +391,12 @@ const registerExpire = (parent: Command, resource: ResourceDef) => {
         await manager.expire!(id)
         success(`${resource.displayName} '${id}' expired`)
       } catch (err) {
-        handleError(err, { cliPath: resourceCliPath(resource), verb: 'expire', id })
+        handleError(err, {
+          cliPath: resourceCliPath(resource),
+          verb: 'expire',
+          id,
+          json: rootOpts.json,
+        })
       }
     })
 }

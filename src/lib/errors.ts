@@ -5,6 +5,7 @@ type ErrorContext = {
   cliPath?: string
   verb?: string
   id?: string
+  json?: boolean
 }
 
 // Parsed fields from a FintocError message.
@@ -93,9 +94,17 @@ const printNextSteps = (steps: string[]) => {
   steps.forEach((step) => log(`  ${step}`))
 }
 
+const exitJsonError = (fields: { type: string; code?: string; message: string }): never => {
+  console.error(JSON.stringify({ error: fields }))
+  return process.exit(1)
+}
+
 export const handleError = (err: unknown, context?: ErrorContext): never => {
   // No API key configured
   if (isNoAuthError(err)) {
+    if (context?.json) {
+      return exitJsonError({ type: 'auth_error', message: 'No API key found' })
+    }
     error('No API key found. To authenticate:')
     printNextSteps([
       'Run:   fintoc login',
@@ -109,6 +118,12 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
 
   // Network / connectivity failure
   if (isConnectivityError(err)) {
+    if (context?.json) {
+      return exitJsonError({
+        type: 'connectivity_error',
+        message: `Could not connect to ${API_HOST}`,
+      })
+    }
     error(`Could not connect to ${API_HOST}`)
     printNextSteps(['Check your internet connection, or run: fintoc doctor'])
     return process.exit(1)
@@ -118,6 +133,14 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
   const fields = parseFintocError(err)
 
   if (fields) {
+    if (context?.json) {
+      return exitJsonError({
+        type: fields.type,
+        code: fields.code,
+        message: fields.message ?? (err as Error).message,
+      })
+    }
+
     // JWS private key missing (for transfers)
     if (fields.code === 'missing_jws_signature_header') {
       error('JWS private key required for transfer operations')
@@ -156,6 +179,9 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
 
   // Unknown / unexpected errors
   const message = err instanceof Error ? err.message : 'An unexpected error occurred'
+  if (context?.json) {
+    return exitJsonError({ type: 'unknown_error', message })
+  }
   error(message)
   return process.exit(1)
 }
