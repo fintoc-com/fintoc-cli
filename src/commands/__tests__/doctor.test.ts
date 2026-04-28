@@ -3,7 +3,7 @@ import { Command } from 'commander'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { resolveAuth, whoami } from '../../lib/auth.js'
 import { readConfig } from '../../lib/config.js'
-import { error, log, success, warn } from '../../lib/output.js'
+import { error, info, log, success, warn } from '../../lib/output.js'
 import { doctorCommand } from '../doctor.js'
 
 const { mockExecSync, mockExistsSync, mockStatSync } = vi.hoisted(() => ({
@@ -37,6 +37,7 @@ vi.mock('../../lib/output.js', () => ({
   success: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
+  info: vi.fn(),
 }))
 
 vi.mock('../../lib/version.js', () => ({
@@ -80,12 +81,48 @@ describe('doctor command', () => {
       expect(success).toHaveBeenCalledWith(expect.stringContaining('Acme Corp'))
     })
 
-    test('reports JWS key as not configured', async () => {
+    test('reports JWS key as info, not error', async () => {
       const program = createProgram()
       await program.parseAsync(['doctor'], { from: 'user' })
 
-      expect(error).toHaveBeenCalledTimes(1)
-      expect(error).toHaveBeenCalledWith(expect.stringContaining('JWS private key'))
+      expect(error).not.toHaveBeenCalledWith(expect.stringContaining('JWS private key'))
+      expect(info).toHaveBeenCalledWith(
+        expect.stringContaining('JWS private key     not configured'),
+      )
+    })
+  })
+
+  describe('when npm version check fails', () => {
+    beforeEach(() => {
+      mockExecSync.mockImplementation(() => {
+        throw new Error('npm ERR! 404')
+      })
+      mockExistsSync.mockReturnValue(true)
+      mockStatSync.mockReturnValue({ mode: 0o100600 } as ReturnType<typeof mockStatSync>)
+      vi.mocked(resolveAuth).mockReturnValue({ secretKey: 'sk_test_abc123', source: 'config' })
+      vi.mocked(whoami).mockResolvedValue({
+        organizationName: 'Acme Corp',
+        mode: 'test',
+        apiVersion: '2023-03-15',
+      })
+    })
+
+    test('passes stdio pipe to suppress stderr', async () => {
+      const program = createProgram()
+      await program.parseAsync(['doctor'], { from: 'user' })
+
+      expect(mockExecSync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ stdio: ['pipe', 'pipe', 'pipe'] }),
+      )
+    })
+
+    test('shows version without error', async () => {
+      const program = createProgram()
+      await program.parseAsync(['doctor'], { from: 'user' })
+
+      expect(success).toHaveBeenCalledWith(expect.stringContaining('CLI version'))
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('could not check for updates'))
     })
   })
 
@@ -148,19 +185,69 @@ describe('doctor command', () => {
   })
 
   describe('when config file is missing', () => {
-    beforeEach(() => {
-      mockExecSync.mockReturnValue('0.1.0\n')
-      mockExistsSync.mockReturnValue(false)
-      vi.mocked(resolveAuth).mockImplementation(() => {
-        throw new Error('No API key')
+    describe('when auth is resolved via env var', () => {
+      beforeEach(() => {
+        mockExecSync.mockReturnValue('0.1.0\n')
+        mockExistsSync.mockReturnValue(false)
+        vi.mocked(resolveAuth).mockReturnValue({
+          secretKey: 'sk_test_abc123',
+          source: 'env',
+        })
+        vi.mocked(whoami).mockResolvedValue({
+          organizationName: 'Acme Corp',
+          mode: 'test',
+          apiVersion: '2023-03-15',
+        })
+      })
+
+      test('reports config file as warning, not error', async () => {
+        const program = createProgram()
+        await program.parseAsync(['doctor'], { from: 'user' })
+
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('not found (using env)'))
+        expect(error).not.toHaveBeenCalledWith(expect.stringContaining('Config file'))
       })
     })
 
-    test('reports config file not found', async () => {
-      const program = createProgram()
-      await program.parseAsync(['doctor'], { from: 'user' })
+    describe('when auth is resolved via flag', () => {
+      beforeEach(() => {
+        mockExecSync.mockReturnValue('0.1.0\n')
+        mockExistsSync.mockReturnValue(false)
+        vi.mocked(resolveAuth).mockReturnValue({
+          secretKey: 'sk_test_abc123',
+          source: 'flag',
+        })
+        vi.mocked(whoami).mockResolvedValue({
+          organizationName: 'Acme Corp',
+          mode: 'test',
+          apiVersion: '2023-03-15',
+        })
+      })
 
-      expect(error).toHaveBeenCalledWith(expect.stringContaining('not found'))
+      test('reports config file as warning, not error', async () => {
+        const program = createProgram()
+        await program.parseAsync(['doctor'], { from: 'user' })
+
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('not found (using flag)'))
+        expect(error).not.toHaveBeenCalledWith(expect.stringContaining('Config file'))
+      })
+    })
+
+    describe('when no auth is available', () => {
+      beforeEach(() => {
+        mockExecSync.mockReturnValue('0.1.0\n')
+        mockExistsSync.mockReturnValue(false)
+        vi.mocked(resolveAuth).mockImplementation(() => {
+          throw new Error('No API key')
+        })
+      })
+
+      test('reports config file as error', async () => {
+        const program = createProgram()
+        await program.parseAsync(['doctor'], { from: 'user' })
+
+        expect(error).toHaveBeenCalledWith(expect.stringContaining('not found'))
+      })
     })
   })
 })

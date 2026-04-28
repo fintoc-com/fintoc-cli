@@ -5,7 +5,7 @@ import { existsSync, statSync } from 'node:fs'
 import { maskKey, resolveAuth, whoami } from '../lib/auth.js'
 import { CONFIG_PATH, readConfig } from '../lib/config.js'
 import { API_HOST, NPM_PACKAGE_NAME } from '../lib/constants.js'
-import { error, log, success, warn } from '../lib/output.js'
+import { error, info, log, success, warn } from '../lib/output.js'
 import { getCliVersion } from '../lib/version.js'
 
 const checkCliVersion = () => {
@@ -14,6 +14,7 @@ const checkCliVersion = () => {
     const latest = execSync(`npm view ${NPM_PACKAGE_NAME} version`, {
       encoding: 'utf-8',
       timeout: 10_000,
+      stdio: ['pipe', 'pipe', 'pipe'],
     }).trim()
 
     if (latest === currentVersion) {
@@ -27,9 +28,13 @@ const checkCliVersion = () => {
   }
 }
 
-const checkConfigFile = () => {
+const checkConfigFile = (authSource?: string) => {
   if (!existsSync(CONFIG_PATH)) {
-    error(`Config file         ${CONFIG_PATH} not found`)
+    if (authSource) {
+      warn(`Config file         ${CONFIG_PATH} not found (using ${authSource})`)
+    } else {
+      error(`Config file         ${CONFIG_PATH} not found`)
+    }
     return
   }
 
@@ -49,7 +54,7 @@ const checkApiKey = (options?: { apiKey?: string }) => {
   try {
     const auth = resolveAuth(options)
     success(`API key             ${maskKey(auth.secretKey)} (source: ${auth.source})`)
-    return auth.secretKey
+    return auth
   } catch {
     error('API key             not configured')
     log('                    Run `fintoc login` or set FINTOC_SECRET_KEY')
@@ -71,7 +76,7 @@ const checkConnectivity = async (secretKey: string) => {
 const checkJwsKey = () => {
   const config = readConfig()
   if (!config.jws_private_key) {
-    error('JWS private key     not configured (required for transfers create)')
+    info('JWS private key     not configured (only needed for transfers create)')
     return
   }
 
@@ -91,11 +96,12 @@ export const doctorCommand = (program: Command) => {
       const rootOpts = cmd.parent!.opts<{ apiKey?: string }>()
       log('')
       checkCliVersion()
-      checkConfigFile()
-      const secretKey = checkApiKey(rootOpts)
 
-      if (secretKey) {
-        await checkConnectivity(secretKey)
+      const auth = checkApiKey(rootOpts)
+      checkConfigFile(auth?.source)
+
+      if (auth) {
+        await checkConnectivity(auth.secretKey)
       } else {
         log('  ⏭ Connectivity     skipped (no API key)')
         log('  ⏭ Organization     skipped (no API key)')
