@@ -4,7 +4,12 @@ import { existsSync, statSync } from 'node:fs'
 
 import { maskKey, resolveAuth, whoami } from '../lib/auth.js'
 import { CONFIG_PATH, readConfig } from '../lib/config.js'
-import { API_HOST, NPM_PACKAGE_NAME } from '../lib/constants.js'
+import {
+  API_HOST,
+  CONFIG_FILE_PERMISSIONS,
+  NPM_CHECK_TIMEOUT_MS,
+  NPM_PACKAGE_NAME,
+} from '../lib/constants.js'
 import { error, info, log, success, warn } from '../lib/output.js'
 import { getCliVersion } from '../lib/version.js'
 
@@ -13,7 +18,7 @@ const checkCliVersion = () => {
   try {
     const latest = execSync(`npm view ${NPM_PACKAGE_NAME} version`, {
       encoding: 'utf-8',
-      timeout: 10_000,
+      timeout: NPM_CHECK_TIMEOUT_MS,
       stdio: ['pipe', 'pipe', 'pipe'],
     }).trim()
 
@@ -40,7 +45,7 @@ const checkConfigFile = (authSource?: string) => {
 
   const stats = statSync(CONFIG_PATH)
   const mode = stats.mode & 0o777
-  if (mode !== 0o600) {
+  if (mode !== CONFIG_FILE_PERMISSIONS) {
     warn(
       `Config file         ${CONFIG_PATH} found (permissions: ${mode.toString(8)}, expected: 600)`,
     )

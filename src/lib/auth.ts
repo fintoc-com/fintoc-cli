@@ -1,6 +1,7 @@
 import { Fintoc } from 'fintoc'
 
 import { readConfig } from './config.js'
+import { DASHBOARD_API_KEYS_URL } from './constants.js'
 
 export type AuthSource = 'flag' | 'env' | 'config'
 
@@ -16,12 +17,20 @@ export type WhoamiResponse = {
 }
 
 export const resolveAuth = (options?: { apiKey?: string }) => {
-  if (options?.apiKey) {
+  if (options?.apiKey !== undefined) {
+    if (!options.apiKey.trim()) {
+      throw new Error('API key is empty. Provide a valid key with --api-key or remove the flag.')
+    }
     return { secretKey: options.apiKey, source: 'flag' as const }
   }
 
   const envKey = process.env.FINTOC_SECRET_KEY
-  if (envKey) {
+  if (envKey !== undefined) {
+    if (!envKey.trim()) {
+      throw new Error(
+        'FINTOC_SECRET_KEY is set but empty. Provide a valid key or unset the variable.',
+      )
+    }
     return { secretKey: envKey, source: 'env' as const }
   }
 
@@ -38,7 +47,7 @@ export const resolveAuth = (options?: { apiKey?: string }) => {
       '  Or:    export FINTOC_SECRET_KEY=sk_test_...',
       '  Or:    fintoc --api-key sk_test_... <command>',
       '',
-      '  Get your API keys at: https://dashboard.fintoc.com/api-keys',
+      `  Get your API keys at: ${DASHBOARD_API_KEYS_URL}`,
     ].join('\n'),
   )
 }

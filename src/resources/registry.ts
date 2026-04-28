@@ -39,7 +39,7 @@ export const resources: ResourceDef[] = [
     createFlags: [
       {
         name: 'amount',
-        type: 'number',
+        type: 'integer',
         required: true,
         description: 'Amount in smallest currency unit',
       },
@@ -158,7 +158,7 @@ export const resources: ResourceDef[] = [
     createFlags: [
       {
         name: 'amount',
-        type: 'number',
+        type: 'integer',
         required: true,
         description: 'Amount in smallest currency unit',
       },
@@ -246,7 +246,7 @@ export const resources: ResourceDef[] = [
     createFlags: [
       {
         name: 'amount',
-        type: 'number',
+        type: 'integer',
         required: true,
         description: 'Amount to pay in smallest currency unit (must be > 0 and < 7000000)',
       },

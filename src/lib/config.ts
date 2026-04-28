@@ -6,6 +6,8 @@ import { join } from 'node:path'
 
 import { parse, stringify } from 'smol-toml'
 
+import { CONFIG_DIR_PERMISSIONS, CONFIG_FILE_PERMISSIONS } from './constants.js'
+
 export const CONFIG_DIR = join(homedir(), '.fintoc')
 export const CONFIG_PATH = join(CONFIG_DIR, 'config.toml')
 
@@ -25,11 +27,11 @@ export const readConfig = (): FintocConfig => {
 }
 
 export const writeConfig = (config: FintocConfig) => {
-  mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 })
+  mkdirSync(CONFIG_DIR, { recursive: true, mode: CONFIG_DIR_PERMISSIONS })
 
   const clean = Object.fromEntries(Object.entries(config).filter(([, v]) => v !== undefined))
 
-  writeFileSync(CONFIG_PATH, stringify(clean), { mode: 0o600 })
+  writeFileSync(CONFIG_PATH, stringify(clean), { mode: CONFIG_FILE_PERMISSIONS })
 }
 
 export const clearConfig = () => {
