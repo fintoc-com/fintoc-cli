@@ -7,6 +7,7 @@ import { error, log, success, warn } from '../lib/output.js'
 const ALLOWED_KEYS: readonly string[] = [
   'secret_key',
   'jws_private_key',
+  'color',
 ] satisfies readonly (keyof FintocConfig)[]
 
 const isConfigKey = (key: string): key is keyof FintocConfig => ALLOWED_KEYS.includes(key)
@@ -61,7 +62,7 @@ export const configCommand = (program: Command) => {
 
   configCmd
     .command('set <key> <value>')
-    .description('Set a config value (allowed keys: secret_key, jws_private_key)')
+    .description('Set a config value (allowed keys: secret_key, jws_private_key, color)')
     .action((key: string, value: string) => {
       if (!isConfigKey(key)) {
         error(`Unknown config key: '${key}'`)
@@ -72,7 +73,17 @@ export const configCommand = (program: Command) => {
       }
 
       const config = readConfig()
-      config[key] = value
+
+      if (key === 'color') {
+        if (value !== 'true' && value !== 'false') {
+          error(`Invalid value for 'color': must be 'true' or 'false'`)
+          process.exit(1)
+        }
+        config[key] = value === 'true'
+      } else {
+        config[key] = value
+      }
+
       writeConfig(config)
 
       success(`Config updated: ${key}`)
