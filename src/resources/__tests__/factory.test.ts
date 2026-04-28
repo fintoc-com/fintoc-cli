@@ -2,7 +2,7 @@ import type { ResourceDef } from '../../types.js'
 import { readFileSync } from 'node:fs'
 import { confirm } from '@inquirer/prompts'
 import { Command } from 'commander'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createClient, resolveAuth } from '../../lib/auth.js'
 import { error, log, printDetail, printJson, printTable, success } from '../../lib/output.js'
 import { registerResourceCommands } from '../factory.js'
@@ -63,7 +63,7 @@ const testResource: ResourceDef = {
   verbs: ['create', 'get', 'list', 'delete'],
   priorityColumns: ['id', 'amount', 'currency', 'status', 'created_at'],
   createFlags: [
-    { name: 'amount', type: 'number', required: true, description: 'Amount' },
+    { name: 'amount', type: 'integer', required: true, description: 'Amount' },
     { name: 'currency', type: 'string', required: true, description: 'Currency code' },
     { name: 'customer-email', type: 'string', description: 'Customer email' },
   ],
@@ -180,7 +180,7 @@ describe('factory: create command', () => {
         verbs: ['create'],
         priorityColumns: ['id'],
         createFlags: [
-          { name: 'amount', type: 'number', required: true },
+          { name: 'amount', type: 'integer', required: true },
           { name: 'currency', type: 'string', required: true },
           {
             name: 'recipient-account-type',
@@ -249,22 +249,80 @@ describe('factory: create command', () => {
     })
   })
 
-  describe('when required flags are missing', () => {
-    test('exits with error listing missing flags', async () => {
-      const exitSpy = mockProcessExit()
+  describe('when number flag value is invalid', () => {
+    let exitSpy: ReturnType<typeof vi.spyOn>
 
+    beforeEach(() => {
+      exitSpy = mockProcessExit()
+    })
+
+    afterEach(() => {
+      exitSpy.mockRestore()
+    })
+
+    test('exits with error when value is not a number', async () => {
+      const program = createProgram()
+      await expect(
+        program.parseAsync(['payment_intents', 'create', '--amount', 'abc', '--currency', 'CLP'], {
+          from: 'user',
+        }),
+      ).rejects.toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining("Invalid value 'abc' for flag --amount: expected a number"),
+      )
+      expect(mockManager.create).not.toHaveBeenCalled()
+    })
+
+    test('exits with error when value is a decimal', async () => {
+      const program = createProgram()
+      await expect(
+        program.parseAsync(['payment_intents', 'create', '--amount', '1.5', '--currency', 'CLP'], {
+          from: 'user',
+        }),
+      ).rejects.toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining("Invalid value '1.5' for flag --amount: expected an integer"),
+      )
+      expect(mockManager.create).not.toHaveBeenCalled()
+    })
+
+    test('accepts valid integer values', async () => {
+      const mockResult = { serialize: () => ({ id: 'pi_123', amount: 10000 }) }
+      mockManager.create.mockResolvedValue(mockResult)
+
+      const program = createProgram()
+      await program.parseAsync(
+        ['payment_intents', 'create', '--amount', '10000', '--currency', 'CLP'],
+        { from: 'user' },
+      )
+
+      expect(mockManager.create).toHaveBeenCalledWith({ amount: 10000, currency: 'CLP' })
+    })
+  })
+
+  describe('when required flags are missing', () => {
+    let exitSpy: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      exitSpy = mockProcessExit()
+    })
+
+    afterEach(() => {
+      exitSpy.mockRestore()
+    })
+
+    test('exits with error listing missing flags', async () => {
       const program = createProgram()
       await expect(
         program.parseAsync(['payment_intents', 'create', '--currency', 'CLP'], { from: 'user' }),
       ).rejects.toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith(expect.stringContaining('--amount'))
-      exitSpy.mockRestore()
     })
 
     test('shows v2 prefix in usage hint for v2 resources', async () => {
-      const exitSpy = mockProcessExit()
-
       const v2Resource: ResourceDef = {
         ...testResource,
         name: 'transfers',
@@ -278,7 +336,6 @@ describe('factory: create command', () => {
       ).rejects.toThrow('process.exit')
 
       expect(log).toHaveBeenCalledWith(expect.stringContaining('fintoc v2 transfers create'))
-      exitSpy.mockRestore()
     })
   })
 })
@@ -385,7 +442,7 @@ describe('factory: create --from-json', () => {
         verbs: ['create'],
         priorityColumns: ['id'],
         createFlags: [
-          { name: 'amount', type: 'number', required: true },
+          { name: 'amount', type: 'integer', required: true },
           { name: 'currency', type: 'string', required: true },
           {
             name: 'recipient-account-type',
@@ -449,6 +506,10 @@ describe('factory: create --from-json', () => {
       exitSpy = mockProcessExit()
     })
 
+    afterEach(() => {
+      exitSpy.mockRestore()
+    })
+
     test('exits with error on invalid JSON', async () => {
       vi.mocked(readFileSync).mockReturnValue('not valid json')
 
@@ -460,7 +521,6 @@ describe('factory: create --from-json', () => {
       ).rejects.toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith(expect.stringContaining('invalid JSON'))
-      exitSpy.mockRestore()
     })
 
     test('exits with error when file does not exist', async () => {
@@ -482,7 +542,6 @@ describe('factory: create --from-json', () => {
       ).rejects.toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith("--from-json: file 'missing.json' not found")
-      exitSpy.mockRestore()
     })
 
     test('exits with error when stdin is a TTY', async () => {
@@ -504,7 +563,6 @@ describe('factory: create --from-json', () => {
         value: originalIsTTY,
         configurable: true,
       })
-      exitSpy.mockRestore()
     })
 
     test('exits with error when JSON is not an object', async () => {
@@ -518,7 +576,6 @@ describe('factory: create --from-json', () => {
       ).rejects.toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith('--from-json must contain a JSON object')
-      exitSpy.mockRestore()
     })
   })
 })
@@ -613,9 +670,17 @@ describe('factory: list command', () => {
   })
 
   describe('when --limit is invalid', () => {
-    test.each(['abc', '0', '-5'])('exits with error when --limit is %s', async (value) => {
-      const exitSpy = mockProcessExit()
+    let exitSpy: ReturnType<typeof vi.spyOn>
 
+    beforeEach(() => {
+      exitSpy = mockProcessExit()
+    })
+
+    afterEach(() => {
+      exitSpy.mockRestore()
+    })
+
+    test.each(['abc', '0', '-5'])('exits with error when --limit is %s', async (value) => {
       const program = createProgram()
       await expect(
         program.parseAsync(['payment_intents', 'list', '--limit', value], { from: 'user' }),
@@ -623,7 +688,6 @@ describe('factory: list command', () => {
 
       expect(error).toHaveBeenCalledWith('--limit must be a positive number')
       expect(mockManager.list).not.toHaveBeenCalled()
-      exitSpy.mockRestore()
     })
   })
 })
@@ -642,12 +706,21 @@ describe('factory: delete command', () => {
   })
 
   describe('when running in non-TTY without --yes', () => {
-    test('exits with error', async () => {
-      const exitSpy = mockProcessExit()
+    let exitSpy: ReturnType<typeof vi.spyOn>
+    let originalIsTTY: boolean | undefined
 
-      const originalIsTTY = process.stdin.isTTY
+    beforeEach(() => {
+      exitSpy = mockProcessExit()
+      originalIsTTY = process.stdin.isTTY
       Object.defineProperty(process.stdin, 'isTTY', { value: false, configurable: true })
+    })
 
+    afterEach(() => {
+      Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true })
+      exitSpy.mockRestore()
+    })
+
+    test('exits with error', async () => {
       const program = createProgram()
       await expect(
         program.parseAsync(['payment_intents', 'delete', 'pi_123'], { from: 'user' }),
@@ -655,9 +728,6 @@ describe('factory: delete command', () => {
 
       expect(mockManager.delete).not.toHaveBeenCalled()
       expect(error).toHaveBeenCalledWith(expect.stringContaining('--yes'))
-
-      Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true })
-      exitSpy.mockRestore()
     })
   })
 
@@ -691,7 +761,7 @@ describe('factory: --jws-private-key flag', () => {
       needsJws: true,
       priorityColumns: ['id'],
       createFlags: [
-        { name: 'amount', type: 'number', required: true },
+        { name: 'amount', type: 'integer', required: true },
         { name: 'currency', type: 'string', required: true },
       ],
       listFlags: [],

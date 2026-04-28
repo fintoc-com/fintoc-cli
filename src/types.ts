@@ -6,7 +6,7 @@ export type FintocConfig = {
 
 export type Verb = 'create' | 'get' | 'list' | 'delete' | 'expire'
 
-export type FlagType = 'string' | 'number' | 'boolean' | 'string[]'
+export type FlagType = 'string' | 'integer' | 'boolean' | 'string[]'
 
 export type FlagDef = {
   name: string

@@ -42,8 +42,15 @@ const getManager = (client: Fintoc, resource: ResourceDef) => {
 
 // Parse flag value according to its type
 const parseFlagValue = (value: string, flag: FlagDef) => {
-  if (flag.type === 'number') {
-    return Number(value)
+  if (flag.type === 'integer') {
+    const num = Number(value)
+    if (Number.isNaN(num)) {
+      throw new TypeError(`Invalid value '${value}' for flag --${flag.name}: expected a number`)
+    }
+    if (!Number.isInteger(num)) {
+      throw new TypeError(`Invalid value '${value}' for flag --${flag.name}: expected an integer`)
+    }
+    return num
   }
   if (flag.type === 'boolean') {
     return value === 'true'

@@ -52,7 +52,7 @@ describe('resource registry', () => {
     })
 
     test('all flag types are valid', () => {
-      const validTypes = new Set(['string', 'number', 'boolean', 'string[]'])
+      const validTypes = new Set(['string', 'integer', 'boolean', 'string[]'])
       for (const resource of resources) {
         for (const flag of resource.createFlags ?? []) {
           expect(validTypes.has(flag.type)).toBe(true)
