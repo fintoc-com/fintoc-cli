@@ -143,7 +143,7 @@ describe('factory: create command', () => {
       currency: 'CLP',
     })
     expect(success).toHaveBeenCalled()
-    expect(printDetail).toHaveBeenCalled()
+    expect(printDetail).toHaveBeenCalledWith({ id: 'pi_123', amount: 10000, currency: 'CLP' })
   })
 
   test('converts kebab-case flags to snake_case for SDK', async () => {
@@ -543,7 +543,7 @@ describe('factory: get command', () => {
     vi.restoreAllMocks()
   })
 
-  test('calls SDK get with ID', async () => {
+  test('calls SDK get with ID and shows full object', async () => {
     const mockResult = { serialize: () => ({ id: 'pi_123', amount: 10000 }) }
     mockManager.get.mockResolvedValue(mockResult)
 
@@ -551,7 +551,7 @@ describe('factory: get command', () => {
     await program.parseAsync(['payment_intents', 'get', 'pi_123'], { from: 'user' })
 
     expect(mockManager.get).toHaveBeenCalledWith('pi_123')
-    expect(printDetail).toHaveBeenCalled()
+    expect(printDetail).toHaveBeenCalledWith({ id: 'pi_123', amount: 10000 })
   })
 
   test('outputs JSON when --json flag is set', async () => {

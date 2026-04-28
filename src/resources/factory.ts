@@ -238,7 +238,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
       } else {
         success(`${resource.displayName} created`)
         log('')
-        printDetail(data, resource.priorityColumns)
+        printDetail(data)
       }
     } catch (err) {
       handleError(err, { cliPath: resourceCliPath(resource), verb: 'create' })
@@ -262,7 +262,7 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
         if (rootOpts.json) {
           printJson(data)
         } else {
-          printDetail(data, resource.priorityColumns)
+          printDetail(data)
         }
       } catch (err) {
         handleError(err, { cliPath: resourceCliPath(resource), verb: 'get', id })

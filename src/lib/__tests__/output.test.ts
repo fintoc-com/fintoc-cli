@@ -82,6 +82,11 @@ describe('formatValue', () => {
     expect(result).toContain('\x1B[32m')
   })
 
+  test('colorizes keys ending with _status', () => {
+    const result = formatValue('payment_status', 'succeeded')
+    expect(result).toContain('\x1B[32m')
+  })
+
   test('formats Date as YYYY-MM-DD', () => {
     const result = formatValue('created_at', new Date('2026-04-22T12:00:00Z'))
     expect(result).toBe('2026-04-22')
@@ -139,6 +144,22 @@ describe('printTable', () => {
       expect(calls[1]).toContain('pi_123')
       expect(calls[2]).toContain('pi_456')
       expect(calls[4]).toContain('Showing 2 results')
+    })
+
+    test('resolves nested paths in columns', () => {
+      const calls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
+        calls.push(msg)
+      })
+
+      printTable({
+        columns: ['id', 'entity.holder_name'],
+        rows: [{ id: 'acc_1', entity: { holder_name: 'Acme Corp' } }],
+      })
+
+      expect(calls[0]).toContain('ENTITY_HOLDER_NAME')
+      expect(calls[0]).not.toContain('ENTITY.HOLDER_NAME')
+      expect(calls[1]).toContain('Acme Corp')
     })
 
     test('uses singular "result" for single row', () => {
@@ -220,6 +241,52 @@ describe('printDetail', () => {
 
       expect(calls).toHaveLength(2)
       expect(calls.every((c) => !c.includes('hidden'))).toBe(true)
+    })
+  })
+
+  describe('when columns contain nested paths', () => {
+    test('resolves nested values and uses full path as label', () => {
+      const calls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
+        calls.push(msg)
+      })
+
+      printDetail({ id: 'acc_1', entity: { holder_name: 'Acme Corp' } }, [
+        'id',
+        'entity.holder_name',
+      ])
+
+      expect(calls).toHaveLength(2)
+      expect(calls[1]).toContain('entity_holder_name')
+      expect(calls[1]).toContain('Acme Corp')
+    })
+
+    test('shows dash when nested path resolves to undefined', () => {
+      const calls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
+        calls.push(msg)
+      })
+
+      printDetail({ id: 'acc_1', entity: {} }, ['id', 'entity.holder_name'])
+
+      expect(calls).toHaveLength(2)
+      expect(calls[1]).toContain('entity_holder_name')
+      expect(calls[1]).toContain('—')
+    })
+  })
+
+  describe('when no columns are provided', () => {
+    test('shows all top-level keys', () => {
+      const calls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
+        calls.push(msg)
+      })
+
+      printDetail({ id: 'pi_123', amount: 10000, status: 'pending' })
+
+      expect(calls).toHaveLength(3)
+      expect(calls[0]).toContain('pi_123')
+      expect(calls[1]).toContain('10000')
     })
   })
 })

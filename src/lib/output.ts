@@ -49,6 +49,20 @@ export const colorizeStatus = (status: string) => {
   return STATUS_COLORS[status as keyof typeof STATUS_COLORS](status)
 }
 
+const toLabel = (path: string) => path.replace(/\./g, '_')
+
+const getNestedValue = (obj: Record<string, unknown>, path: string): unknown => {
+  if (!path.includes('.')) {
+    return obj[path]
+  }
+  return path.split('.').reduce<unknown>((current, key) => {
+    if (current !== null && current !== undefined && typeof current === 'object') {
+      return (current as Record<string, unknown>)[key]
+    }
+    return undefined
+  }, obj)
+}
+
 // Strip ANSI codes for width calculation
 // eslint-disable-next-line no-control-regex
 const stripAnsi = (str: string) => str.replace(/\x1B\[[0-9;]*m/g, '')
@@ -63,7 +77,7 @@ export const formatValue = (key: string, value: unknown) => {
   if (value === null || value === undefined) {
     return dim('—')
   }
-  if (key === 'status') {
+  if (key === 'status' || key.endsWith('_status')) {
     return colorizeStatus(String(value))
   }
   if (value instanceof Date) {
@@ -89,10 +103,11 @@ export const printTable = ({ columns, rows, total }: TableOptions) => {
   }
 
   // Build formatted rows (with ANSI codes for display)
-  const formattedRows = rows.map((row) => columns.map((col) => formatValue(col, row[col])))
+  const formattedRows = rows.map((row) =>
+    columns.map((col) => formatValue(toLabel(col), getNestedValue(row, col))),
+  )
 
-  // Calculate column widths using stripped ANSI text
-  const headers = columns.map((col) => col.toUpperCase())
+  const headers = columns.map((col) => toLabel(col).toUpperCase())
   const widths = columns.map((col, i) => {
     const cellWidths = formattedRows.map((row) => stripAnsi(row[i]).length)
     return Math.max(headers[i].length, ...cellWidths)
@@ -133,14 +148,13 @@ export const printDetail = (data: Record<string, unknown>, columns?: string[]) =
     return
   }
 
-  const maxKeyLen = Math.max(...keys.map((k) => k.length))
+  const labels = keys.map((k) => toLabel(k))
+  const maxKeyLen = Math.max(...labels.map((l) => l.length))
 
-  for (const key of keys) {
-    if (!(key in data)) {
-      continue
-    }
-    const label = key.padEnd(maxKeyLen)
-    const value = formatValue(key, data[key])
-    log(`${label}  ${value}`)
+  for (let i = 0; i < keys.length; i++) {
+    const value = getNestedValue(data, keys[i])
+    const label = labels[i].padEnd(maxKeyLen)
+    const formatted = formatValue(labels[i], value)
+    log(`${label}  ${formatted}`)
   }
 }
