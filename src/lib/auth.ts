@@ -1,6 +1,7 @@
 import { Fintoc } from 'fintoc'
 
 import { readConfig } from './config.js'
+import { DASHBOARD_API_KEYS_URL } from './constants.js'
 
 export type AuthSource = 'flag' | 'env' | 'config'
 
@@ -38,7 +39,7 @@ export const resolveAuth = (options?: { apiKey?: string }) => {
       '  Or:    export FINTOC_SECRET_KEY=sk_test_...',
       '  Or:    fintoc --api-key sk_test_... <command>',
       '',
-      '  Get your API keys at: https://dashboard.fintoc.com/api-keys',
+      `  Get your API keys at: ${DASHBOARD_API_KEYS_URL}`,
     ].join('\n'),
   )
 }

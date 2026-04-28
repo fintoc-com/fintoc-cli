@@ -1,16 +1,26 @@
 import type { FintocConfig } from '../../types.js'
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { clearConfig, CONFIG_DIR, CONFIG_PATH, readConfig, writeConfig } from '../config.js'
 
-vi.mock('node:fs')
+vi.mock('node:fs', () => ({
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  mkdirSync: vi.fn(),
+  unlinkSync: vi.fn(),
+}))
 vi.mock('node:os', () => ({
   homedir: () => '/mock-home',
 }))
-
-const { readConfig, writeConfig, clearConfig, CONFIG_DIR, CONFIG_PATH } =
-  await import('../config.js')
-
-const fs = await import('node:fs')
+vi.mock('../constants.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../constants.js')>()
+  return {
+    ...actual,
+    CONFIG_DIR_PERMISSIONS: 0o700,
+    CONFIG_FILE_PERMISSIONS: 0o600,
+  }
+})
 
 const fsError = (code: string): NodeJS.ErrnoException => {
   const err = new Error(code) as NodeJS.ErrnoException
@@ -34,7 +44,7 @@ describe('config', () => {
 
   describe('readConfig', () => {
     test('returns empty object when file does not exist', () => {
-      vi.mocked(fs.readFileSync).mockImplementation(() => {
+      vi.mocked(readFileSync).mockImplementation(() => {
         throw fsError('ENOENT')
       })
 
@@ -42,14 +52,14 @@ describe('config', () => {
     })
 
     test('parses valid TOML', () => {
-      vi.mocked(fs.readFileSync).mockReturnValue('secret_key = "sk_test_123"')
+      vi.mocked(readFileSync).mockReturnValue('secret_key = "sk_test_123"')
 
       const config = readConfig()
       expect(config).toEqual({ secret_key: 'sk_test_123' })
     })
 
     test('rethrows non-ENOENT errors', () => {
-      vi.mocked(fs.readFileSync).mockImplementation(() => {
+      vi.mocked(readFileSync).mockImplementation(() => {
         throw fsError('EACCES')
       })
 
@@ -59,17 +69,14 @@ describe('config', () => {
 
   describe('writeConfig', () => {
     test('creates directory and writes file with correct permissions', () => {
-      vi.mocked(fs.mkdirSync).mockReturnValue(undefined)
-      vi.mocked(fs.writeFileSync).mockReturnValue(undefined)
-
       const config: FintocConfig = { secret_key: 'sk_test_abc' }
       writeConfig(config)
 
-      expect(fs.mkdirSync).toHaveBeenCalledWith('/mock-home/.fintoc', {
+      expect(mkdirSync).toHaveBeenCalledWith('/mock-home/.fintoc', {
         recursive: true,
         mode: 0o700,
       })
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
+      expect(writeFileSync).toHaveBeenCalledWith(
         '/mock-home/.fintoc/config.toml',
         expect.stringContaining('secret_key'),
         { mode: 0o600 },
@@ -77,27 +84,22 @@ describe('config', () => {
     })
 
     test('omits undefined values', () => {
-      vi.mocked(fs.mkdirSync).mockReturnValue(undefined)
-      vi.mocked(fs.writeFileSync).mockReturnValue(undefined)
-
       writeConfig({ secret_key: 'sk_test_abc' })
 
-      const written = vi.mocked(fs.writeFileSync).mock.calls[0]![1] as string
+      const written = vi.mocked(writeFileSync).mock.calls[0]![1] as string
       expect(written).not.toContain('jws_private_key')
     })
   })
 
   describe('clearConfig', () => {
     test('deletes the config file', () => {
-      vi.mocked(fs.unlinkSync).mockReturnValue(undefined)
-
       clearConfig()
 
-      expect(fs.unlinkSync).toHaveBeenCalledWith('/mock-home/.fintoc/config.toml')
+      expect(unlinkSync).toHaveBeenCalledWith('/mock-home/.fintoc/config.toml')
     })
 
     test('is silent when file does not exist', () => {
-      vi.mocked(fs.unlinkSync).mockImplementation(() => {
+      vi.mocked(unlinkSync).mockImplementation(() => {
         throw fsError('ENOENT')
       })
 
@@ -105,7 +107,7 @@ describe('config', () => {
     })
 
     test('rethrows non-ENOENT errors', () => {
-      vi.mocked(fs.unlinkSync).mockImplementation(() => {
+      vi.mocked(unlinkSync).mockImplementation(() => {
         throw fsError('EACCES')
       })
 
