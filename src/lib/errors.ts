@@ -2,7 +2,7 @@ import { API_HOST, DASHBOARD_API_KEYS_URL, DOCS_TRANSFERS_URL } from './constant
 import { error, log } from './output.js'
 
 type ErrorContext = {
-  resourceName?: string
+  cliPath?: string
   verb?: string
   id?: string
 }
@@ -133,8 +133,8 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     if (fields.code === 'missing_resource') {
       const label = context?.id ? `'${context.id}' not found` : 'Resource not found'
       error(`Error (404): ${label}`)
-      if (context?.resourceName) {
-        printNextSteps([`List available: fintoc ${context.resourceName} list`])
+      if (context?.cliPath) {
+        printNextSteps([`List available: fintoc ${context.cliPath} list`])
       }
       return process.exit(1)
     }

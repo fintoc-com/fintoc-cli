@@ -104,7 +104,7 @@ describe('handleError', () => {
       })
 
       expect(() =>
-        handleError(err, { resourceName: 'payment_intents', verb: 'get', id: 'pi_invalid' }),
+        handleError(err, { cliPath: 'payment_intents', verb: 'get', id: 'pi_invalid' }),
       ).toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith("Error (404): 'pi_invalid' not found")
@@ -119,7 +119,7 @@ describe('handleError', () => {
         message: 'No such payment_intent: pi_invalid',
       })
 
-      expect(() => handleError(err, { resourceName: 'payment_intents', verb: 'get' })).toThrow(
+      expect(() => handleError(err, { cliPath: 'payment_intents', verb: 'get' })).toThrow(
         'process.exit',
       )
 
@@ -196,7 +196,7 @@ describe('handleError', () => {
       }
 
       expect(() =>
-        handleError(err, { resourceName: 'payment_intents', verb: 'get', id: 'pi_bad' }),
+        handleError(err, { cliPath: 'payment_intents', verb: 'get', id: 'pi_bad' }),
       ).toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith("Error (404): 'pi_bad' not found")
