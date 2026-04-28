@@ -279,7 +279,7 @@ describe('factory', () => {
         ).rejects.toThrow('process.exit')
 
         expect(error).toHaveBeenCalledWith(
-          expect.stringContaining("Invalid value 'abc' for flag --amount: expected a number"),
+          expect.stringContaining("Invalid value 'abc' for flag --amount: expected an integer"),
         )
         expect(mockManager.create).not.toHaveBeenCalled()
       })

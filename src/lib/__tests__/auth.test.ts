@@ -59,6 +59,20 @@ describe('resolveAuth', () => {
     expect(() => resolveAuth({ apiKey: '   ' })).toThrow('API key is empty')
   })
 
+  test('throws when FINTOC_SECRET_KEY is empty string', () => {
+    process.env.FINTOC_SECRET_KEY = ''
+    vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
+
+    expect(() => resolveAuth()).toThrow('FINTOC_SECRET_KEY is set but empty')
+  })
+
+  test('throws when FINTOC_SECRET_KEY is only whitespace', () => {
+    process.env.FINTOC_SECRET_KEY = '   '
+    vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
+
+    expect(() => resolveAuth()).toThrow('FINTOC_SECRET_KEY is set but empty')
+  })
+
   test('throws when no key found', () => {
     vi.mocked(readConfig).mockReturnValue({})
 

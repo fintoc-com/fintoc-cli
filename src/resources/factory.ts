@@ -45,7 +45,7 @@ const parseFlagValue = (value: string, flag: FlagDef) => {
   if (flag.type === 'integer') {
     const num = Number(value)
     if (Number.isNaN(num)) {
-      throw new TypeError(`Invalid value '${value}' for flag --${flag.name}: expected a number`)
+      throw new TypeError(`Invalid value '${value}' for flag --${flag.name}: expected an integer`)
     }
     if (!Number.isInteger(num)) {
       throw new TypeError(`Invalid value '${value}' for flag --${flag.name}: expected an integer`)

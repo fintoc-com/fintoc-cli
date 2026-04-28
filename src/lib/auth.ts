@@ -25,7 +25,12 @@ export const resolveAuth = (options?: { apiKey?: string }) => {
   }
 
   const envKey = process.env.FINTOC_SECRET_KEY
-  if (envKey) {
+  if (envKey !== undefined) {
+    if (!envKey.trim()) {
+      throw new Error(
+        'FINTOC_SECRET_KEY is set but empty. Provide a valid key or unset the variable.',
+      )
+    }
     return { secretKey: envKey, source: 'env' as const }
   }
 
