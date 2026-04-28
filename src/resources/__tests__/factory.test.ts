@@ -186,6 +186,27 @@ describe('factory: create command', () => {
     exitSpy.mockRestore()
   })
 
+  test('shows v2 prefix in usage hint for v2 resources', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit')
+    })
+
+    const v2Resource: ResourceDef = {
+      ...testResource,
+      name: 'transfers',
+      cliCommand: 'transfers',
+      sdkNamespace: 'v2',
+    }
+
+    const program = createProgram(v2Resource)
+    await expect(
+      program.parseAsync(['transfers', 'create', '--currency', 'CLP'], { from: 'user' }),
+    ).rejects.toThrow('process.exit')
+
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('fintoc v2 transfers create'))
+    exitSpy.mockRestore()
+  })
+
   test('outputs JSON when --json flag is set', async () => {
     const mockResult = { serialize: () => ({ id: 'pi_123', amount: 10000 }) }
     mockManager.create.mockResolvedValue(mockResult)

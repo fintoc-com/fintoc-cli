@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { resources } from '../registry.js'
+import { resources, v1Resources, v2Resources } from '../registry.js'
 
 describe('resource registry', () => {
   test('contains all 9 resources', () => {
@@ -78,10 +78,20 @@ describe('resource registry', () => {
     })
 
     test('all other resources use v1 namespace', () => {
-      const v1Resources = resources.filter((r) => !['transfers', 'accounts'].includes(r.name))
-      for (const resource of v1Resources) {
+      const nonV2 = resources.filter((r) => !['transfers', 'accounts'].includes(r.name))
+      for (const resource of nonV2) {
         expect(resource.sdkNamespace).toBe('v1')
       }
+    })
+
+    test('v1Resources contains only v1 namespace resources', () => {
+      expect(v1Resources.every((r) => r.sdkNamespace === 'v1')).toBe(true)
+      expect(v1Resources).toHaveLength(7)
+    })
+
+    test('v2Resources contains only v2 namespace resources', () => {
+      expect(v2Resources.every((r) => r.sdkNamespace === 'v2')).toBe(true)
+      expect(v2Resources.map((r) => r.name)).toEqual(['transfers', 'accounts'])
     })
   })
 
