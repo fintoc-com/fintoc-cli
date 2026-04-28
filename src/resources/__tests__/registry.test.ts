@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest'
-
 import { resources, v1Resources, v2Resources } from '../registry.js'
 
 describe('resource registry', () => {
