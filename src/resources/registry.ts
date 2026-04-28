@@ -90,7 +90,7 @@ export const resources: ResourceDef[] = [
     listFlags: [
       {
         name: 'status',
-        type: 'string',
+        type: 'string[]',
         description: 'Filter by status (pending, succeeded, failed, rejected)',
       },
       {
@@ -320,3 +320,6 @@ export const resources: ResourceDef[] = [
     listFlags: [],
   },
 ]
+
+export const v1Resources = resources.filter((r) => r.sdkNamespace === 'v1')
+export const v2Resources = resources.filter((r) => r.sdkNamespace === 'v2')

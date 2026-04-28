@@ -19,6 +19,9 @@ fintoc login
 # List payment intents
 fintoc payment_intents list
 
+# List transfers (v2 resource)
+fintoc v2 transfers list
+
 # Create a charge from a JSON file
 fintoc charges create --from-json payload.json
 
@@ -53,11 +56,13 @@ fintoc logout
 
 ## Resources
 
+Resources map to `fintoc <resource> <action> [flags]`. V2 API resources require the `v2` prefix: `fintoc v2 <resource> <action> [flags]`.
+
+### V1 resources
+
 | Resource | create | get | list | delete | expire |
 |----------|:------:|:---:|:----:|:------:|:------:|
 | `payment_intents` | | ✔ | ✔ | | |
-| `transfers` | ✔ | ✔ | ✔ | | |
-| `accounts` | | ✔ | ✔ | | |
 | `webhook_endpoints` | ✔ | ✔ | ✔ | ✔ | |
 | `charges` | ✔ | ✔ | ✔ | | |
 | `subscriptions` | | ✔ | ✔ | | |
@@ -65,17 +70,50 @@ fintoc logout
 | `checkout_sessions` | ✔ | ✔ | | | ✔ |
 | `api_keys` | | | ✔ | | |
 
+### V2 resources (require `v2` prefix)
+
+| Resource | create | get | list |
+|----------|:------:|:---:|:----:|
+| `transfers` | ✔ | ✔ | ✔ |
+| `accounts` | | ✔ | ✔ |
+
+### Command patterns
+
+```bash
+# get — fetch a single resource by ID
+fintoc <resource> get <id>
+fintoc v2 <resource> get <id>
+
+# list — list resources with optional filters
+fintoc <resource> list [--status <value>] [--since <date>] [--until <date>] [--limit <n>]
+fintoc v2 <resource> list [--status <value>] [--limit <n>]
+
+# create — create a resource with flags or JSON
+fintoc <resource> create --<flag> <value> ...
+fintoc <resource> create --from-json <file|->
+
+# delete — delete a resource (webhook_endpoints, links)
+fintoc <resource> delete <id> [--yes]
+
+# expire — expire a resource (checkout_sessions)
+fintoc <resource> expire <id> [--yes]
+```
+
 ### Examples
 
 ```bash
 # Get a resource by ID
 fintoc payment_intents get pi_test_abc123
 
-# List with filters
-fintoc charges list --status succeeded --since 2026-01-01
+# List with filters (comma-separated for multiple values)
+fintoc charges list --status succeeded,failed --since 2026-01-01
 
-# Create with flags
-fintoc transfers create --amount 10000 --currency CLP --counterparty-account-number 12345678
+# Create a v2 transfer
+fintoc v2 transfers create --amount 10000 --currency CLP \
+  --account-id acc_test_abc123 \
+  --counterparty-account-number 12345678 \
+  --counterparty-institution-id cl_banco_estado \
+  --jws-private-key ~/path/to/private_key.pem
 
 # Create from a JSON file
 fintoc checkout_sessions create --from-json session.json
@@ -96,7 +134,16 @@ By default the CLI prints a formatted table. Use `--json` for machine-readable o
 
 ```bash
 fintoc payment_intents list --json
-fintoc charges get ch_test_abc123 --json
+fintoc v2 accounts get acc_test_abc123 --json
+```
+
+### Discovering flags
+
+Each command exposes its available flags via `--help`:
+
+```bash
+fintoc charges create --help
+fintoc v2 transfers list --help
 ```
 
 ## Utilities

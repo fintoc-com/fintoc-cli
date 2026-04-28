@@ -20,8 +20,18 @@ const toCamelCase = (str: string) => str.replace(/-([a-z])/g, (_, c: string) => 
 // Convert kebab-case flag name to snake_case for SDK
 const toSnakeCase = (str: string) => str.replace(/-/g, '_')
 
-// Get root program opts from a nested action command
-const getRootOpts = (actionCmd: Command) => actionCmd.parent!.parent!.opts<RootOpts>()
+// Get root program opts from a nested action command (walks up regardless of nesting depth)
+const getRootOpts = (actionCmd: Command) => {
+  let cmd = actionCmd
+  while (cmd.parent) {
+    cmd = cmd.parent
+  }
+  return cmd.opts<RootOpts>()
+}
+
+// Full CLI path for a resource, including v2 prefix when applicable
+const resourceCliPath = (resource: ResourceDef) =>
+  resource.sdkNamespace === 'v2' ? `v2 ${resource.cliCommand}` : resource.cliCommand
 
 // Get the SDK manager for a resource
 const getManager = (client: Fintoc, resource: ResourceDef) => {
@@ -145,7 +155,7 @@ const readJsonBody = (fromJson: string): Record<string, unknown> => {
 }
 
 // Validate required flags are present
-const validateRequired = (cmd: Command, flags: FlagDef[], resourceName: string, verb: string) => {
+const validateRequired = (cmd: Command, flags: FlagDef[], fullCliPath: string, verb: string) => {
   const opts = cmd.opts()
   const missing = flags
     .filter((f) => f.required && opts[toCamelCase(f.name)] === undefined)
@@ -155,12 +165,12 @@ const validateRequired = (cmd: Command, flags: FlagDef[], resourceName: string, 
     error(`Missing required ${missing.length === 1 ? 'flag' : 'flags'}: ${missing.join(', ')}`)
     log('')
     log(
-      `  Usage: fintoc ${resourceName} ${verb} ${flags
+      `  Usage: fintoc ${fullCliPath} ${verb} ${flags
         .filter((f) => f.required)
         .map((f) => `--${f.name} <${f.type}>`)
         .join(' ')}`,
     )
-    log(`  Help:  fintoc ${resourceName} ${verb} --help`)
+    log(`  Help:  fintoc ${fullCliPath} ${verb} --help`)
     process.exit(1)
   }
 }
@@ -209,7 +219,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
     const localOpts = actionCmd.opts<{ fromJson?: string; jwsPrivateKey?: string }>()
 
     if (!localOpts.fromJson) {
-      validateRequired(actionCmd, resource.createFlags ?? [], resource.cliCommand, 'create')
+      validateRequired(actionCmd, resource.createFlags ?? [], resourceCliPath(resource), 'create')
     }
 
     try {
@@ -231,7 +241,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
         printDetail(data, resource.priorityColumns)
       }
     } catch (err) {
-      handleError(err, { resourceName: resource.cliCommand, verb: 'create' })
+      handleError(err, { cliPath: resourceCliPath(resource), verb: 'create' })
     }
   })
 }
@@ -255,7 +265,7 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
           printDetail(data, resource.priorityColumns)
         }
       } catch (err) {
-        handleError(err, { resourceName: resource.cliCommand, verb: 'get', id })
+        handleError(err, { cliPath: resourceCliPath(resource), verb: 'get', id })
       }
     })
 }
@@ -301,7 +311,7 @@ const registerList = (parent: Command, resource: ResourceDef) => {
         })
       }
     } catch (err) {
-      handleError(err, { resourceName: resource.cliCommand, verb: 'list' })
+      handleError(err, { cliPath: resourceCliPath(resource), verb: 'list' })
     }
   })
 }
@@ -336,7 +346,7 @@ const registerDelete = (parent: Command, resource: ResourceDef) => {
         await manager.delete!(id)
         success(`${resource.displayName} '${id}' deleted`)
       } catch (err) {
-        handleError(err, { resourceName: resource.cliCommand, verb: 'delete', id })
+        handleError(err, { cliPath: resourceCliPath(resource), verb: 'delete', id })
       }
     })
 }
@@ -371,7 +381,7 @@ const registerExpire = (parent: Command, resource: ResourceDef) => {
         await manager.expire!(id)
         success(`${resource.displayName} '${id}' expired`)
       } catch (err) {
-        handleError(err, { resourceName: resource.cliCommand, verb: 'expire', id })
+        handleError(err, { cliPath: resourceCliPath(resource), verb: 'expire', id })
       }
     })
 }

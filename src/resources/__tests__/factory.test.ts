@@ -186,6 +186,27 @@ describe('factory: create command', () => {
     exitSpy.mockRestore()
   })
 
+  test('shows v2 prefix in usage hint for v2 resources', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit')
+    })
+
+    const v2Resource: ResourceDef = {
+      ...testResource,
+      name: 'transfers',
+      cliCommand: 'transfers',
+      sdkNamespace: 'v2',
+    }
+
+    const program = createProgram(v2Resource)
+    await expect(
+      program.parseAsync(['transfers', 'create', '--currency', 'CLP'], { from: 'user' }),
+    ).rejects.toThrow('process.exit')
+
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('fintoc v2 transfers create'))
+    exitSpy.mockRestore()
+  })
+
   test('outputs JSON when --json flag is set', async () => {
     const mockResult = { serialize: () => ({ id: 'pi_123', amount: 10000 }) }
     mockManager.create.mockResolvedValue(mockResult)
@@ -765,33 +786,67 @@ describe('factory: --jws-private-key flag', () => {
 })
 
 describe('factory: v2 namespace', () => {
-  beforeEach(() => {
+  const v2Manager = {
+    list: vi.fn(),
+  }
+
+  const v2Resource: ResourceDef = {
+    name: 'transfers',
+    displayName: 'transfer',
+    cliCommand: 'transfers',
+    sdkMethod: 'transfers',
+    sdkNamespace: 'v2',
+    verbs: ['list'],
+    priorityColumns: ['id', 'amount', 'status'],
+    listFlags: [],
+  }
+
+  beforeEach(async () => {
     vi.clearAllMocks()
-  })
 
-  test('uses v2 namespace for v2 resources', async () => {
-    const v2Manager = { list: vi.fn().mockResolvedValue(asyncGenerator([])) }
-    const v2Client = {
-      v2: { transfers: v2Manager },
-    }
-
+    const v2Client = { v2: { transfers: v2Manager } }
     const { createClient } = await import('../../lib/auth.js')
     vi.mocked(createClient).mockReturnValue(v2Client as unknown as ReturnType<typeof createClient>)
+  })
 
-    const v2Resource: ResourceDef = {
-      name: 'transfers',
-      displayName: 'transfer',
-      cliCommand: 'transfers',
-      sdkMethod: 'transfers',
-      sdkNamespace: 'v2',
-      verbs: ['list'],
-      priorityColumns: ['id', 'amount', 'status'],
-      listFlags: [],
+  describe('when registered directly on a program', () => {
+    test('routes to the v2 SDK namespace', async () => {
+      v2Manager.list.mockResolvedValue(asyncGenerator([]))
+
+      const program = createProgram(v2Resource)
+      await program.parseAsync(['transfers', 'list'], { from: 'user' })
+
+      expect(v2Manager.list).toHaveBeenCalled()
+    })
+  })
+
+  describe('when nested under a v2 subcommand (root > v2 > resource > action)', () => {
+    const createV2Program = () => {
+      const root = new Command()
+      root.exitOverride()
+      root.option('--api-key <key>', 'Override API key').option('--json', 'Output as JSON')
+      const v2Cmd = root.command('v2').description('API v2 resources')
+      registerResourceCommands(v2Cmd, [v2Resource])
+      return root
     }
 
-    const program = createProgram(v2Resource)
-    await program.parseAsync(['transfers', 'list'], { from: 'user' })
+    test('routes to the v2 SDK namespace', async () => {
+      v2Manager.list.mockResolvedValue(asyncGenerator([]))
 
-    expect(v2Manager.list).toHaveBeenCalled()
+      const program = createV2Program()
+      await program.parseAsync(['v2', 'transfers', 'list'], { from: 'user' })
+
+      expect(v2Manager.list).toHaveBeenCalled()
+    })
+
+    test('resolves root --json flag through nested commands', async () => {
+      v2Manager.list.mockResolvedValue(asyncGenerator([{ serialize: () => ({ id: 'tr_1' }) }]))
+
+      const program = createV2Program()
+      await program.parseAsync(['--json', 'v2', 'transfers', 'list'], { from: 'user' })
+
+      expect(printJson).toHaveBeenCalledWith([{ id: 'tr_1' }])
+      expect(printTable).not.toHaveBeenCalled()
+    })
   })
 })
