@@ -16,6 +16,10 @@ export const warn = (message: string) => {
   console.error(`⚠ ${message}`)
 }
 
+export const info = (message: string) => {
+  console.log(`ℹ ${message}`)
+}
+
 // ANSI color helpers
 const green = (text: string) => `\x1B[32m${text}\x1B[0m`
 const yellow = (text: string) => `\x1B[33m${text}\x1B[0m`
