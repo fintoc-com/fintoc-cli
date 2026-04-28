@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import { readConfig } from './config.js'
 
 export const log = (message: string) => {
   console.log(message)
@@ -20,11 +21,40 @@ export const info = (message: string) => {
   console.log(`ℹ ${message}`)
 }
 
-// ANSI color helpers
-const green = (text: string) => `\x1B[32m${text}\x1B[0m`
-const yellow = (text: string) => `\x1B[33m${text}\x1B[0m`
-const red = (text: string) => `\x1B[31m${text}\x1B[0m`
-const dim = (text: string) => `\x1B[2m${text}\x1B[0m`
+// Color support detection: FORCE_COLOR > NO_COLOR > config.color > TTY check
+let _colorEnabled: boolean | undefined
+
+export const supportsColor = () => {
+  if (_colorEnabled !== undefined) {
+    return _colorEnabled
+  }
+
+  if ('FORCE_COLOR' in process.env) {
+    _colorEnabled = process.env.FORCE_COLOR !== '0'
+  } else if ('NO_COLOR' in process.env) {
+    _colorEnabled = false
+  } else {
+    const config = (() => {
+      try {
+        return readConfig()
+      } catch {
+        return {}
+      }
+    })()
+    _colorEnabled = config.color !== undefined ? config.color : !!process.stdout.isTTY
+  }
+
+  return _colorEnabled
+}
+
+export const _resetColorCache = () => {
+  _colorEnabled = undefined
+}
+
+const green = (text: string) => (supportsColor() ? `\x1B[32m${text}\x1B[0m` : text)
+const yellow = (text: string) => (supportsColor() ? `\x1B[33m${text}\x1B[0m` : text)
+const red = (text: string) => (supportsColor() ? `\x1B[31m${text}\x1B[0m` : text)
+const dim = (text: string) => (supportsColor() ? `\x1B[2m${text}\x1B[0m` : text)
 
 const STATUS_COLORS = {
   succeeded: green,

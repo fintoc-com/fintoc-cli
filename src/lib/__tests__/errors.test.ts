@@ -252,4 +252,78 @@ describe('handleError', () => {
       expect(exitSpy).toHaveBeenCalledWith(1)
     })
   })
+
+  describe('when json is true', () => {
+    let stderrSpy: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      stderrSpy.mockRestore()
+    })
+
+    test('emits JSON for no-auth error', () => {
+      const err = new Error('No API key found')
+
+      expect(() => handleError(err, { json: true })).toThrow('process.exit')
+
+      const output = JSON.parse(stderrSpy.mock.calls[0][0] as string)
+      expect(output).toEqual({
+        error: { type: 'auth_error', message: 'No API key found' },
+      })
+    })
+
+    test('emits JSON for connectivity error', () => {
+      const err = createNetworkError('ECONNREFUSED')
+
+      expect(() => handleError(err, { json: true })).toThrow('process.exit')
+
+      const output = JSON.parse(stderrSpy.mock.calls[0][0] as string)
+      expect(output).toEqual({
+        error: { type: 'connectivity_error', message: 'Could not connect to api.fintoc.com' },
+      })
+    })
+
+    test('emits JSON for FintocError with structured fields', () => {
+      const err = createFintocError('InvalidRequestError', {
+        type: 'invalid_request_error',
+        code: 'missing_resource',
+        param: 'id',
+        message: 'No such payment_intent: pi_invalid',
+      })
+
+      expect(() => handleError(err, { json: true, id: 'pi_invalid' })).toThrow('process.exit')
+
+      const output = JSON.parse(stderrSpy.mock.calls[0][0] as string)
+      expect(output).toEqual({
+        error: {
+          type: 'invalid_request_error',
+          code: 'missing_resource',
+          message: 'No such payment_intent: pi_invalid',
+        },
+      })
+    })
+
+    test('emits JSON for unknown error', () => {
+      const err = new Error('Something broke')
+
+      expect(() => handleError(err, { json: true })).toThrow('process.exit')
+
+      const output = JSON.parse(stderrSpy.mock.calls[0][0] as string)
+      expect(output).toEqual({
+        error: { type: 'unknown_error', message: 'Something broke' },
+      })
+    })
+
+    test('emits JSON for non-Error value', () => {
+      expect(() => handleError(42, { json: true })).toThrow('process.exit')
+
+      const output = JSON.parse(stderrSpy.mock.calls[0][0] as string)
+      expect(output).toEqual({
+        error: { type: 'unknown_error', message: 'An unexpected error occurred' },
+      })
+    })
+  })
 })

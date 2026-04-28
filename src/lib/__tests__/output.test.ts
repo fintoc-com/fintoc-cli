@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
-
+import { readConfig } from '../config.js'
 import {
+  _resetColorCache,
   colorizeStatus,
   error,
   formatValue,
@@ -9,8 +10,92 @@ import {
   printJson,
   printTable,
   success,
+  supportsColor,
   warn,
 } from '../output.js'
+
+vi.mock('../config.js', () => ({
+  readConfig: vi.fn(() => ({})),
+}))
+
+describe('supportsColor', () => {
+  const originalEnv = process.env
+
+  afterEach(() => {
+    _resetColorCache()
+    process.env = originalEnv
+  })
+
+  describe('when FORCE_COLOR is set', () => {
+    test('returns true for non-zero value', () => {
+      process.env = { ...originalEnv, FORCE_COLOR: '1' }
+      expect(supportsColor()).toBe(true)
+    })
+
+    test('returns false for FORCE_COLOR=0', () => {
+      process.env = { ...originalEnv, FORCE_COLOR: '0' }
+      expect(supportsColor()).toBe(false)
+    })
+  })
+
+  describe('when NO_COLOR is set', () => {
+    test('returns false', () => {
+      process.env = { ...originalEnv, NO_COLOR: '' }
+      expect(supportsColor()).toBe(false)
+    })
+
+    test('returns false even with a value', () => {
+      process.env = { ...originalEnv, NO_COLOR: '1' }
+      expect(supportsColor()).toBe(false)
+    })
+  })
+
+  describe('when config.color is set', () => {
+    test('returns true when color is true in config', () => {
+      const { FORCE_COLOR: _fc, NO_COLOR: _nc, ...envWithout } = originalEnv
+      process.env = envWithout
+      vi.mocked(readConfig).mockReturnValue({ color: true })
+      expect(supportsColor()).toBe(true)
+    })
+
+    test('returns false when color is false in config', () => {
+      const { FORCE_COLOR: _fc, NO_COLOR: _nc, ...envWithout } = originalEnv
+      process.env = envWithout
+      vi.mocked(readConfig).mockReturnValue({ color: false })
+      expect(supportsColor()).toBe(false)
+    })
+
+    test('env vars take precedence over config', () => {
+      process.env = { ...originalEnv, NO_COLOR: '' }
+      vi.mocked(readConfig).mockReturnValue({ color: true })
+      expect(supportsColor()).toBe(false)
+    })
+  })
+
+  describe('when neither FORCE_COLOR nor NO_COLOR nor config is set', () => {
+    test('returns based on stdout.isTTY', () => {
+      const { FORCE_COLOR: _fc, NO_COLOR: _nc, ...envWithout } = originalEnv
+      process.env = envWithout
+      vi.mocked(readConfig).mockReturnValue({})
+      // In test environment, stdout is not a TTY
+      expect(supportsColor()).toBe(!!process.stdout.isTTY)
+    })
+  })
+})
+
+describe('colorizeStatus without color', () => {
+  const originalEnv = process.env
+
+  afterEach(() => {
+    _resetColorCache()
+    process.env = originalEnv
+  })
+
+  test('returns plain text when NO_COLOR is set', () => {
+    process.env = { ...originalEnv, NO_COLOR: '' }
+    expect(colorizeStatus('succeeded')).toBe('succeeded')
+  })
+})
 
 describe('console wrappers', () => {
   afterEach(() => {
@@ -43,19 +128,29 @@ describe('console wrappers', () => {
 })
 
 describe('colorizeStatus', () => {
-  test('applies green to succeeded', () => {
+  const originalEnv = process.env
+
+  afterEach(() => {
+    _resetColorCache()
+    process.env = originalEnv
+  })
+
+  test('applies green to succeeded when color is enabled', () => {
+    process.env = { ...originalEnv, FORCE_COLOR: '1' }
     const result = colorizeStatus('succeeded')
     expect(result).toContain('succeeded')
     expect(result).toContain('\x1B[32m')
   })
 
-  test('applies yellow to pending', () => {
+  test('applies yellow to pending when color is enabled', () => {
+    process.env = { ...originalEnv, FORCE_COLOR: '1' }
     const result = colorizeStatus('pending')
     expect(result).toContain('pending')
     expect(result).toContain('\x1B[33m')
   })
 
-  test('applies red to failed', () => {
+  test('applies red to failed when color is enabled', () => {
+    process.env = { ...originalEnv, FORCE_COLOR: '1' }
     const result = colorizeStatus('failed')
     expect(result).toContain('failed')
     expect(result).toContain('\x1B[31m')
@@ -67,6 +162,13 @@ describe('colorizeStatus', () => {
 })
 
 describe('formatValue', () => {
+  const originalEnv = process.env
+
+  afterEach(() => {
+    _resetColorCache()
+    process.env = originalEnv
+  })
+
   test('formats null as dim dash', () => {
     const result = formatValue('id', null)
     expect(result).toContain('—')
@@ -77,12 +179,14 @@ describe('formatValue', () => {
     expect(result).toContain('—')
   })
 
-  test('colorizes status values', () => {
+  test('colorizes status values when color is enabled', () => {
+    process.env = { ...originalEnv, FORCE_COLOR: '1' }
     const result = formatValue('status', 'succeeded')
     expect(result).toContain('\x1B[32m')
   })
 
-  test('colorizes keys ending with _status', () => {
+  test('colorizes keys ending with _status when color is enabled', () => {
+    process.env = { ...originalEnv, FORCE_COLOR: '1' }
     const result = formatValue('payment_status', 'succeeded')
     expect(result).toContain('\x1B[32m')
   })
