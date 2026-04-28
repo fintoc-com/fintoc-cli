@@ -1,4 +1,5 @@
-import type { ExecSyncOptions } from 'node:child_process'
+import { execSync } from 'node:child_process'
+import { existsSync, statSync } from 'node:fs'
 import { Command } from 'commander'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { resolveAuth, whoami } from '../../lib/auth.js'
@@ -6,25 +7,19 @@ import { readConfig } from '../../lib/config.js'
 import { error, info, log, success, warn } from '../../lib/output.js'
 import { doctorCommand } from '../doctor.js'
 
-const { mockExecSync, mockExistsSync, mockStatSync } = vi.hoisted(() => ({
-  mockExecSync: vi.fn<(cmd: string, opts?: ExecSyncOptions) => string>(),
-  mockExistsSync: vi.fn<(path: string) => boolean>(),
-  mockStatSync: vi.fn(),
-}))
-
 vi.mock('node:child_process', () => ({
-  execSync: mockExecSync,
+  execSync: vi.fn(),
 }))
 
 vi.mock('node:fs', () => ({
-  existsSync: mockExistsSync,
-  statSync: mockStatSync,
+  existsSync: vi.fn(),
+  statSync: vi.fn(),
 }))
 
 vi.mock('../../lib/auth.js', () => ({
   resolveAuth: vi.fn(),
   whoami: vi.fn(),
-  maskKey: vi.fn((k: string) => `${k.slice(0, 8)}····`),
+  maskKey: vi.fn(() => 'sk_test_····'),
 }))
 
 vi.mock('../../lib/config.js', () => ({
@@ -52,24 +47,22 @@ const createProgram = () => {
 }
 
 describe('doctor command', () => {
+  // Default: all checks pass
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(execSync).mockReturnValue('0.1.0\n')
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(statSync).mockReturnValue({ mode: 0o100600 } as ReturnType<typeof statSync>)
     vi.mocked(readConfig).mockReturnValue({})
+    vi.mocked(resolveAuth).mockReturnValue({ secretKey: 'sk_test_abc123', source: 'config' })
+    vi.mocked(whoami).mockResolvedValue({
+      organizationName: 'Acme Corp',
+      mode: 'test',
+      apiVersion: '2023-03-15',
+    })
   })
 
   describe('when all checks pass', () => {
-    beforeEach(() => {
-      mockExecSync.mockReturnValue('0.1.0\n')
-      mockExistsSync.mockReturnValue(true)
-      mockStatSync.mockReturnValue({ mode: 0o100600 } as ReturnType<typeof mockStatSync>)
-      vi.mocked(resolveAuth).mockReturnValue({ secretKey: 'sk_test_abc123', source: 'config' })
-      vi.mocked(whoami).mockResolvedValue({
-        organizationName: 'Acme Corp',
-        mode: 'test',
-        apiVersion: '2023-03-15',
-      })
-    })
-
     test('reports success for CLI version, config, API key, and connectivity', async () => {
       const program = createProgram()
       await program.parseAsync(['doctor'], { from: 'user' })
@@ -94,16 +87,8 @@ describe('doctor command', () => {
 
   describe('when npm version check fails', () => {
     beforeEach(() => {
-      mockExecSync.mockImplementation(() => {
+      vi.mocked(execSync).mockImplementation(() => {
         throw new Error('npm ERR! 404')
-      })
-      mockExistsSync.mockReturnValue(true)
-      mockStatSync.mockReturnValue({ mode: 0o100600 } as ReturnType<typeof mockStatSync>)
-      vi.mocked(resolveAuth).mockReturnValue({ secretKey: 'sk_test_abc123', source: 'config' })
-      vi.mocked(whoami).mockResolvedValue({
-        organizationName: 'Acme Corp',
-        mode: 'test',
-        apiVersion: '2023-03-15',
       })
     })
 
@@ -111,7 +96,7 @@ describe('doctor command', () => {
       const program = createProgram()
       await program.parseAsync(['doctor'], { from: 'user' })
 
-      expect(mockExecSync).toHaveBeenCalledWith(
+      expect(execSync).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ stdio: ['pipe', 'pipe', 'pipe'] }),
       )
@@ -128,9 +113,6 @@ describe('doctor command', () => {
 
   describe('when API key is missing', () => {
     beforeEach(() => {
-      mockExecSync.mockReturnValue('0.1.0\n')
-      mockExistsSync.mockReturnValue(true)
-      mockStatSync.mockReturnValue({ mode: 0o100600 } as ReturnType<typeof mockStatSync>)
       vi.mocked(resolveAuth).mockImplementation(() => {
         throw new Error('No API key')
       })
@@ -148,10 +130,6 @@ describe('doctor command', () => {
 
   describe('when API is unreachable', () => {
     beforeEach(() => {
-      mockExecSync.mockReturnValue('0.1.0\n')
-      mockExistsSync.mockReturnValue(true)
-      mockStatSync.mockReturnValue({ mode: 0o100600 } as ReturnType<typeof mockStatSync>)
-      vi.mocked(resolveAuth).mockReturnValue({ secretKey: 'sk_test_abc123', source: 'config' })
       vi.mocked(whoami).mockRejectedValue(new Error('Network error'))
     })
 
@@ -165,15 +143,7 @@ describe('doctor command', () => {
 
   describe('when CLI version is outdated', () => {
     beforeEach(() => {
-      mockExecSync.mockReturnValue('0.2.0\n')
-      mockExistsSync.mockReturnValue(true)
-      mockStatSync.mockReturnValue({ mode: 0o100600 } as ReturnType<typeof mockStatSync>)
-      vi.mocked(resolveAuth).mockReturnValue({ secretKey: 'sk_test_abc123', source: 'config' })
-      vi.mocked(whoami).mockResolvedValue({
-        organizationName: 'Acme Corp',
-        mode: 'test',
-        apiVersion: '2023-03-15',
-      })
+      vi.mocked(execSync).mockReturnValue('0.2.0\n')
     })
 
     test('warns about newer version', async () => {
@@ -185,18 +155,15 @@ describe('doctor command', () => {
   })
 
   describe('when config file is missing', () => {
+    beforeEach(() => {
+      vi.mocked(existsSync).mockReturnValue(false)
+    })
+
     describe('when auth is resolved via env var', () => {
       beforeEach(() => {
-        mockExecSync.mockReturnValue('0.1.0\n')
-        mockExistsSync.mockReturnValue(false)
         vi.mocked(resolveAuth).mockReturnValue({
           secretKey: 'sk_test_abc123',
           source: 'env',
-        })
-        vi.mocked(whoami).mockResolvedValue({
-          organizationName: 'Acme Corp',
-          mode: 'test',
-          apiVersion: '2023-03-15',
         })
       })
 
@@ -211,16 +178,9 @@ describe('doctor command', () => {
 
     describe('when auth is resolved via flag', () => {
       beforeEach(() => {
-        mockExecSync.mockReturnValue('0.1.0\n')
-        mockExistsSync.mockReturnValue(false)
         vi.mocked(resolveAuth).mockReturnValue({
           secretKey: 'sk_test_abc123',
           source: 'flag',
-        })
-        vi.mocked(whoami).mockResolvedValue({
-          organizationName: 'Acme Corp',
-          mode: 'test',
-          apiVersion: '2023-03-15',
         })
       })
 
@@ -235,8 +195,6 @@ describe('doctor command', () => {
 
     describe('when no auth is available', () => {
       beforeEach(() => {
-        mockExecSync.mockReturnValue('0.1.0\n')
-        mockExistsSync.mockReturnValue(false)
         vi.mocked(resolveAuth).mockImplementation(() => {
           throw new Error('No API key')
         })

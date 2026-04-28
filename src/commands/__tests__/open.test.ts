@@ -1,3 +1,4 @@
+import { exec } from 'node:child_process'
 import { Command } from 'commander'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { error, success } from '../../lib/output.js'
@@ -20,20 +21,28 @@ const createProgram = () => {
 }
 
 describe('open command', () => {
+  let originalPlatform: string
+
   beforeEach(() => {
     vi.clearAllMocks()
+    originalPlatform = process.platform
+    vi.mocked(exec).mockImplementation((_cmd, callback) => {
+      ;(callback as (err: Error | null) => void)(null)
+      return undefined as never
+    })
   })
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: originalPlatform })
+  })
+
+  const setPlatform = (value: string) => {
+    Object.defineProperty(process, 'platform', { value })
+  }
 
   describe('open dashboard', () => {
     test('opens dashboard URL in browser on macOS', async () => {
-      const { exec } = await import('node:child_process')
-      const originalPlatform = process.platform
-      Object.defineProperty(process, 'platform', { value: 'darwin' })
-
-      vi.mocked(exec).mockImplementation((_cmd, callback) => {
-        ;(callback as (err: Error | null) => void)(null)
-        return undefined as never
-      })
+      setPlatform('darwin')
 
       const program = createProgram()
       await program.parseAsync(['open', 'dashboard'], { from: 'user' })
@@ -43,19 +52,10 @@ describe('open command', () => {
         expect.any(Function),
       )
       expect(success).toHaveBeenCalledWith(expect.stringContaining('https://dashboard.fintoc.com/'))
-
-      Object.defineProperty(process, 'platform', { value: originalPlatform })
     })
 
     test('uses xdg-open on Linux', async () => {
-      const { exec } = await import('node:child_process')
-      const originalPlatform = process.platform
-      Object.defineProperty(process, 'platform', { value: 'linux' })
-
-      vi.mocked(exec).mockImplementation((_cmd, callback) => {
-        ;(callback as (err: Error | null) => void)(null)
-        return undefined as never
-      })
+      setPlatform('linux')
 
       const program = createProgram()
       await program.parseAsync(['open', 'dashboard'], { from: 'user' })
@@ -64,19 +64,10 @@ describe('open command', () => {
         'xdg-open "https://dashboard.fintoc.com/"',
         expect.any(Function),
       )
-
-      Object.defineProperty(process, 'platform', { value: originalPlatform })
     })
 
     test('uses start on Windows', async () => {
-      const { exec } = await import('node:child_process')
-      const originalPlatform = process.platform
-      Object.defineProperty(process, 'platform', { value: 'win32' })
-
-      vi.mocked(exec).mockImplementation((_cmd, callback) => {
-        ;(callback as (err: Error | null) => void)(null)
-        return undefined as never
-      })
+      setPlatform('win32')
 
       const program = createProgram()
       await program.parseAsync(['open', 'dashboard'], { from: 'user' })
@@ -85,14 +76,10 @@ describe('open command', () => {
         'start "" "https://dashboard.fintoc.com/"',
         expect.any(Function),
       )
-
-      Object.defineProperty(process, 'platform', { value: originalPlatform })
     })
 
     test('logs error when browser fails to open', async () => {
-      const { exec } = await import('node:child_process')
-      const originalPlatform = process.platform
-      Object.defineProperty(process, 'platform', { value: 'darwin' })
+      setPlatform('darwin')
 
       vi.mocked(exec).mockImplementation((_cmd, callback) => {
         ;(callback as (err: Error | null) => void)(new Error('spawn open ENOENT'))
@@ -104,14 +91,10 @@ describe('open command', () => {
 
       expect(error).toHaveBeenCalledWith(expect.stringContaining('Failed to open browser'))
       expect(success).not.toHaveBeenCalled()
-
-      Object.defineProperty(process, 'platform', { value: originalPlatform })
     })
 
     test('shows friendly error on unsupported platform', async () => {
-      const { exec } = await import('node:child_process')
-      const originalPlatform = process.platform
-      Object.defineProperty(process, 'platform', { value: 'freebsd' })
+      setPlatform('freebsd')
 
       const program = createProgram()
       await program.parseAsync(['open', 'dashboard'], { from: 'user' })
@@ -119,8 +102,6 @@ describe('open command', () => {
       expect(exec).not.toHaveBeenCalled()
       expect(error).toHaveBeenCalledWith(expect.stringContaining('Unsupported platform'))
       expect(success).not.toHaveBeenCalled()
-
-      Object.defineProperty(process, 'platform', { value: originalPlatform })
     })
   })
 })
