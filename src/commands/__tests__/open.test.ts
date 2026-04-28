@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process'
 import { Command } from 'commander'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { error, success } from '../../lib/output.js'
 import { openCommand } from '../open.js'
 
