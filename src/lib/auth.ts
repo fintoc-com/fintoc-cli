@@ -17,7 +17,10 @@ export type WhoamiResponse = {
 }
 
 export const resolveAuth = (options?: { apiKey?: string }) => {
-  if (options?.apiKey) {
+  if (options?.apiKey !== undefined) {
+    if (!options.apiKey.trim()) {
+      throw new Error('API key is empty. Provide a valid key with --api-key or remove the flag.')
+    }
     return { secretKey: options.apiKey, source: 'flag' as const }
   }
 
