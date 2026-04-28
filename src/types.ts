@@ -1,6 +1,7 @@
 export type FintocConfig = {
   secret_key?: string
   jws_private_key?: string
+  color?: boolean
 }
 
 export type Verb = 'create' | 'get' | 'list' | 'delete' | 'expire'
