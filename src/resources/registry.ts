@@ -112,7 +112,14 @@ export const resources: ResourceDef[] = [
     sdkMethod: 'accounts',
     sdkNamespace: 'v2',
     verbs: ['get', 'list'],
-    priorityColumns: ['id', 'name', 'type', 'currency', 'balance', 'status'],
+    priorityColumns: [
+      'id',
+      'entity.holder_name',
+      'currency',
+      'available_balance',
+      'status',
+      'refreshed_at',
+    ],
     listFlags: [{ name: 'type', type: 'string', description: 'Filter by account type' }],
   },
   {
