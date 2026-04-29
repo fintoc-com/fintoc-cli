@@ -239,7 +239,7 @@ export const resources: ResourceDef[] = [
     sdkMethod: 'links',
     sdkNamespace: 'v1',
     verbs: ['get', 'list', 'delete'],
-    priorityColumns: ['id', 'holder_name', 'institution', 'status', 'created_at'],
+    priorityColumns: ['id', 'holder_id', 'institution', 'status', 'created_at'],
     getArg: {
       name: 'link_token',
       description: `Link token (format: LINK_ID_token_LINK_ACCESS_TOKEN, see ${DOCS_LINKS_URL})`,
