@@ -1,5 +1,10 @@
-import { API_HOST, DASHBOARD_API_KEYS_URL, DOCS_TRANSFERS_URL } from './constants.js'
-import { error, log } from './output.js'
+import {
+  API_HOST,
+  DASHBOARD_API_KEYS_URL,
+  DOCS_LINKS_URL,
+  DOCS_TRANSFERS_URL,
+} from './constants.js'
+import { error, hint } from './output.js'
 
 type ErrorContext = {
   cliPath?: string
@@ -83,8 +88,8 @@ const isConnectivityError = (err: unknown): boolean => {
 }
 
 const printNextSteps = (steps: string[]) => {
-  log('')
-  steps.forEach((step) => log(`  ${step}`))
+  hint('')
+  steps.forEach((step) => hint(`  ${step}`))
 }
 
 const exitJsonError = (fields: { type: string; code?: string; message: string }): never => {
@@ -141,9 +146,19 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       return process.exit(1)
     }
 
+    if (fields.code === 'invalid_link_token') {
+      error('Invalid link token format')
+      printNextSteps([
+        'Link tokens use the format: LINK_ID_token_LINK_ACCESS_TOKEN',
+        'You can find link tokens in the response when creating a link.',
+        `More info:  ${DOCS_LINKS_URL}`,
+      ])
+      return process.exit(1)
+    }
+
     if (fields.code === 'missing_resource') {
-      const label = context?.id ? `'${context.id}' not found` : 'Resource not found'
-      error(`Error (404): ${label}`)
+      const fallback = context?.id ? `'${context.id}' not found` : 'Resource not found'
+      error(`Error (404): ${fields.message?.trim() || fallback}`)
       if (context?.cliPath) {
         printNextSteps([`List available: fintoc ${context.cliPath} list`])
       }
