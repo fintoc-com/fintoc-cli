@@ -47,7 +47,6 @@ const createProgram = () => {
 }
 
 describe('doctor command', () => {
-  // Default: all checks pass
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(execSync).mockReturnValue('0.1.0\n')

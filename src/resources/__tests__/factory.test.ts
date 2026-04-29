@@ -45,7 +45,6 @@ const mockClient = {
   paymentIntents: mockManager,
 }
 
-// Mock async generator helper
 const asyncGenerator = (items: { serialize: () => Record<string, unknown> }[]) => {
   return (async function* () {
     for (const item of items) {
@@ -639,7 +638,6 @@ describe('factory', () => {
             rows: expect.arrayContaining([expect.objectContaining({ id: 'pi_0' })]),
           }),
         )
-        // Should have only 5 items due to limit
         const call = vi.mocked(printTable).mock.calls[0][0]
         expect(call.rows).toHaveLength(5)
       })

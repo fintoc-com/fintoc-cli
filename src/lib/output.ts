@@ -93,7 +93,6 @@ const getNestedValue = (obj: Record<string, unknown>, path: string): unknown => 
   }, obj)
 }
 
-// Strip ANSI codes for width calculation
 // eslint-disable-next-line no-control-regex
 const stripAnsi = (str: string) => str.replace(/\x1B\[[0-9;]*m/g, '')
 
@@ -132,7 +131,6 @@ export const printTable = ({ columns, rows, total }: TableOptions) => {
     return
   }
 
-  // Build formatted rows (with ANSI codes for display)
   const formattedRows = rows.map((row) =>
     columns.map((col) => formatValue(toLabel(col), getNestedValue(row, col))),
   )
@@ -143,11 +141,9 @@ export const printTable = ({ columns, rows, total }: TableOptions) => {
     return Math.max(headers[i].length, ...cellWidths)
   })
 
-  // Print header
   const headerLine = headers.map((h, i) => h.padEnd(widths[i])).join('  ')
   log(dim(`  ${headerLine}`))
 
-  // Print rows
   for (const row of formattedRows) {
     const line = row
       .map((cell, i) => {
@@ -158,7 +154,6 @@ export const printTable = ({ columns, rows, total }: TableOptions) => {
     log(`  ${line}`)
   }
 
-  // Footer
   log('')
   const shown = rows.length
   if (total !== undefined && total > shown) {

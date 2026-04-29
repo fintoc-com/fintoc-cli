@@ -78,7 +78,6 @@ const setNestedValue = (obj: Record<string, unknown>, path: string, value: unkno
   current[keys[keys.length - 1]] = value
 }
 
-// Only send flags explicitly set by the user (not Commander defaults)
 const collectSetOptions = (cmd: Command, flags: FlagDef[]) => {
   const opts = cmd.opts()
   const result: Record<string, unknown> = {}
