@@ -17,7 +17,7 @@ export const configCommand = (program: Command) => {
   configCmd.configureHelp({ showGlobalOptions: true })
   configCmd.action(async (_opts: unknown, cmd: Command) => {
     let secretKey: string
-    let source: string
+    let source: 'flag' | 'env' | 'config'
 
     const sourceLabels = {
       flag: 'inline flag (--api-key)',
@@ -30,7 +30,7 @@ export const configCommand = (program: Command) => {
     try {
       const auth = resolveAuth(rootOpts)
       secretKey = auth.secretKey
-      source = sourceLabels[auth.source]
+      source = auth.source
     } catch {
       if (rootOpts.json) {
         printJson({ authenticated: false, config_path: CONFIG_PATH })
@@ -78,7 +78,7 @@ export const configCommand = (program: Command) => {
     log(`  Secret key:    ${maskKey(secretKey)}`)
     log(`  API version:   ${apiVersion ?? '-'}`)
     log(`  Config path:   ${CONFIG_PATH}`)
-    log(`  Source:        ${source}`)
+    log(`  Source:        ${sourceLabels[source]}`)
   })
 
   configCmd

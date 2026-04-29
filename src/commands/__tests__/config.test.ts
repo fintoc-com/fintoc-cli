@@ -81,7 +81,7 @@ describe('config command', () => {
           organization: 'Acme Corp',
           mode: 'test',
           api_version: '2023-03-15',
-          source: 'config file',
+          source: 'config',
           api_reachable: true,
         }),
       )
