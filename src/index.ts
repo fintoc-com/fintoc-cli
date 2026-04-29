@@ -1,6 +1,5 @@
 import type { Help, Option } from 'commander'
 import { Command, CommanderError } from 'commander'
-
 import { configCommand } from './commands/config.js'
 import { doctorCommand } from './commands/doctor.js'
 import { loginCommand } from './commands/login.js'
@@ -56,6 +55,7 @@ program
   .version(versionString, '-v, --version')
   .option('--api-key <key>', 'Override API key for this command')
   .option('--json', 'Output as JSON')
+  .option('--no-color', 'Disable colored output')
   .exitOverride()
   .showSuggestionAfterError(true)
   .configureOutput({
@@ -123,6 +123,14 @@ program.configureHelp({
 
     return lines.join('\n')
   },
+})
+
+program.hook('preAction', (thisCommand) => {
+  const opts = thisCommand.opts<{ color?: boolean }>()
+  if (opts.color === false) {
+    delete process.env.FORCE_COLOR
+    process.env.NO_COLOR = '1'
+  }
 })
 
 addDefaultAction(program)
