@@ -21,6 +21,19 @@ const createProgram = () => {
 }
 
 describe('open command', () => {
+  describe('when called without subcommand', () => {
+    test('shows help instead of erroring', async () => {
+      const program = createProgram()
+
+      await expect(program.parseAsync(['open'], { from: 'user' })).rejects.toMatchObject({
+        exitCode: 0,
+        code: 'commander.help',
+      })
+
+      expect(exec).not.toHaveBeenCalled()
+    })
+  })
+
   let originalPlatform: string
 
   beforeEach(() => {

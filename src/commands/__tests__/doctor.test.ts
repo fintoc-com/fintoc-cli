@@ -4,7 +4,7 @@ import { Command } from 'commander'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { resolveAuth, whoami } from '../../lib/auth.js'
 import { readConfig } from '../../lib/config.js'
-import { error, info, log, success, warn } from '../../lib/output.js'
+import { error, hint, info, success, warn } from '../../lib/output.js'
 import { doctorCommand } from '../doctor.js'
 
 vi.mock('node:child_process', () => ({
@@ -29,6 +29,7 @@ vi.mock('../../lib/config.js', () => ({
 
 vi.mock('../../lib/output.js', () => ({
   log: vi.fn(),
+  hint: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
@@ -106,7 +107,7 @@ describe('doctor command', () => {
       await program.parseAsync(['doctor'], { from: 'user' })
 
       expect(success).toHaveBeenCalledWith(expect.stringContaining('CLI version'))
-      expect(log).toHaveBeenCalledWith(expect.stringContaining('could not check for updates'))
+      expect(hint).toHaveBeenCalledWith(expect.stringContaining('could not check for updates'))
     })
   })
 
@@ -122,7 +123,7 @@ describe('doctor command', () => {
       await program.parseAsync(['doctor'], { from: 'user' })
 
       expect(error).toHaveBeenCalledWith(expect.stringContaining('API key'))
-      expect(log).toHaveBeenCalledWith(expect.stringContaining('skipped'))
+      expect(hint).toHaveBeenCalledWith(expect.stringContaining('skipped'))
       expect(whoami).not.toHaveBeenCalled()
     })
   })

@@ -1,6 +1,6 @@
 import type { Command } from 'commander'
 import { exec } from 'node:child_process'
-
+import { addDefaultAction } from '../lib/commands.js'
 import { DASHBOARD_URL } from '../lib/constants.js'
 import { error, success } from '../lib/output.js'
 
@@ -32,6 +32,7 @@ const openInBrowser = (url: string): Promise<void> => {
 
 export const openCommand = (program: Command) => {
   const open = program.command('open').description('Open Fintoc resources in the browser')
+  open.configureHelp({ showGlobalOptions: true })
 
   open
     .command('dashboard')
@@ -39,4 +40,6 @@ export const openCommand = (program: Command) => {
     .action(async () => {
       await openInBrowser(DASHBOARD_URL)
     })
+
+  addDefaultAction(open)
 }

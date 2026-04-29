@@ -2,7 +2,7 @@ import { Command } from 'commander'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { resolveAuth, whoami } from '../../lib/auth.js'
 import { readConfig, writeConfig } from '../../lib/config.js'
-import { error, log, success, warn } from '../../lib/output.js'
+import { error, hint, log, printJson, success, warn } from '../../lib/output.js'
 import { configCommand } from '../config.js'
 
 vi.mock('../../lib/auth.js', () => ({
@@ -19,14 +19,17 @@ vi.mock('../../lib/config.js', () => ({
 
 vi.mock('../../lib/output.js', () => ({
   log: vi.fn(),
+  hint: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
+  printJson: vi.fn(),
 }))
 
 const createProgram = () => {
   const program = new Command()
   program.exitOverride()
+  program.option('--json', 'Output as JSON')
   configCommand(program)
   return program
 }
@@ -57,6 +60,69 @@ describe('config command', () => {
     })
   })
 
+  describe('when --json is passed', () => {
+    test('outputs JSON when authenticated', async () => {
+      vi.mocked(resolveAuth).mockReturnValue({
+        secretKey: 'sk_test_abc123',
+        source: 'config',
+      })
+      vi.mocked(whoami).mockResolvedValue({
+        organizationName: 'Acme Corp',
+        mode: 'test',
+        apiVersion: '2023-03-15',
+      })
+
+      const program = createProgram()
+      await program.parseAsync(['--json', 'config'], { from: 'user' })
+
+      expect(printJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authenticated: true,
+          organization: 'Acme Corp',
+          mode: 'test',
+          api_version: '2023-03-15',
+          source: 'config file',
+          api_reachable: true,
+        }),
+      )
+      expect(log).not.toHaveBeenCalled()
+    })
+
+    test('outputs JSON with nulls when API is unreachable', async () => {
+      vi.mocked(resolveAuth).mockReturnValue({
+        secretKey: 'sk_test_abc123',
+        source: 'config',
+      })
+      vi.mocked(whoami).mockRejectedValue(new Error('Network error'))
+
+      const program = createProgram()
+      await program.parseAsync(['--json', 'config'], { from: 'user' })
+
+      expect(printJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authenticated: true,
+          organization: null,
+          mode: null,
+          api_version: null,
+          api_reachable: false,
+        }),
+      )
+      expect(warn).not.toHaveBeenCalled()
+    })
+
+    test('outputs JSON when not authenticated', async () => {
+      vi.mocked(resolveAuth).mockImplementation(() => {
+        throw new Error('No API key found')
+      })
+
+      const program = createProgram()
+      await program.parseAsync(['--json', 'config'], { from: 'user' })
+
+      expect(printJson).toHaveBeenCalledWith(expect.objectContaining({ authenticated: false }))
+      expect(log).not.toHaveBeenCalled()
+    })
+  })
+
   describe('when not authenticated', () => {
     test('shows not authenticated message', async () => {
       vi.mocked(resolveAuth).mockImplementation(() => {
@@ -66,7 +132,7 @@ describe('config command', () => {
       const program = createProgram()
       await program.parseAsync(['config'], { from: 'user' })
 
-      expect(log).toHaveBeenCalledWith(expect.stringContaining('Not authenticated'))
+      expect(hint).toHaveBeenCalledWith(expect.stringContaining('Not authenticated'))
     })
   })
 
@@ -82,7 +148,7 @@ describe('config command', () => {
       await program.parseAsync(['config'], { from: 'user' })
 
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('Unable to reach Fintoc API'))
-      expect(log).toHaveBeenCalledWith(expect.stringContaining('(unknown)'))
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('  -'))
       expect(log).toHaveBeenCalledWith(expect.stringContaining('env var'))
     })
   })

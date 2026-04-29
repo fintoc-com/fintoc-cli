@@ -1,7 +1,6 @@
 import type { Command } from 'commander'
 import { execSync } from 'node:child_process'
 import { existsSync, statSync } from 'node:fs'
-
 import { maskKey, resolveAuth, whoami } from '../lib/auth.js'
 import { CONFIG_PATH, readConfig } from '../lib/config.js'
 import {
@@ -10,7 +9,7 @@ import {
   NPM_CHECK_TIMEOUT_MS,
   NPM_PACKAGE_NAME,
 } from '../lib/constants.js'
-import { error, info, log, success, warn } from '../lib/output.js'
+import { error, hint, info, success, warn } from '../lib/output.js'
 import { getCliVersion } from '../lib/version.js'
 
 const checkCliVersion = () => {
@@ -29,7 +28,7 @@ const checkCliVersion = () => {
     }
   } catch {
     success(`CLI version         ${currentVersion}`)
-    log('                    (could not check for updates)')
+    hint('                    (could not check for updates)')
   }
 }
 
@@ -62,7 +61,7 @@ const checkApiKey = (options?: { apiKey?: string }) => {
     return auth
   } catch {
     error('API key             not configured')
-    log('                    Run `fintoc login` or set FINTOC_SECRET_KEY')
+    hint('                    Run `fintoc login` or set FINTOC_SECRET_KEY')
     return null
   }
 }
@@ -74,7 +73,7 @@ const checkConnectivity = async (secretKey: string) => {
     success(`Organization        ${info.organizationName} (${info.mode} mode)`)
   } catch {
     error(`Connectivity        could not reach ${API_HOST}`)
-    log('                    Check your internet connection and API key')
+    hint('                    Check your internet connection and API key')
   }
 }
 
@@ -94,25 +93,24 @@ const checkJwsKey = () => {
 }
 
 export const doctorCommand = (program: Command) => {
-  program
-    .command('doctor')
-    .description('Check CLI setup and connectivity')
-    .action(async (_opts: unknown, cmd: Command) => {
-      const rootOpts = cmd.parent!.opts<{ apiKey?: string }>()
-      log('')
-      checkCliVersion()
+  const cmd = program.command('doctor').description('Check CLI setup and connectivity')
+  cmd.configureHelp({ showGlobalOptions: true })
+  cmd.action(async (_opts: unknown, actionCmd: Command) => {
+    const rootOpts = actionCmd.parent!.opts<{ apiKey?: string }>()
+    hint('')
+    checkCliVersion()
 
-      const auth = checkApiKey(rootOpts)
-      checkConfigFile(auth?.source)
+    const auth = checkApiKey(rootOpts)
+    checkConfigFile(auth?.source)
 
-      if (auth) {
-        await checkConnectivity(auth.secretKey)
-      } else {
-        log('  ⏭ Connectivity     skipped (no API key)')
-        log('  ⏭ Organization     skipped (no API key)')
-      }
+    if (auth) {
+      await checkConnectivity(auth.secretKey)
+    } else {
+      hint('  ⏭ Connectivity     skipped (no API key)')
+      hint('  ⏭ Organization     skipped (no API key)')
+    }
 
-      checkJwsKey()
-      log('')
-    })
+    checkJwsKey()
+    hint('')
+  })
 }

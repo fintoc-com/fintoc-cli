@@ -11,6 +11,7 @@ vi.mock('../../lib/config.js', () => ({
 
 vi.mock('../../lib/output.js', () => ({
   log: vi.fn(),
+  hint: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
