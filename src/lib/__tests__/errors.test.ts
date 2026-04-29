@@ -122,7 +122,12 @@ describe('handleError', () => {
       })
 
       expect(() =>
-        handleError(err, { cliPath: 'payment_intents', verb: 'get', id: 'pi_invalid' }),
+        handleError(err, {
+          cliPath: 'payment_intents',
+          verb: 'get',
+          id: 'pi_invalid',
+          availableVerbs: ['get', 'list'],
+        }),
       ).toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith('Error (404): No such payment_intent: pi_invalid')
@@ -142,6 +147,7 @@ describe('handleError', () => {
       )
 
       expect(error).toHaveBeenCalledWith('Error (404): Resource not found')
+      expect(hint).not.toHaveBeenCalledWith(expect.stringContaining('List available'))
     })
 
     test('falls back to id-based message when API message is empty', () => {
@@ -157,6 +163,7 @@ describe('handleError', () => {
       ).toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith("Error (404): 'pi_invalid' not found")
+      expect(hint).not.toHaveBeenCalledWith(expect.stringContaining('List available'))
     })
 
     test('shows API message when missing_resource is not a classic 404', () => {

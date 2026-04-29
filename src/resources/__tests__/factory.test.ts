@@ -700,7 +700,7 @@ describe('factory', () => {
           program.parseAsync(['payment_intents', 'list', '--limit', value], { from: 'user' }),
         ).rejects.toThrow('process.exit')
 
-        expect(error).toHaveBeenCalledWith('--limit must be a positive number')
+        expect(error).toHaveBeenCalledWith('--limit must be a positive integer')
         expect(mockManager.list).not.toHaveBeenCalled()
       })
     })

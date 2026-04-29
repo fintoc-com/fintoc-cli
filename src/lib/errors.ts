@@ -11,6 +11,7 @@ type ErrorContext = {
   verb?: string
   id?: string
   json?: boolean
+  availableVerbs?: string[]
 }
 
 // The SDK builds error messages as: "type[: code][ (param)]\nmessage[\nCheck the docs...]"
@@ -159,7 +160,7 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     if (fields.code === 'missing_resource') {
       const fallback = context?.id ? `'${context.id}' not found` : 'Resource not found'
       error(`Error (404): ${fields.message?.trim() || fallback}`)
-      if (context?.cliPath) {
+      if (context?.cliPath && context.availableVerbs?.includes('list')) {
         printNextSteps([`List available: fintoc ${context.cliPath} list`])
       }
       return process.exit(1)
