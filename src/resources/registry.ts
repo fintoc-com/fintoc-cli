@@ -1,4 +1,10 @@
 import type { ResourceDef } from '../types.js'
+import {
+  DOCS_CHARGES_URL,
+  DOCS_LINKS_URL,
+  DOCS_PAYMENT_INTENTS_URL,
+  DOCS_TRANSFERS_OBJECT_URL,
+} from '../lib/constants.js'
 
 export const resources: ResourceDef[] = [
   {
@@ -13,7 +19,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'status',
         type: 'string',
-        description: 'Filter by status (pending, succeeded, failed, expired)',
+        description: `Filter by status (see ${DOCS_PAYMENT_INTENTS_URL})`,
       },
       {
         name: 'since',
@@ -91,7 +97,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'status',
         type: 'string[]',
-        description: 'Filter by status (pending, succeeded, failed, rejected)',
+        description: `Filter by status (see ${DOCS_TRANSFERS_OBJECT_URL})`,
       },
       {
         name: 'since',
@@ -179,7 +185,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'status',
         type: 'string',
-        description: 'Filter by status (pending, in_progress, succeeded, failed)',
+        description: `Filter by status (see ${DOCS_CHARGES_URL})`,
       },
       {
         name: 'since',
@@ -231,7 +237,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'status',
         type: 'string',
-        description: 'Filter by status (active, inactive, login_required)',
+        description: `Filter by status (see ${DOCS_LINKS_URL})`,
       },
     ],
   },
