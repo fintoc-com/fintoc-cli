@@ -234,7 +234,12 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
         printDetail(data)
       }
     } catch (err) {
-      handleError(err, { cliPath: resourceCliPath(resource), verb: 'create', json: rootOpts.json })
+      handleError(err, {
+        cliPath: resourceCliPath(resource),
+        verb: 'create',
+        json: rootOpts.json,
+        availableVerbs: resource.verbs,
+      })
     }
   })
 }
@@ -265,6 +270,7 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
         verb: 'get',
         id: identifier,
         json: rootOpts.json,
+        availableVerbs: resource.verbs,
       })
     }
   })
@@ -282,8 +288,8 @@ const registerList = (parent: Command, resource: ResourceDef) => {
     const rootOpts = getRootOpts(actionCmd)
     const localOpts = actionCmd.opts<{ limit: string }>()
     const limit = Number(localOpts.limit)
-    if (Number.isNaN(limit) || limit <= 0) {
-      error('--limit must be a positive number')
+    if (Number.isNaN(limit) || !Number.isInteger(limit) || limit <= 0) {
+      error('--limit must be a positive integer')
       process.exit(1)
     }
 
@@ -311,7 +317,12 @@ const registerList = (parent: Command, resource: ResourceDef) => {
         })
       }
     } catch (err) {
-      handleError(err, { cliPath: resourceCliPath(resource), verb: 'list', json: rootOpts.json })
+      handleError(err, {
+        cliPath: resourceCliPath(resource),
+        verb: 'list',
+        json: rootOpts.json,
+        availableVerbs: resource.verbs,
+      })
     }
   })
 }
@@ -351,6 +362,7 @@ const registerDelete = (parent: Command, resource: ResourceDef) => {
         verb: 'delete',
         id,
         json: rootOpts.json,
+        availableVerbs: resource.verbs,
       })
     }
   })
@@ -391,6 +403,7 @@ const registerExpire = (parent: Command, resource: ResourceDef) => {
         verb: 'expire',
         id,
         json: rootOpts.json,
+        availableVerbs: resource.verbs,
       })
     }
   })

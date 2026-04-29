@@ -107,7 +107,7 @@ export type TableOptions = {
   total?: number
 }
 
-export const formatValue = (key: string, value: unknown) => {
+export const formatValue = (key: string, value: unknown, { inline = false } = {}) => {
   if (value === null || value === undefined) {
     return dim('—')
   }
@@ -125,7 +125,7 @@ export const formatValue = (key: string, value: unknown) => {
     if (typeof obj.name === 'string') {
       return obj.name
     }
-    return JSON.stringify(value)
+    return inline ? JSON.stringify(value) : JSON.stringify(value, null, 2)
   }
   return String(value)
 }
@@ -137,7 +137,7 @@ export const printTable = ({ columns, rows, total }: TableOptions) => {
   }
 
   const formattedRows = rows.map((row) =>
-    columns.map((col) => formatValue(toLabel(col), getNestedValue(row, col))),
+    columns.map((col) => formatValue(toLabel(col), getNestedValue(row, col), { inline: true })),
   )
 
   const headers = columns.map((col) => toLabel(col).toUpperCase())
@@ -181,10 +181,12 @@ export const printDetail = (data: Record<string, unknown>, columns?: string[]) =
   const labels = keys.map((k) => toLabel(k))
   const maxKeyLen = Math.max(...labels.map((l) => l.length))
 
+  const indent = ' '.repeat(maxKeyLen + 2)
   for (let i = 0; i < keys.length; i++) {
     const value = getNestedValue(data, keys[i])
     const label = labels[i].padEnd(maxKeyLen)
     const formatted = formatValue(labels[i], value)
-    log(`${label}  ${formatted}`)
+    const indented = formatted.replace(/\n/g, `\n${indent}`)
+    log(`${label}  ${indented}`)
   }
 }

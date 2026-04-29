@@ -34,22 +34,39 @@ const createProgram = () => {
   return program
 }
 
-describe('config command', () => {
+describe('config show command', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  describe('when authenticated', () => {
+  const setupAuth = () => {
+    vi.mocked(resolveAuth).mockReturnValue({
+      secretKey: 'sk_test_abc123',
+      source: 'config',
+    })
+    vi.mocked(whoami).mockResolvedValue({
+      organizationName: 'Acme Corp',
+      mode: 'test',
+      apiVersion: '2023-03-15',
+    })
+  }
+
+  describe('when using explicit `config show`', () => {
     test('shows full config', async () => {
-      vi.mocked(resolveAuth).mockReturnValue({
-        secretKey: 'sk_test_abc123',
-        source: 'config',
-      })
-      vi.mocked(whoami).mockResolvedValue({
-        organizationName: 'Acme Corp',
-        mode: 'test',
-        apiVersion: '2023-03-15',
-      })
+      setupAuth()
+
+      const program = createProgram()
+      await program.parseAsync(['config', 'show'], { from: 'user' })
+
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('Acme Corp'))
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('test'))
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('config file'))
+    })
+  })
+
+  describe('when using `config` without subcommand (default)', () => {
+    test('shows full config', async () => {
+      setupAuth()
 
       const program = createProgram()
       await program.parseAsync(['config'], { from: 'user' })
@@ -62,18 +79,10 @@ describe('config command', () => {
 
   describe('when --json is passed', () => {
     test('outputs JSON when authenticated', async () => {
-      vi.mocked(resolveAuth).mockReturnValue({
-        secretKey: 'sk_test_abc123',
-        source: 'config',
-      })
-      vi.mocked(whoami).mockResolvedValue({
-        organizationName: 'Acme Corp',
-        mode: 'test',
-        apiVersion: '2023-03-15',
-      })
+      setupAuth()
 
       const program = createProgram()
-      await program.parseAsync(['--json', 'config'], { from: 'user' })
+      await program.parseAsync(['--json', 'config', 'show'], { from: 'user' })
 
       expect(printJson).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -96,7 +105,7 @@ describe('config command', () => {
       vi.mocked(whoami).mockRejectedValue(new Error('Network error'))
 
       const program = createProgram()
-      await program.parseAsync(['--json', 'config'], { from: 'user' })
+      await program.parseAsync(['--json', 'config', 'show'], { from: 'user' })
 
       expect(printJson).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -116,7 +125,7 @@ describe('config command', () => {
       })
 
       const program = createProgram()
-      await program.parseAsync(['--json', 'config'], { from: 'user' })
+      await program.parseAsync(['--json', 'config', 'show'], { from: 'user' })
 
       expect(printJson).toHaveBeenCalledWith(expect.objectContaining({ authenticated: false }))
       expect(log).not.toHaveBeenCalled()
@@ -130,7 +139,7 @@ describe('config command', () => {
       })
 
       const program = createProgram()
-      await program.parseAsync(['config'], { from: 'user' })
+      await program.parseAsync(['config', 'show'], { from: 'user' })
 
       expect(hint).toHaveBeenCalledWith(expect.stringContaining('Not authenticated'))
     })
@@ -145,7 +154,7 @@ describe('config command', () => {
       vi.mocked(whoami).mockRejectedValue(new Error('Network error'))
 
       const program = createProgram()
-      await program.parseAsync(['config'], { from: 'user' })
+      await program.parseAsync(['config', 'show'], { from: 'user' })
 
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('Unable to reach Fintoc API'))
       expect(log).toHaveBeenCalledWith(expect.stringContaining('  -'))
