@@ -15,71 +15,75 @@ const isConfigKey = (key: string): key is keyof FintocConfig => ALLOWED_KEYS.inc
 export const configCommand = (program: Command) => {
   const configCmd = program.command('config').description('Show or update CLI configuration')
   configCmd.configureHelp({ showGlobalOptions: true })
-  configCmd.action(async (_opts: unknown, cmd: Command) => {
-    let secretKey: string
-    let source: 'flag' | 'env' | 'config'
 
-    const sourceLabels = {
-      flag: 'inline flag (--api-key)',
-      env: 'env var (FINTOC_SECRET_KEY)',
-      config: 'config file',
-    } satisfies Record<string, string>
+  configCmd
+    .command('show', { isDefault: true })
+    .description('Show current configuration')
+    .action(async (_opts: unknown, cmd: Command) => {
+      let secretKey: string
+      let source: 'flag' | 'env' | 'config'
 
-    const rootOpts = cmd.parent!.opts<{ apiKey?: string; json?: boolean }>()
+      const sourceLabels = {
+        flag: 'inline flag (--api-key)',
+        env: 'env var (FINTOC_SECRET_KEY)',
+        config: 'config file',
+      } satisfies Record<string, string>
 
-    try {
-      const auth = resolveAuth(rootOpts)
-      secretKey = auth.secretKey
-      source = auth.source
-    } catch {
-      if (rootOpts.json) {
-        printJson({ authenticated: false, config_path: CONFIG_PATH })
+      const rootOpts = cmd.optsWithGlobals<{ apiKey?: string; json?: boolean }>()
+
+      try {
+        const auth = resolveAuth(rootOpts)
+        secretKey = auth.secretKey
+        source = auth.source
+      } catch {
+        if (rootOpts.json) {
+          printJson({ authenticated: false, config_path: CONFIG_PATH })
+          return
+        }
+        hint('Not authenticated. Run `fintoc login` to get started.')
+        hint('')
+        hint(`  Config path:  ${CONFIG_PATH}`)
         return
       }
-      hint('Not authenticated. Run `fintoc login` to get started.')
-      hint('')
-      hint(`  Config path:  ${CONFIG_PATH}`)
-      return
-    }
 
-    let orgName: string | null = null
-    let mode: string | null = null
-    let apiVersion: string | null = null
-    let apiReachable = true
+      let orgName: string | null = null
+      let mode: string | null = null
+      let apiVersion: string | null = null
+      let apiReachable = true
 
-    try {
-      const info = await whoami(secretKey)
-      orgName = info.organizationName
-      mode = info.mode
-      apiVersion = info.apiVersion
-    } catch {
-      apiReachable = false
-      if (!rootOpts.json) {
-        warn('Unable to reach Fintoc API — showing cached config')
+      try {
+        const info = await whoami(secretKey)
+        orgName = info.organizationName
+        mode = info.mode
+        apiVersion = info.apiVersion
+      } catch {
+        apiReachable = false
+        if (!rootOpts.json) {
+          warn('Unable to reach Fintoc API — showing cached config')
+        }
       }
-    }
 
-    if (rootOpts.json) {
-      printJson({
-        authenticated: true,
-        organization: orgName,
-        mode,
-        secret_key: maskKey(secretKey),
-        api_version: apiVersion,
-        config_path: CONFIG_PATH,
-        source,
-        api_reachable: apiReachable,
-      })
-      return
-    }
+      if (rootOpts.json) {
+        printJson({
+          authenticated: true,
+          organization: orgName,
+          mode,
+          secret_key: maskKey(secretKey),
+          api_version: apiVersion,
+          config_path: CONFIG_PATH,
+          source,
+          api_reachable: apiReachable,
+        })
+        return
+      }
 
-    log(`  Organization:  ${orgName ?? '-'}`)
-    log(`  Mode:          ${mode ?? '-'}`)
-    log(`  Secret key:    ${maskKey(secretKey)}`)
-    log(`  API version:   ${apiVersion ?? '-'}`)
-    log(`  Config path:   ${CONFIG_PATH}`)
-    log(`  Source:        ${sourceLabels[source]}`)
-  })
+      log(`  Organization:  ${orgName ?? '-'}`)
+      log(`  Mode:          ${mode ?? '-'}`)
+      log(`  Secret key:    ${maskKey(secretKey)}`)
+      log(`  API version:   ${apiVersion ?? '-'}`)
+      log(`  Config path:   ${CONFIG_PATH}`)
+      log(`  Source:        ${sourceLabels[source]}`)
+    })
 
   configCmd
     .command('set <key> <value>')
