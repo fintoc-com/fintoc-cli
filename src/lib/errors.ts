@@ -8,8 +8,7 @@ type ErrorContext = {
   json?: boolean
 }
 
-// Parsed fields from a FintocError message.
-// The SDK builds messages as: "type[: code][ (param)]\nmessage[\nCheck the docs...]"
+// The SDK builds error messages as: "type[: code][ (param)]\nmessage[\nCheck the docs...]"
 type FintocErrorFields = {
   type: string
   code?: string
@@ -25,7 +24,7 @@ const CONNECTIVITY_CODES = new Set([
   'ERR_NETWORK',
 ])
 
-// Detect FintocError subclasses by constructor name (not exported from SDK)
+// Checked by constructor name because FintocError subclasses are not exported from the SDK
 const FINTOC_ERROR_CLASSES = new Set([
   'FintocError',
   'ApiError',
@@ -38,10 +37,7 @@ const FINTOC_ERROR_CLASSES = new Set([
 const isFintocError = (err: unknown): err is Error =>
   err instanceof Error && FINTOC_ERROR_CLASSES.has(err.constructor.name)
 
-// Parse structured fields from a FintocError message.
-// Format: "type[: code][ (param)]\nmessage[\nCheck the docs for more info: url]"
 const parseFintocError = (err: unknown): FintocErrorFields | undefined => {
-  // Try parsing as FintocError (SDK wraps API errors)
   if (isFintocError(err)) {
     const lines = err.message.split('\n')
     const firstLine = lines[0] ?? ''
@@ -59,7 +55,6 @@ const parseFintocError = (err: unknown): FintocErrorFields | undefined => {
     }
   }
 
-  // Try parsing as AxiosError with structured response data
   if (err instanceof Error) {
     const { response } = err as { response?: { data?: { error?: Record<string, string> } } }
     const apiError = response?.data?.error
@@ -76,11 +71,9 @@ const parseFintocError = (err: unknown): FintocErrorFields | undefined => {
   return undefined
 }
 
-// Detect "No API key" error thrown by resolveAuth
 const isNoAuthError = (err: unknown): boolean =>
   err instanceof Error && err.message.includes('No API key found')
 
-// Detect network/connectivity errors (Axios errors without a response)
 const isConnectivityError = (err: unknown): boolean => {
   if (!(err instanceof Error)) {
     return false
@@ -100,7 +93,6 @@ const exitJsonError = (fields: { type: string; code?: string; message: string })
 }
 
 export const handleError = (err: unknown, context?: ErrorContext): never => {
-  // No API key configured
   if (isNoAuthError(err)) {
     if (context?.json) {
       return exitJsonError({ type: 'auth_error', message: 'No API key found' })
@@ -116,7 +108,6 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     return process.exit(1)
   }
 
-  // Network / connectivity failure
   if (isConnectivityError(err)) {
     if (context?.json) {
       return exitJsonError({
@@ -129,7 +120,6 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     return process.exit(1)
   }
 
-  // Parse structured fields from FintocError or AxiosError
   const fields = parseFintocError(err)
 
   if (fields) {
@@ -141,7 +131,6 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       })
     }
 
-    // JWS private key missing (for transfers)
     if (fields.code === 'missing_jws_signature_header') {
       error('JWS private key required for transfer operations')
       printNextSteps([
@@ -152,7 +141,6 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       return process.exit(1)
     }
 
-    // Resource not found (404) — API returns code "missing_resource"
     if (fields.code === 'missing_resource') {
       const label = context?.id ? `'${context.id}' not found` : 'Resource not found'
       error(`Error (404): ${label}`)
@@ -162,7 +150,6 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       return process.exit(1)
     }
 
-    // Authentication error from the API (invalid key, expired, etc.)
     if (fields.type === 'authentication_error') {
       error(`Authentication failed: ${fields.message ?? 'Invalid API key'}`)
       printNextSteps([
@@ -172,12 +159,10 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       return process.exit(1)
     }
 
-    // Other Fintoc API errors — show the human-readable message
     error(fields.message ?? (err as Error).message)
     return process.exit(1)
   }
 
-  // Unknown / unexpected errors
   const message = err instanceof Error ? err.message : 'An unexpected error occurred'
   if (context?.json) {
     return exitJsonError({ type: 'unknown_error', message })

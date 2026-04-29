@@ -26,7 +26,6 @@ const createFintocError = (
   return err
 }
 
-// Helper to create a connectivity error (Axios-style)
 const createNetworkError = (code: string) => {
   const err = new Error(`connect ${code}`)
   ;(err as unknown as Record<string, string>).code = code

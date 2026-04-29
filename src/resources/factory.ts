@@ -4,6 +4,7 @@ import type { FlagDef, ResourceDef, SdkManager, Serializable } from '../types.js
 import { readFileSync } from 'node:fs'
 import { confirm } from '@inquirer/prompts'
 import { createClient, resolveAuth } from '../lib/auth.js'
+import { addDefaultAction } from '../lib/commands.js'
 import { readConfig } from '../lib/config.js'
 import { DEFAULT_LIST_LIMIT } from '../lib/constants.js'
 import { handleError } from '../lib/errors.js'
@@ -14,13 +15,10 @@ type RootOpts = {
   json?: boolean
 }
 
-// Convert kebab-case flag name to camelCase for SDK
 const toCamelCase = (str: string) => str.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
 
-// Convert kebab-case flag name to snake_case for SDK
 const toSnakeCase = (str: string) => str.replace(/-/g, '_')
 
-// Get root program opts from a nested action command (walks up regardless of nesting depth)
 const getRootOpts = (actionCmd: Command) => {
   let cmd = actionCmd
   while (cmd.parent) {
@@ -29,18 +27,15 @@ const getRootOpts = (actionCmd: Command) => {
   return cmd.opts<RootOpts>()
 }
 
-// Full CLI path for a resource, including v2 prefix when applicable
 const resourceCliPath = (resource: ResourceDef) =>
   resource.sdkNamespace === 'v2' ? `v2 ${resource.cliCommand}` : resource.cliCommand
 
-// Get the SDK manager for a resource
 const getManager = (client: Fintoc, resource: ResourceDef) => {
   const base =
     resource.sdkNamespace === 'v2' ? (client as unknown as Record<string, unknown>).v2 : client
   return (base as Record<string, unknown>)[resource.sdkMethod] as SdkManager
 }
 
-// Parse flag value according to its type
 const parseFlagValue = (value: string, flag: FlagDef) => {
   if (flag.type === 'integer') {
     const num = Number(value)
@@ -61,7 +56,6 @@ const parseFlagValue = (value: string, flag: FlagDef) => {
   return value
 }
 
-// Add Commander options from flag definitions
 const addFlags = (cmd: Command, flags: FlagDef[]) => {
   for (const flag of flags) {
     const flagName = `--${flag.name} <${flag.type === 'string[]' ? 'values' : flag.type}>`
@@ -71,7 +65,6 @@ const addFlags = (cmd: Command, flags: FlagDef[]) => {
   }
 }
 
-// Set a value at a dot-separated path in a nested object
 const setNestedValue = (obj: Record<string, unknown>, path: string, value: unknown) => {
   const keys = path.split('.')
   let current = obj
@@ -85,7 +78,6 @@ const setNestedValue = (obj: Record<string, unknown>, path: string, value: unkno
   current[keys[keys.length - 1]] = value
 }
 
-// Collect only explicitly-set option values (skip Commander defaults)
 const collectSetOptions = (cmd: Command, flags: FlagDef[]) => {
   const opts = cmd.opts()
   const result: Record<string, unknown> = {}
@@ -109,7 +101,6 @@ const collectSetOptions = (cmd: Command, flags: FlagDef[]) => {
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 
-// Deep merge two objects, where source values override target values
 const deepMerge = (
   target: Record<string, unknown>,
   source: Record<string, unknown>,
@@ -127,7 +118,6 @@ const deepMerge = (
   return result
 }
 
-// Read JSON body from file path or stdin ("-")
 const readJsonBody = (fromJson: string): Record<string, unknown> => {
   if (fromJson === '-' && process.stdin.isTTY) {
     error('--from-json -: no input on stdin. Pipe a file or use a path instead')
@@ -161,7 +151,6 @@ const readJsonBody = (fromJson: string): Record<string, unknown> => {
   return parsed as Record<string, unknown>
 }
 
-// Validate required flags are present
 const validateRequired = (cmd: Command, flags: FlagDef[], fullCliPath: string, verb: string) => {
   const opts = cmd.opts()
   const missing = flags
@@ -182,7 +171,6 @@ const validateRequired = (cmd: Command, flags: FlagDef[], fullCliPath: string, v
   }
 }
 
-// Resolve auth + create SDK client, reading JWS only when the resource requires it
 // JWS precedence: --jws-private-key flag > config.toml
 const resolveClient = (parentOpts: RootOpts, resource: ResourceDef, jwsKeyPath?: string) => {
   const auth = resolveAuth(parentOpts)
@@ -191,14 +179,12 @@ const resolveClient = (parentOpts: RootOpts, resource: ResourceDef, jwsKeyPath?:
   return createClient(auth.secretKey, resolvedPath)
 }
 
-// Type predicate for SDK objects with a serialize() method
 const isSerializable = (obj: unknown): obj is Serializable =>
   typeof obj === 'object' &&
   obj !== null &&
   'serialize' in obj &&
   typeof obj.serialize === 'function'
 
-// Serialize SDK resource object to plain object
 const serialize = (obj: unknown): Record<string, unknown> => {
   if (isSerializable(obj)) {
     return obj.serialize()
@@ -254,32 +240,30 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
 }
 
 const registerGet = (parent: Command, resource: ResourceDef) => {
-  parent
-    .command('get <id>')
-    .description(`Get a ${resource.displayName} by ID`)
-    .action(async (id: string, _opts: unknown, actionCmd: Command) => {
-      const rootOpts = getRootOpts(actionCmd)
-      try {
-        const client = resolveClient(rootOpts, resource)
-        const manager = getManager(client, resource)
+  const cmd = parent.command('get <id>').description(`Get a ${resource.displayName} by ID`)
+  cmd.action(async (id: string, _opts: unknown, actionCmd: Command) => {
+    const rootOpts = getRootOpts(actionCmd)
+    try {
+      const client = resolveClient(rootOpts, resource)
+      const manager = getManager(client, resource)
 
-        const result = await manager.get!(id)
-        const data = serialize(result)
+      const result = await manager.get!(id)
+      const data = serialize(result)
 
-        if (rootOpts.json) {
-          printJson(data)
-        } else {
-          printDetail(data)
-        }
-      } catch (err) {
-        handleError(err, {
-          cliPath: resourceCliPath(resource),
-          verb: 'get',
-          id,
-          json: rootOpts.json,
-        })
+      if (rootOpts.json) {
+        printJson(data)
+      } else {
+        printDetail(data)
       }
-    })
+    } catch (err) {
+      handleError(err, {
+        cliPath: resourceCliPath(resource),
+        verb: 'get',
+        id,
+        json: rootOpts.json,
+      })
+    }
+  })
 }
 
 const registerList = (parent: Command, resource: ResourceDef) => {
@@ -329,83 +313,83 @@ const registerList = (parent: Command, resource: ResourceDef) => {
 }
 
 const registerDelete = (parent: Command, resource: ResourceDef) => {
-  parent
+  const cmd = parent
     .command('delete <id>')
     .description(`Delete a ${resource.displayName}`)
     .option('--yes', 'Skip confirmation prompt')
-    .action(async (id: string, opts: { yes?: boolean }, actionCmd: Command) => {
-      const rootOpts = getRootOpts(actionCmd)
+  cmd.action(async (id: string, opts: { yes?: boolean }, actionCmd: Command) => {
+    const rootOpts = getRootOpts(actionCmd)
 
-      if (!opts.yes) {
-        if (!process.stdin.isTTY) {
-          error(`Confirmation required to delete '${id}'. Use --yes to skip.`)
-          process.exit(1)
-        }
-        const confirmed = await confirm({
-          message: `Are you sure you want to delete '${id}'?`,
-          default: false,
-        })
-        if (!confirmed) {
-          log('Aborted.')
-          return
-        }
+    if (!opts.yes) {
+      if (!process.stdin.isTTY) {
+        error(`Confirmation required to delete '${id}'. Use --yes to skip.`)
+        process.exit(1)
       }
-
-      try {
-        const client = resolveClient(rootOpts, resource)
-        const manager = getManager(client, resource)
-
-        await manager.delete!(id)
-        success(`${resource.displayName} '${id}' deleted`)
-      } catch (err) {
-        handleError(err, {
-          cliPath: resourceCliPath(resource),
-          verb: 'delete',
-          id,
-          json: rootOpts.json,
-        })
+      const confirmed = await confirm({
+        message: `Are you sure you want to delete '${id}'?`,
+        default: false,
+      })
+      if (!confirmed) {
+        log('Aborted.')
+        return
       }
-    })
+    }
+
+    try {
+      const client = resolveClient(rootOpts, resource)
+      const manager = getManager(client, resource)
+
+      await manager.delete!(id)
+      success(`${resource.displayName} '${id}' deleted`)
+    } catch (err) {
+      handleError(err, {
+        cliPath: resourceCliPath(resource),
+        verb: 'delete',
+        id,
+        json: rootOpts.json,
+      })
+    }
+  })
 }
 
 const registerExpire = (parent: Command, resource: ResourceDef) => {
-  parent
+  const cmd = parent
     .command('expire <id>')
     .description(`Expire a ${resource.displayName}`)
     .option('--yes', 'Skip confirmation prompt')
-    .action(async (id: string, opts: { yes?: boolean }, actionCmd: Command) => {
-      const rootOpts = getRootOpts(actionCmd)
+  cmd.action(async (id: string, opts: { yes?: boolean }, actionCmd: Command) => {
+    const rootOpts = getRootOpts(actionCmd)
 
-      if (!opts.yes) {
-        if (!process.stdin.isTTY) {
-          error(`Confirmation required to expire '${id}'. Use --yes to skip.`)
-          process.exit(1)
-        }
-        const confirmed = await confirm({
-          message: `Are you sure you want to expire '${id}'?`,
-          default: false,
-        })
-        if (!confirmed) {
-          log('Aborted.')
-          return
-        }
+    if (!opts.yes) {
+      if (!process.stdin.isTTY) {
+        error(`Confirmation required to expire '${id}'. Use --yes to skip.`)
+        process.exit(1)
       }
-
-      try {
-        const client = resolveClient(rootOpts, resource)
-        const manager = getManager(client, resource)
-
-        await manager.expire!(id)
-        success(`${resource.displayName} '${id}' expired`)
-      } catch (err) {
-        handleError(err, {
-          cliPath: resourceCliPath(resource),
-          verb: 'expire',
-          id,
-          json: rootOpts.json,
-        })
+      const confirmed = await confirm({
+        message: `Are you sure you want to expire '${id}'?`,
+        default: false,
+      })
+      if (!confirmed) {
+        log('Aborted.')
+        return
       }
-    })
+    }
+
+    try {
+      const client = resolveClient(rootOpts, resource)
+      const manager = getManager(client, resource)
+
+      await manager.expire!(id)
+      success(`${resource.displayName} '${id}' expired`)
+    } catch (err) {
+      handleError(err, {
+        cliPath: resourceCliPath(resource),
+        verb: 'expire',
+        id,
+        json: rootOpts.json,
+      })
+    }
+  })
 }
 
 const verbRegistrars = {
@@ -426,8 +410,12 @@ export const registerResourceCommands = (program: Command, resourceDefs: Resourc
       .command(resource.cliCommand)
       .description(`Manage ${resource.name.replace(/_/g, ' ')}`)
 
+    resourceCmd.configureHelp({ showGlobalOptions: true })
+
     resource.verbs.forEach((verb) => {
       verbRegistrars[verb]?.(resourceCmd, resource)
     })
+
+    addDefaultAction(resourceCmd)
   })
 }

@@ -1,11 +1,13 @@
-import type { Help } from 'commander'
-import { Command } from 'commander'
+import type { Help, Option } from 'commander'
+import { Command, CommanderError } from 'commander'
 
 import { configCommand } from './commands/config.js'
 import { doctorCommand } from './commands/doctor.js'
 import { loginCommand } from './commands/login.js'
 import { logoutCommand } from './commands/logout.js'
 import { openCommand } from './commands/open.js'
+import { addDefaultAction } from './lib/commands.js'
+import { error } from './lib/output.js'
 import { registerResourceCommands } from './resources/factory.js'
 import { v1Resources, v2Resources } from './resources/registry.js'
 
@@ -15,25 +17,6 @@ const versionString = `fintoc/${__CLI_VERSION__} ${process.platform} node-${proc
 
 const AUTH_COMMANDS = new Set(['login', 'logout', 'config'])
 const UTILITY_COMMANDS = new Set(['doctor', 'open'])
-
-const program = new Command()
-
-program
-  .name('fintoc')
-  .description('Fintoc CLI — manage your Fintoc resources from the terminal')
-  .version(versionString, '-v, --version')
-  .option('--api-key <key>', 'Override API key for this command')
-  .option('--json', 'Output as JSON')
-
-loginCommand(program)
-logoutCommand(program)
-configCommand(program)
-doctorCommand(program)
-openCommand(program)
-registerResourceCommands(program, v1Resources)
-
-const v2Cmd = program.command('v2').description('API v2 resources')
-registerResourceCommands(v2Cmd, v2Resources)
 
 type HelpEntry = { name: () => string; description: () => string }
 
@@ -53,17 +36,54 @@ const formatGroup = (
   }
 }
 
-const formatOptions = (lines: string[], cmd: Command, helper: Help) => {
+const formatOptions = (lines: string[], title: string, options: Option[], helper: Help) => {
+  if (options.length === 0) {
+    return
+  }
   lines.push('')
-  lines.push('Flags:')
-  const options = helper.visibleOptions(cmd)
-  const optPadWidth = Math.max(...options.map((o) => helper.optionTerm(o).length), 0) + 2
+  lines.push(`${title}:`)
+  const padWidth = Math.max(...options.map((o) => helper.optionTerm(o).length), 0) + 2
   for (const opt of options) {
-    lines.push(`  ${helper.optionTerm(opt).padEnd(optPadWidth)}${opt.description}`)
+    lines.push(`  ${helper.optionTerm(opt).padEnd(padWidth)}${opt.description}`)
   }
 }
 
+const program = new Command()
+
+program
+  .name('fintoc')
+  .description('Fintoc CLI — manage your Fintoc resources from the terminal')
+  .version(versionString, '-v, --version')
+  .option('--api-key <key>', 'Override API key for this command')
+  .option('--json', 'Output as JSON')
+  .exitOverride()
+  .showSuggestionAfterError(true)
+  .configureOutput({
+    writeErr: (str: string) => {
+      const match = str.match(/^error:\s*(.*)/is)
+      const message = match ? match[1].trim() : str.trim()
+      if (message) {
+        error(message)
+      }
+    },
+    writeOut: (str: string) => {
+      process.stdout.write(str)
+    },
+  })
+
+loginCommand(program)
+logoutCommand(program)
+configCommand(program)
+doctorCommand(program)
+openCommand(program)
+registerResourceCommands(program, v1Resources)
+
+const v2Cmd = program.command('v2').description('API v2 resources')
+v2Cmd.configureHelp({ showGlobalOptions: true })
+registerResourceCommands(v2Cmd, v2Resources)
+
 program.configureHelp({
+  showGlobalOptions: true,
   formatHelp: (cmd: Command, helper: Help) => {
     const lines: string[] = []
 
@@ -79,7 +99,6 @@ program.configureHelp({
       (c) => !AUTH_COMMANDS.has(c.name()) && !UTILITY_COMMANDS.has(c.name()) && c.name() !== 'v2',
     )
 
-    // Build v2 resource entries as "v2 <resource>" for display in help
     const v2Group = subcommands.find((c) => c.name() === 'v2')
     const v2ResourceEntries: HelpEntry[] = v2Group
       ? v2Group.commands.map((c) => ({
@@ -96,7 +115,7 @@ program.configureHelp({
     formatGroup(lines, 'Resources', resourceEntries, padWidth)
     formatGroup(lines, 'Utilities', utilityEntries, padWidth)
 
-    formatOptions(lines, cmd, helper)
+    formatOptions(lines, 'Flags', helper.visibleOptions(cmd), helper)
 
     lines.push('')
     lines.push('Get started: fintoc login')
@@ -106,24 +125,14 @@ program.configureHelp({
   },
 })
 
-v2Cmd.configureHelp({
-  formatHelp: (cmd: Command, helper: Help) => {
-    const lines: string[] = []
+addDefaultAction(program)
+addDefaultAction(v2Cmd)
 
-    lines.push(cmd.description())
-    lines.push('')
-    lines.push(`Usage: fintoc v2 <resource> <action> [flags]`)
-
-    const entries = cmd.commands
-    const padWidth = Math.max(...entries.map((e) => e.name().length), 0) + 2
-
-    formatGroup(lines, 'Resources', entries, padWidth)
-
-    formatOptions(lines, cmd, helper)
-    lines.push('')
-
-    return lines.join('\n')
-  },
-})
-
-program.parse()
+try {
+  program.parse()
+} catch (err) {
+  if (err instanceof CommanderError) {
+    process.exit(err.exitCode)
+  }
+  throw err
+}

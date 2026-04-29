@@ -77,7 +77,6 @@ describe('supportsColor', () => {
       const { FORCE_COLOR: _fc, NO_COLOR: _nc, ...envWithout } = originalEnv
       process.env = envWithout
       vi.mocked(readConfig).mockReturnValue({})
-      // In test environment, stdout is not a TTY
       expect(supportsColor()).toBe(!!process.stdout.isTTY)
     })
   })
