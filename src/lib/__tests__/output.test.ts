@@ -232,7 +232,12 @@ describe('formatValue', () => {
 
   test('formats object without name as JSON', () => {
     const obj = { id: 'abc', country: 'cl' }
-    expect(formatValue('metadata', obj)).toBe(JSON.stringify(obj))
+    expect(formatValue('metadata', obj)).toBe(JSON.stringify(obj, null, 2))
+  })
+
+  test('formats object without name as compact JSON when inline', () => {
+    const obj = { id: 'abc', country: 'cl' }
+    expect(formatValue('metadata', obj, { inline: true })).toBe(JSON.stringify(obj))
   })
 })
 
