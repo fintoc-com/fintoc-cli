@@ -1,5 +1,7 @@
 # Fintoc CLI
 
+> **Early access** — This CLI is under active development (v0.x). Commands and flags may change between releases. [Report issues or feedback](https://github.com/fintoc-com/fintoc-cli/issues).
+
 Manage your Fintoc resources from the terminal.
 
 ## Installation
@@ -19,15 +21,17 @@ fintoc login
 # List payment intents
 fintoc payment_intents list
 
-# List transfers (v2 resource)
-fintoc v2 transfers list
+# Get a resource by ID
+fintoc payment_intents get pi_test_abc123
 
-# Create a charge from a JSON file
-fintoc charges create --from-json payload.json
+# Create a charge
+fintoc charges create --amount 5000 --currency CLP --subscription-id sub_test_abc123
 
 # Check your setup
 fintoc doctor
 ```
+
+Run `fintoc` or `fintoc --help` to see all available commands.
 
 ## Authentication
 
@@ -38,10 +42,10 @@ The CLI resolves your API key in this order:
 3. `~/.fintoc/config.toml` (saved via `fintoc login`)
 
 ```bash
-# Interactive login
+# Interactive login (prompts for key)
 fintoc login
 
-# Non-interactive
+# Non-interactive login
 fintoc login --api-key sk_test_...
 
 # One-off override
@@ -54,14 +58,16 @@ fintoc config
 fintoc logout
 ```
 
-## Resources
+## Commands
 
-Resources map to `fintoc <resource> <action> [flags]`. V2 API resources require the `v2` prefix: `fintoc v2 <resource> <action> [flags]`.
+### Resources
 
-### V1 resources
+Resources follow the pattern `fintoc <resource> <action> [flags]`. V2 API resources use the `v2` prefix.
+
+#### V1
 
 | Resource | create | get | list | delete | expire |
-|----------|:------:|:---:|:----:|:------:|:------:|
+|---|:---:|:---:|:---:|:---:|:---:|
 | `payment_intents` | | ✔ | ✔ | | |
 | `webhook_endpoints` | ✔ | ✔ | ✔ | ✔ | |
 | `charges` | ✔ | ✔ | ✔ | | |
@@ -70,63 +76,50 @@ Resources map to `fintoc <resource> <action> [flags]`. V2 API resources require 
 | `checkout_sessions` | ✔ | ✔ | | | ✔ |
 | `api_keys` | | | ✔ | | |
 
-### V2 resources (require `v2` prefix)
+#### V2
 
 | Resource | create | get | list |
-|----------|:------:|:---:|:----:|
-| `transfers` | ✔ | ✔ | ✔ |
-| `accounts` | | ✔ | ✔ |
+|---|:---:|:---:|:---:|
+| `v2 transfers` | ✔ | ✔ | ✔ |
+| `v2 accounts` | | ✔ | ✔ |
 
-### Command patterns
+### Actions
 
 ```bash
-# get — fetch a single resource by ID
-fintoc <resource> get <id>
-fintoc v2 <resource> get <id>
+# get — fetch by ID
+fintoc payment_intents get <id>
 
-# list — list resources with optional filters
-fintoc <resource> list [--status <value>] [--since <date>] [--until <date>] [--limit <n>]
-fintoc v2 <resource> list [--status <value>] [--limit <n>]
+# list — with optional filters
+fintoc charges list --status succeeded --since 2026-01-01 --limit 5
 
-# create — create a resource with flags or JSON
-fintoc <resource> create --<flag> <value> ...
-fintoc <resource> create --from-json <file|->
+# create — with flags or JSON
+fintoc charges create --amount 5000 --currency CLP --subscription-id sub_test_abc123
+fintoc charges create --from-json payload.json
+cat payload.json | fintoc charges create --from-json -
 
-# delete — delete a resource (webhook_endpoints, links)
-fintoc <resource> delete <id> [--yes]
+# delete — with confirmation
+fintoc webhook_endpoints delete <id>
+fintoc webhook_endpoints delete <id> --yes   # skip confirmation (CI-friendly)
 
-# expire — expire a resource (checkout_sessions)
-fintoc <resource> expire <id> [--yes]
+# expire — with confirmation
+fintoc checkout_sessions expire <id>
 ```
 
-### Examples
+Flags can be mixed with `--from-json` — flag values take precedence over JSON keys.
+
+### V2 transfers
+
+Transfers require a JWS private key for `create`:
 
 ```bash
-# Get a resource by ID
-fintoc payment_intents get pi_test_abc123
-
-# List with filters (comma-separated for multiple values)
-fintoc charges list --status succeeded,failed --since 2026-01-01
-
-# Create a v2 transfer
 fintoc v2 transfers create --amount 10000 --currency CLP \
   --account-id acc_test_abc123 \
   --counterparty-account-number 12345678 \
   --counterparty-institution-id cl_banco_estado \
   --jws-private-key ~/path/to/private_key.pem
-
-# Create from a JSON file
-fintoc checkout_sessions create --from-json session.json
-
-# Pipe from stdin
-cat payload.json | fintoc charges create --from-json -
-
-# Mix JSON body with flag overrides
-fintoc charges create --from-json base.json --amount 5000
-
-# Delete with confirmation skip
-fintoc webhook_endpoints delete we_test_abc123 --yes
 ```
+
+The JWS key can also be set in `~/.fintoc/config.toml` as `jws_private_key`.
 
 ### Output
 
@@ -139,7 +132,7 @@ fintoc v2 accounts get acc_test_abc123 --json
 
 ### Discovering flags
 
-Each command exposes its available flags via `--help`:
+Each command documents its available flags via `--help`:
 
 ```bash
 fintoc charges create --help
@@ -152,7 +145,7 @@ fintoc v2 transfers list --help
 # Diagnose setup and connectivity
 fintoc doctor
 
-# Open the Fintoc dashboard in your browser
+# Open the Fintoc dashboard
 fintoc open dashboard
 ```
 
@@ -161,7 +154,7 @@ fintoc open dashboard
 ```bash
 npm install
 npm run build        # Bundle to dist/
-npm run test         # Run tests
+npm run test         # Run tests (requires build)
 npm run lint         # ESLint + Prettier
 npm run typecheck    # Type-check without emitting
 ```
