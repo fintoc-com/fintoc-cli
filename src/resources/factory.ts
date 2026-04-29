@@ -8,7 +8,7 @@ import { addDefaultAction } from '../lib/commands.js'
 import { readConfig } from '../lib/config.js'
 import { DEFAULT_LIST_LIMIT } from '../lib/constants.js'
 import { handleError } from '../lib/errors.js'
-import { error, log, printDetail, printJson, printTable, success } from '../lib/output.js'
+import { error, hint, printDetail, printJson, printTable, success } from '../lib/output.js'
 
 type RootOpts = {
   apiKey?: string
@@ -159,14 +159,14 @@ const validateRequired = (cmd: Command, flags: FlagDef[], fullCliPath: string, v
 
   if (missing.length > 0) {
     error(`Missing required ${missing.length === 1 ? 'flag' : 'flags'}: ${missing.join(', ')}`)
-    log('')
-    log(
+    hint('')
+    hint(
       `  Usage: fintoc ${fullCliPath} ${verb} ${flags
         .filter((f) => f.required)
         .map((f) => `--${f.name} <${f.type}>`)
         .join(' ')}`,
     )
-    log(`  Help:  fintoc ${fullCliPath} ${verb} --help`)
+    hint(`  Help:  fintoc ${fullCliPath} ${verb} --help`)
     process.exit(1)
   }
 }
@@ -230,7 +230,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
         printJson(data)
       } else {
         success(`${resource.displayName} created`)
-        log('')
+        hint('')
         printDetail(data)
       }
     } catch (err) {
@@ -240,14 +240,18 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
 }
 
 const registerGet = (parent: Command, resource: ResourceDef) => {
-  const cmd = parent.command('get <id>').description(`Get a ${resource.displayName} by ID`)
-  cmd.action(async (id: string, _opts: unknown, actionCmd: Command) => {
+  const argName = resource.getArg?.name ?? 'id'
+  const cmd = parent
+    .command('get')
+    .description(`Get a ${resource.displayName} by ${argName.replace(/_/g, ' ')}`)
+  cmd.argument(`<${argName}>`, resource.getArg?.description)
+  cmd.action(async (identifier: string, _opts: unknown, actionCmd: Command) => {
     const rootOpts = getRootOpts(actionCmd)
     try {
       const client = resolveClient(rootOpts, resource)
       const manager = getManager(client, resource)
 
-      const result = await manager.get!(id)
+      const result = await manager.get!(identifier)
       const data = serialize(result)
 
       if (rootOpts.json) {
@@ -259,7 +263,7 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
       handleError(err, {
         cliPath: resourceCliPath(resource),
         verb: 'get',
-        id,
+        id: identifier,
         json: rootOpts.json,
       })
     }
@@ -330,7 +334,7 @@ const registerDelete = (parent: Command, resource: ResourceDef) => {
         default: false,
       })
       if (!confirmed) {
-        log('Aborted.')
+        hint('Aborted.')
         return
       }
     }
@@ -370,7 +374,7 @@ const registerExpire = (parent: Command, resource: ResourceDef) => {
         default: false,
       })
       if (!confirmed) {
-        log('Aborted.')
+        hint('Aborted.')
         return
       }
     }
@@ -408,7 +412,7 @@ export const registerResourceCommands = (program: Command, resourceDefs: Resourc
 
     const resourceCmd = program
       .command(resource.cliCommand)
-      .description(`Manage ${resource.name.replace(/_/g, ' ')}`)
+      .description(`Manage ${resource.displayName}s`)
 
     resourceCmd.configureHelp({ showGlobalOptions: true })
 

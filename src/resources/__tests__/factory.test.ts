@@ -4,7 +4,7 @@ import { confirm } from '@inquirer/prompts'
 import { Command } from 'commander'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createClient, resolveAuth } from '../../lib/auth.js'
-import { error, log, printDetail, printJson, printTable, success } from '../../lib/output.js'
+import { error, hint, printDetail, printJson, printTable, success } from '../../lib/output.js'
 import { registerResourceCommands } from '../factory.js'
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -23,6 +23,7 @@ vi.mock('../../lib/config.js', () => ({
 
 vi.mock('../../lib/output.js', () => ({
   log: vi.fn(),
+  hint: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
   printTable: vi.fn(),
@@ -347,7 +348,7 @@ describe('factory', () => {
           program.parseAsync(['transfers', 'create', '--currency', 'CLP'], { from: 'user' }),
         ).rejects.toThrow('process.exit')
 
-        expect(log).toHaveBeenCalledWith(expect.stringContaining('fintoc v2 transfers create'))
+        expect(hint).toHaveBeenCalledWith(expect.stringContaining('fintoc v2 transfers create'))
       })
     })
   })
@@ -755,7 +756,7 @@ describe('factory', () => {
         await program.parseAsync(['payment_intents', 'delete', 'pi_123'], { from: 'user' })
 
         expect(mockManager.delete).not.toHaveBeenCalled()
-        expect(log).toHaveBeenCalledWith('Aborted.')
+        expect(hint).toHaveBeenCalledWith('Aborted.')
 
         Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true })
       })

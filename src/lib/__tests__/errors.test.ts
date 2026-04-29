@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { handleError } from '../errors.js'
-import { error, log } from '../output.js'
+import { error, hint } from '../output.js'
 
 vi.mock('../output.js', () => ({
   log: vi.fn(),
   error: vi.fn(),
+  hint: vi.fn(),
 }))
 
 // Helper to create a FintocError-like error with a specific constructor name.
@@ -55,8 +56,8 @@ describe('handleError', () => {
       expect(() => handleError(err)).toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith('No API key found. To authenticate:')
-      expect(log).toHaveBeenCalledWith('  Run:   fintoc login')
-      expect(log).toHaveBeenCalledWith(
+      expect(hint).toHaveBeenCalledWith('  Run:   fintoc login')
+      expect(hint).toHaveBeenCalledWith(
         '  Get your API keys at: https://dashboard.fintoc.com/api-keys',
       )
       expect(exitSpy).toHaveBeenCalledWith(1)
@@ -72,7 +73,7 @@ describe('handleError', () => {
         expect(() => handleError(err)).toThrow('process.exit')
 
         expect(error).toHaveBeenCalledWith('Could not connect to api.fintoc.com')
-        expect(log).toHaveBeenCalledWith('  Check your internet connection, or run: fintoc doctor')
+        expect(hint).toHaveBeenCalledWith('  Check your internet connection, or run: fintoc doctor')
       },
     )
   })
@@ -89,7 +90,25 @@ describe('handleError', () => {
       expect(() => handleError(err)).toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith('JWS private key required for transfer operations')
-      expect(log).toHaveBeenCalledWith('  More info:  https://docs.fintoc.com/docs/transfers')
+      expect(hint).toHaveBeenCalledWith('  More info:  https://docs.fintoc.com/docs/transfers')
+    })
+  })
+
+  describe('invalid link token', () => {
+    test('formats invalid_link_token error with next steps', () => {
+      const err = createFintocError('InvalidRequestError', {
+        type: 'invalid_request_error',
+        code: 'invalid_link_token',
+        param: 'link_token',
+        message: 'Invalid link access token',
+      })
+
+      expect(() => handleError(err)).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith('Invalid link token format')
+      expect(hint).toHaveBeenCalledWith(
+        '  Link tokens use the format: LINK_ID_token_LINK_ACCESS_TOKEN',
+      )
     })
   })
 
@@ -106,16 +125,16 @@ describe('handleError', () => {
         handleError(err, { cliPath: 'payment_intents', verb: 'get', id: 'pi_invalid' }),
       ).toThrow('process.exit')
 
-      expect(error).toHaveBeenCalledWith("Error (404): 'pi_invalid' not found")
-      expect(log).toHaveBeenCalledWith('  List available: fintoc payment_intents list')
+      expect(error).toHaveBeenCalledWith('Error (404): No such payment_intent: pi_invalid')
+      expect(hint).toHaveBeenCalledWith('  List available: fintoc payment_intents list')
     })
 
-    test('formats not found error without ID', () => {
+    test('formats not found error without ID and no API message', () => {
       const err = createFintocError('InvalidRequestError', {
         type: 'invalid_request_error',
         code: 'missing_resource',
         param: 'id',
-        message: 'No such payment_intent: pi_invalid',
+        message: '',
       })
 
       expect(() => handleError(err, { cliPath: 'payment_intents', verb: 'get' })).toThrow(
@@ -123,6 +142,36 @@ describe('handleError', () => {
       )
 
       expect(error).toHaveBeenCalledWith('Error (404): Resource not found')
+    })
+
+    test('falls back to id-based message when API message is empty', () => {
+      const err = createFintocError('InvalidRequestError', {
+        type: 'invalid_request_error',
+        code: 'missing_resource',
+        param: 'id',
+        message: '',
+      })
+
+      expect(() =>
+        handleError(err, { cliPath: 'payment_intents', verb: 'get', id: 'pi_invalid' }),
+      ).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith("Error (404): 'pi_invalid' not found")
+    })
+
+    test('shows API message when missing_resource is not a classic 404', () => {
+      const err = createFintocError('InvalidRequestError', {
+        type: 'invalid_request_error',
+        code: 'missing_resource',
+        param: 'enabled_events',
+        message: 'No such event: ["link.created"]',
+      })
+
+      expect(() => handleError(err, { cliPath: 'webhook_endpoints', verb: 'create' })).toThrow(
+        'process.exit',
+      )
+
+      expect(error).toHaveBeenCalledWith('Error (404): No such event: ["link.created"]')
     })
   })
 
@@ -136,8 +185,8 @@ describe('handleError', () => {
       expect(() => handleError(err)).toThrow('process.exit')
 
       expect(error).toHaveBeenCalledWith('Authentication failed: Invalid API key')
-      expect(log).toHaveBeenCalledWith('  Check your API key and try again.')
-      expect(log).toHaveBeenCalledWith(
+      expect(hint).toHaveBeenCalledWith('  Check your API key and try again.')
+      expect(hint).toHaveBeenCalledWith(
         '  Get your API keys at: https://dashboard.fintoc.com/api-keys',
       )
     })
@@ -198,7 +247,7 @@ describe('handleError', () => {
         handleError(err, { cliPath: 'payment_intents', verb: 'get', id: 'pi_bad' }),
       ).toThrow('process.exit')
 
-      expect(error).toHaveBeenCalledWith("Error (404): 'pi_bad' not found")
+      expect(error).toHaveBeenCalledWith('Error (404): No such resource')
     })
 
     test('handles AxiosError with JWS missing code', () => {

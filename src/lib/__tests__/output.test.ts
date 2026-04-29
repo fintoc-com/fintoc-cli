@@ -80,6 +80,28 @@ describe('supportsColor', () => {
       expect(supportsColor()).toBe(!!process.stdout.isTTY)
     })
   })
+
+  describe('when --no-color sets NO_COLOR after cache is empty', () => {
+    test('respects NO_COLOR set before first call', () => {
+      const { FORCE_COLOR: _fc, NO_COLOR: _nc, ...envWithout } = originalEnv
+      process.env = envWithout
+
+      process.env.NO_COLOR = '1'
+
+      expect(supportsColor()).toBe(false)
+      expect(supportsColor()).toBe(false)
+    })
+
+    test('cache locks in the value from the first call', () => {
+      process.env = { ...originalEnv, FORCE_COLOR: '1' }
+
+      expect(supportsColor()).toBe(true)
+
+      process.env.NO_COLOR = '1'
+      delete process.env.FORCE_COLOR
+      expect(supportsColor()).toBe(true)
+    })
+  })
 })
 
 describe('colorizeStatus without color', () => {
@@ -107,8 +129,8 @@ describe('console wrappers', () => {
     expect(spy).toHaveBeenCalledWith('hello')
   })
 
-  test('success writes to stdout with ✔ prefix', () => {
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+  test('success writes to stderr with ✔ prefix', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     success('done')
     expect(spy).toHaveBeenCalledWith('✔ done')
   })
@@ -220,18 +242,22 @@ describe('printTable', () => {
   })
 
   describe('when rows are empty', () => {
-    test('prints no results message', () => {
-      const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    test('prints no results message to stderr', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
       printTable({ columns: ['id'], rows: [] })
       expect(spy).toHaveBeenCalledWith('No results found.')
     })
   })
 
   describe('when rows have data', () => {
-    test('prints header and rows', () => {
-      const calls: string[] = []
+    test('prints header and rows to stdout, footer to stderr', () => {
+      const stdoutCalls: string[] = []
+      const stderrCalls: string[] = []
       vi.spyOn(console, 'log').mockImplementation((msg: string) => {
-        calls.push(msg)
+        stdoutCalls.push(msg)
+      })
+      vi.spyOn(console, 'error').mockImplementation((msg: string) => {
+        stderrCalls.push(msg)
       })
 
       printTable({
@@ -242,11 +268,13 @@ describe('printTable', () => {
         ],
       })
 
-      expect(calls[0]).toContain('ID')
-      expect(calls[0]).toContain('STATUS')
-      expect(calls[1]).toContain('pi_123')
-      expect(calls[2]).toContain('pi_456')
-      expect(calls[4]).toContain('Showing 2 results')
+      expect(stdoutCalls[0]).toContain('ID')
+      expect(stdoutCalls[0]).toContain('STATUS')
+      expect(stdoutCalls[1]).toContain('pi_123')
+      expect(stdoutCalls[2]).toContain('pi_456')
+      expect(stderrCalls).toEqual(
+        expect.arrayContaining([expect.stringContaining('Showing 2 results')]),
+      )
     })
 
     test('resolves nested paths in columns', () => {
@@ -266,9 +294,10 @@ describe('printTable', () => {
     })
 
     test('uses singular "result" for single row', () => {
-      const calls: string[] = []
-      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
-        calls.push(msg)
+      const stderrCalls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation((msg: string) => {
+        stderrCalls.push(msg)
       })
 
       printTable({
@@ -276,16 +305,17 @@ describe('printTable', () => {
         rows: [{ id: 'pi_123' }],
       })
 
-      const footer = calls.find((c) => c.includes('Showing'))
+      const footer = stderrCalls.find((c) => c.includes('Showing'))
       expect(footer).toContain('1 result')
     })
   })
 
   describe('when total exceeds shown', () => {
     test('shows "X of Y" in footer', () => {
-      const calls: string[] = []
-      vi.spyOn(console, 'log').mockImplementation((msg: string) => {
-        calls.push(msg)
+      const stderrCalls: string[] = []
+      vi.spyOn(console, 'log').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation((msg: string) => {
+        stderrCalls.push(msg)
       })
 
       printTable({
@@ -294,7 +324,7 @@ describe('printTable', () => {
         total: 50,
       })
 
-      const footer = calls.find((c) => c.includes('Showing'))
+      const footer = stderrCalls.find((c) => c.includes('Showing'))
       expect(footer).toContain('1 of 50')
     })
   })

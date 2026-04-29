@@ -27,6 +27,7 @@ export type ResourceDef = {
   priorityColumns: string[]
   createFlags?: FlagDef[]
   listFlags?: FlagDef[]
+  getArg?: { name: string; description: string }
 }
 
 export type SdkManager = {

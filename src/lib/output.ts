@@ -6,11 +6,15 @@ export const log = (message: string) => {
 }
 
 export const success = (message: string) => {
-  console.log(`✔ ${message}`)
+  console.error(`✔ ${message}`)
 }
 
 export const error = (message: string) => {
   console.error(`✘ ${message}`)
+}
+
+export const hint = (message: string) => {
+  console.error(message)
 }
 
 export const warn = (message: string) => {
@@ -18,10 +22,11 @@ export const warn = (message: string) => {
 }
 
 export const info = (message: string) => {
-  console.log(`ℹ ${message}`)
+  console.error(`ℹ ${message}`)
 }
 
 // Color support detection: FORCE_COLOR > NO_COLOR > config.color > TTY check
+// Cached because --no-color sets NO_COLOR=1 in a preAction hook before any output runs.
 let _colorEnabled: boolean | undefined
 
 export const supportsColor = () => {
@@ -127,7 +132,7 @@ export const formatValue = (key: string, value: unknown) => {
 
 export const printTable = ({ columns, rows, total }: TableOptions) => {
   if (rows.length === 0) {
-    log('No results found.')
+    hint('No results found.')
     return
   }
 
@@ -154,12 +159,12 @@ export const printTable = ({ columns, rows, total }: TableOptions) => {
     log(`  ${line}`)
   }
 
-  log('')
+  hint('')
   const shown = rows.length
   if (total !== undefined && total > shown) {
-    log(`Showing ${shown} of ${total} results`)
+    hint(`Showing ${shown} of ${total} results`)
   } else {
-    log(`Showing ${shown} ${shown === 1 ? 'result' : 'results'}`)
+    hint(`Showing ${shown} ${shown === 1 ? 'result' : 'results'}`)
   }
 }
 

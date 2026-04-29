@@ -1,5 +1,4 @@
 import { Fintoc } from 'fintoc'
-
 import { readConfig } from './config.js'
 import { DASHBOARD_API_KEYS_URL } from './constants.js'
 

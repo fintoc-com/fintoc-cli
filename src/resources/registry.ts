@@ -135,7 +135,7 @@ export const resources: ResourceDef[] = [
     sdkMethod: 'webhookEndpoints',
     sdkNamespace: 'v1',
     verbs: ['create', 'get', 'list', 'delete'],
-    priorityColumns: ['id', 'url', 'status', 'enabled_events', 'created_at'],
+    priorityColumns: ['id', 'name', 'url', 'status', 'created_at'],
     createFlags: [
       {
         name: 'url',
@@ -211,7 +211,14 @@ export const resources: ResourceDef[] = [
     sdkMethod: 'subscriptions',
     sdkNamespace: 'v1',
     verbs: ['get', 'list'],
-    priorityColumns: ['id', 'status', 'amount', 'currency', 'created_at'],
+    priorityColumns: [
+      'created_at',
+      'id',
+      'account.holder_name',
+      'account.holder_id',
+      'account.institution',
+      'status',
+    ],
     listFlags: [
       {
         name: 'since',
@@ -233,6 +240,10 @@ export const resources: ResourceDef[] = [
     sdkNamespace: 'v1',
     verbs: ['get', 'list', 'delete'],
     priorityColumns: ['id', 'holder_name', 'institution', 'status', 'created_at'],
+    getArg: {
+      name: 'link_token',
+      description: `Link token (format: LINK_ID_token_LINK_ACCESS_TOKEN, see ${DOCS_LINKS_URL})`,
+    },
     listFlags: [
       {
         name: 'status',

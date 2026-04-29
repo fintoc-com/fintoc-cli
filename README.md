@@ -130,6 +130,8 @@ fintoc payment_intents list --json
 fintoc v2 accounts get acc_test_abc123 --json
 ```
 
+Use `--no-color` to disable colored output.
+
 ### Discovering flags
 
 Each command documents its available flags via `--help`:
