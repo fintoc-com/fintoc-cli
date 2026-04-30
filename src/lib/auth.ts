@@ -1,6 +1,7 @@
 import { Fintoc } from 'fintoc'
 import { readConfig } from './config.js'
 import { DASHBOARD_API_KEYS_URL } from './constants.js'
+import { getCliVersion } from './version.js'
 
 export type AuthSource = 'flag' | 'env' | 'config'
 
@@ -52,7 +53,9 @@ export const resolveAuth = (options?: { apiKey?: string }) => {
 }
 
 export const createClient = (secretKey: string, jwsPrivateKey?: string) => {
-  return new Fintoc(secretKey, jwsPrivateKey)
+  return new Fintoc(secretKey, jwsPrivateKey, {
+    userAgent: `fintoc-cli/${getCliVersion()}`,
+  })
 }
 
 export const whoami = async (secretKey: string) => {
