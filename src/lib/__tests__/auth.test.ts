@@ -1,9 +1,18 @@
+import { Fintoc } from 'fintoc'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { maskKey, resolveAuth } from '../auth.js'
+import { createClient, maskKey, resolveAuth } from '../auth.js'
 import { readConfig } from '../config.js'
+
+vi.mock('fintoc', () => ({
+  Fintoc: vi.fn(),
+}))
 
 vi.mock('../config.js', () => ({
   readConfig: vi.fn(),
+}))
+
+vi.mock('../version.js', () => ({
+  getCliVersion: vi.fn(() => '0.1.0'),
 }))
 
 describe('resolveAuth', () => {
@@ -77,6 +86,26 @@ describe('resolveAuth', () => {
     vi.mocked(readConfig).mockReturnValue({})
 
     expect(() => resolveAuth()).toThrow('No API key found')
+  })
+})
+
+describe('createClient', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  test('passes fintoc-cli user agent to SDK', () => {
+    createClient('sk_test_123')
+    expect(Fintoc).toHaveBeenCalledWith('sk_test_123', undefined, {
+      userAgent: 'fintoc-cli/0.1.0',
+    })
+  })
+
+  test('forwards JWS private key to SDK', () => {
+    createClient('sk_test_123', '/path/to/key.pem')
+    expect(Fintoc).toHaveBeenCalledWith('sk_test_123', '/path/to/key.pem', {
+      userAgent: 'fintoc-cli/0.1.0',
+    })
   })
 })
 
