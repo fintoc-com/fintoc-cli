@@ -1,5 +1,7 @@
 # Fintoc CLI
 
+[![npm version](https://img.shields.io/npm/v/@fintoc/cli.svg)](https://www.npmjs.com/package/@fintoc/cli)
+
 Build, test, and manage your Fintoc integration right from the terminal.
 
 ![demo](docs/demo.gif)
