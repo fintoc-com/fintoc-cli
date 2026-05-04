@@ -50,7 +50,7 @@ describe('handleError', () => {
   describe('no API key', () => {
     test('formats no-auth error with next steps', () => {
       const err = new Error(
-        'No API key found. To authenticate:\n\n  Run:   fintoc login\n  Or:    export FINTOC_SECRET_KEY=sk_test_...',
+        'No API key found. To authenticate:\n\n  Run:   fintoc login\n  Or:    export FINTOC_API_KEY=sk_test_...',
       )
 
       expect(() => handleError(err)).toThrow('process.exit')

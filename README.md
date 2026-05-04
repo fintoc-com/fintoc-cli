@@ -44,7 +44,7 @@ fintoc charges create --amount 5000 --currency CLP --subscription-id sub_test_ab
 The CLI resolves your API key in this order:
 
 1. `--api-key` flag (inline, per-command)
-2. `FINTOC_SECRET_KEY` environment variable
+2. `FINTOC_API_KEY` environment variable
 3. `~/.fintoc/config.toml` (saved via `fintoc login`)
 
 ```bash

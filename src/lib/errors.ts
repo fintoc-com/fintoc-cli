@@ -106,7 +106,7 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     error('No API key found. To authenticate:')
     printNextSteps([
       'Run:   fintoc login',
-      'Or:    export FINTOC_SECRET_KEY=sk_test_...',
+      'Or:    export FINTOC_API_KEY=sk_test_...',
       'Or:    fintoc --api-key sk_test_... <command>',
       '',
       `Get your API keys at: ${DASHBOARD_API_KEYS_URL}`,
