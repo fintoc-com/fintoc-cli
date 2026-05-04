@@ -3,8 +3,8 @@ import { resources, v1Resources, v2Resources } from '../registry.js'
 
 describe('resource registry', () => {
   describe('schema validation', () => {
-    test('contains all 9 resources', () => {
-      expect(resources).toHaveLength(9)
+    test('contains all 12 resources', () => {
+      expect(resources).toHaveLength(12)
 
       const names = resources.map((r) => r.name)
       expect(names).toEqual([
@@ -16,6 +16,9 @@ describe('resource registry', () => {
         'subscriptions',
         'links',
         'checkout_sessions',
+        'account_verifications',
+        'account_numbers',
+        'movements',
         'api_keys',
       ])
     })
@@ -59,6 +62,9 @@ describe('resource registry', () => {
         for (const flag of resource.listFlags ?? []) {
           expect(validTypes.has(flag.type)).toBe(true)
         }
+        for (const flag of resource.getFlags ?? []) {
+          expect(validTypes.has(flag.type)).toBe(true)
+        }
       }
     })
   })
@@ -73,7 +79,14 @@ describe('resource registry', () => {
     })
 
     test('all other resources use v1 namespace', () => {
-      const nonV2 = resources.filter((r) => !['transfers', 'accounts'].includes(r.name))
+      const v2Names = new Set([
+        'transfers',
+        'accounts',
+        'account_verifications',
+        'account_numbers',
+        'movements',
+      ])
+      const nonV2 = resources.filter((r) => !v2Names.has(r.name))
       for (const resource of nonV2) {
         expect(resource.sdkNamespace).toBe('v1')
       }
@@ -86,7 +99,13 @@ describe('resource registry', () => {
 
     test('v2Resources contains only v2 namespace resources', () => {
       expect(v2Resources.every((r) => r.sdkNamespace === 'v2')).toBe(true)
-      expect(v2Resources.map((r) => r.name)).toEqual(['transfers', 'accounts'])
+      expect(v2Resources.map((r) => r.name)).toEqual([
+        'transfers',
+        'accounts',
+        'account_verifications',
+        'account_numbers',
+        'movements',
+      ])
     })
   })
 
@@ -142,6 +161,35 @@ describe('resource registry', () => {
       const webhooks = resources.find((r) => r.name === 'webhook_endpoints')!
       const eventsFlag = webhooks.createFlags!.find((f) => f.name === 'enabled-events')!
       expect(eventsFlag.type).toBe('string[]')
+    })
+
+    test('account_verifications requires account-number and needs JWS', () => {
+      const av = resources.find((r) => r.name === 'account_verifications')!
+      expect(av.needsJws).toBe(true)
+      const requiredFlags = av.createFlags!.filter((f) => f.required)
+      expect(requiredFlags.map((f) => f.name)).toEqual(['account-number'])
+    })
+
+    test('account_numbers requires account-id for create', () => {
+      const an = resources.find((r) => r.name === 'account_numbers')!
+      const requiredFlags = an.createFlags!.filter((f) => f.required)
+      expect(requiredFlags.map((f) => f.name)).toEqual(['account-id'])
+    })
+
+    test('movements requires account-id for get and list', () => {
+      const movements = resources.find((r) => r.name === 'movements')!
+      expect(movements.getFlags).toBeDefined()
+      expect(movements.getFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
+        'account-id',
+      ])
+      expect(movements.listFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
+        'account-id',
+      ])
+    })
+
+    test('movements uses nested sdkMethod path', () => {
+      const movements = resources.find((r) => r.name === 'movements')!
+      expect(movements.sdkMethod).toBe('accounts.movements')
     })
   })
 })

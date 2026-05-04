@@ -13,3 +13,7 @@ export const DOCS_PAYMENT_INTENTS_URL =
 export const DOCS_TRANSFERS_OBJECT_URL = 'https://docs.fintoc.com/reference/transfer-object.md'
 export const DOCS_CHARGES_URL = 'https://docs.fintoc.com/reference/charge-object.md'
 export const DOCS_LINKS_URL = 'https://docs.fintoc.com/reference/link-object.md'
+export const DOCS_ACCOUNT_VERIFICATIONS_URL =
+  'https://docs.fintoc.com/reference/account-verification-object.md'
+export const DOCS_ACCOUNT_NUMBERS_URL = 'https://docs.fintoc.com/reference/account-number-object.md'
+export const DOCS_MOVEMENTS_URL = 'https://docs.fintoc.com/reference/movement-object.md'
