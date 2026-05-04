@@ -25,6 +25,10 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fintoc-com/fintoc-cli"
+  },
   "license": "MIT",
   "dependencies": {
     "@inquirer/prompts": "^8.4.2",
