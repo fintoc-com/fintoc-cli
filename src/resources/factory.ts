@@ -33,7 +33,14 @@ const resourceCliPath = (resource: ResourceDef) =>
 const getManager = (client: Fintoc, resource: ResourceDef) => {
   const base =
     resource.sdkNamespace === 'v2' ? (client as unknown as Record<string, unknown>).v2 : client
-  return (base as Record<string, unknown>)[resource.sdkMethod] as SdkManager
+  let current = base as Record<string, unknown>
+  for (const part of resource.sdkMethod.split('.')) {
+    current = current[part] as Record<string, unknown>
+    if (!current) {
+      throw new Error(`SDK path "${resource.sdkMethod}" not found at "${part}"`)
+    }
+  }
+  return current as unknown as SdkManager
 }
 
 const parseFlagValue = (value: string, flag: FlagDef) => {
@@ -250,13 +257,19 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
     .command('get')
     .description(`Get a ${resource.displayName} by ${argName.replace(/_/g, ' ')}`)
   cmd.argument(`<${argName}>`, resource.getArg?.description)
+  addFlags(cmd, resource.getFlags ?? [])
   cmd.action(async (identifier: string, _opts: unknown, actionCmd: Command) => {
     const rootOpts = getRootOpts(actionCmd)
+    const flags = resource.getFlags ?? []
+
+    validateRequired(actionCmd, flags, resourceCliPath(resource), 'get')
+
     try {
       const client = resolveClient(rootOpts, resource)
       const manager = getManager(client, resource)
 
-      const result = await manager.get!(identifier)
+      const params = flags.length ? collectSetOptions(actionCmd, flags) : undefined
+      const result = await manager.get!(identifier, params)
       const data = serialize(result)
 
       if (rootOpts.json) {
@@ -286,6 +299,9 @@ const registerList = (parent: Command, resource: ResourceDef) => {
 
   cmd.action(async (_opts: unknown, actionCmd: Command) => {
     const rootOpts = getRootOpts(actionCmd)
+
+    validateRequired(actionCmd, resource.listFlags ?? [], resourceCliPath(resource), 'list')
+
     const localOpts = actionCmd.opts<{ limit: string }>()
     const limit = Number(localOpts.limit)
     if (Number.isNaN(limit) || !Number.isInteger(limit) || limit <= 0) {
