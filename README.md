@@ -80,6 +80,9 @@ Resources follow the pattern `fintoc <resource> <action> [flags]`.
 | `api_keys` | list |
 | `v2 transfers` | create, get, list |
 | `v2 accounts` | get, list |
+| `v2 account_verifications` | create, get, list |
+| `v2 account_numbers` | create, get, list, delete |
+| `v2 movements` | get, list |
 
 ### Utilities
 
