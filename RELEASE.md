@@ -2,24 +2,22 @@
 
 ## How to publish a new version
 
-1. Make sure you're on `main` with everything merged:
+1. Create a branch and bump the version in `package.json`:
 
 ```bash
 git checkout main && git pull
+git checkout -b release/vX.X.X
+npm version patch --no-git-tag-version   # or minor/major
 ```
 
-2. Bump the version (creates a commit + git tag automatically):
+2. Create a PR with the version bump and merge it.
+
+3. After merging, create and push the tag from main:
 
 ```bash
-npm version patch   # 0.1.0 → 0.1.1
-npm version minor   # 0.1.1 → 0.2.0
-npm version major   # 0.2.0 → 1.0.0
-```
-
-3. Push the commit and tag:
-
-```bash
-git push && git push --tags
+git checkout main && git pull
+git tag vX.X.X
+git push --tags
 ```
 
 4. GitHub Actions detects the `v*` tag and automatically:
@@ -32,7 +30,6 @@ git push && git push --tags
 
 ```bash
 npm view @fintoc/cli version
-npx --package @fintoc/cli fintoc --version
 ```
 
 ## CI requirements
