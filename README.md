@@ -18,12 +18,20 @@ Build, test, and manage your Fintoc integration right from the terminal.
 
 ## Installation
 
+### npm
+
 ```bash
 npm install -g @fintoc/cli
 fintoc --version
 ```
 
 Requires Node.js >= 22.
+
+### Homebrew
+
+```bash
+brew install fintoc-com/tap/fintoc
+```
 
 ## Getting started
 
