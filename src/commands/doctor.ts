@@ -61,7 +61,7 @@ const checkApiKey = (options?: { apiKey?: string }) => {
     return auth
   } catch {
     error('API key             not configured')
-    hint('                    Run `fintoc login` or set FINTOC_SECRET_KEY')
+    hint('                    Run `fintoc login` or set FINTOC_API_KEY')
     return null
   }
 }

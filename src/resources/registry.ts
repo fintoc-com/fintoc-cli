@@ -1,7 +1,10 @@
 import type { ResourceDef } from '../types.js'
 import {
+  DOCS_ACCOUNT_NUMBERS_URL,
+  DOCS_ACCOUNT_VERIFICATIONS_URL,
   DOCS_CHARGES_URL,
   DOCS_LINKS_URL,
+  DOCS_MOVEMENTS_URL,
   DOCS_PAYMENT_INTENTS_URL,
   DOCS_TRANSFERS_OBJECT_URL,
 } from '../lib/constants.js'
@@ -332,6 +335,94 @@ export const resources: ResourceDef[] = [
       },
     ],
     listFlags: [],
+  },
+  {
+    name: 'account_verifications',
+    displayName: 'account verification',
+    cliCommand: 'account_verifications',
+    sdkMethod: 'accountVerifications',
+    sdkNamespace: 'v2',
+    verbs: ['create', 'get', 'list'],
+    needsJws: true,
+    priorityColumns: [
+      'id',
+      'status',
+      'counterparty.account_number',
+      'counterparty.holder_name',
+      'reason',
+    ],
+    createFlags: [
+      {
+        name: 'account-number',
+        type: 'string',
+        required: true,
+        description: `Account to verify — CLABE, debit card, or phone number (see ${DOCS_ACCOUNT_VERIFICATIONS_URL})`,
+      },
+    ],
+    listFlags: [],
+  },
+  {
+    name: 'account_numbers',
+    displayName: 'account number',
+    cliCommand: 'account_numbers',
+    sdkMethod: 'accountNumbers',
+    sdkNamespace: 'v2',
+    verbs: ['create', 'get', 'list', 'delete'],
+    priorityColumns: ['id', 'number', 'description', 'status', 'is_root'],
+    createFlags: [
+      {
+        name: 'account-id',
+        type: 'string',
+        required: true,
+        description: 'Account ID to associate the account number with',
+      },
+      {
+        name: 'description',
+        type: 'string',
+        description: `Description to identify the account number (see ${DOCS_ACCOUNT_NUMBERS_URL})`,
+      },
+    ],
+    listFlags: [],
+  },
+  {
+    name: 'movements',
+    displayName: 'movement',
+    cliCommand: 'movements',
+    sdkMethod: 'accounts.movements',
+    sdkNamespace: 'v2',
+    verbs: ['get', 'list'],
+    priorityColumns: ['id', 'amount', 'currency', 'direction', 'balance', 'transaction_date'],
+    getFlags: [
+      {
+        name: 'account-id',
+        type: 'string',
+        required: true,
+        description: 'Account ID to retrieve the movement from',
+      },
+    ],
+    listFlags: [
+      {
+        name: 'account-id',
+        type: 'string',
+        required: true,
+        description: 'Account ID to list movements for',
+      },
+      {
+        name: 'since',
+        type: 'string',
+        description: 'Show results with post_date after this date (ISO 8601)',
+      },
+      {
+        name: 'until',
+        type: 'string',
+        description: 'Show results with post_date before this date (ISO 8601)',
+      },
+      {
+        name: 'resource-id',
+        type: 'string',
+        description: `Filter by associated resource ID (see ${DOCS_MOVEMENTS_URL})`,
+      },
+    ],
   },
   {
     name: 'api_keys',

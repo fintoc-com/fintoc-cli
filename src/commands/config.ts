@@ -25,7 +25,7 @@ export const configCommand = (program: Command) => {
 
       const sourceLabels = {
         flag: 'inline flag (--api-key)',
-        env: 'env var (FINTOC_SECRET_KEY)',
+        env: 'env var (FINTOC_API_KEY)',
         config: 'config file',
       } satisfies Record<string, string>
 

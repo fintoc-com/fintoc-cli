@@ -24,12 +24,10 @@ export const resolveAuth = (options?: { apiKey?: string }) => {
     return { secretKey: options.apiKey, source: 'flag' as const }
   }
 
-  const envKey = process.env.FINTOC_SECRET_KEY
+  const envKey = process.env.FINTOC_API_KEY
   if (envKey !== undefined) {
     if (!envKey.trim()) {
-      throw new Error(
-        'FINTOC_SECRET_KEY is set but empty. Provide a valid key or unset the variable.',
-      )
+      throw new Error('FINTOC_API_KEY is set but empty. Provide a valid key or unset the variable.')
     }
     return { secretKey: envKey, source: 'env' as const }
   }
@@ -44,7 +42,7 @@ export const resolveAuth = (options?: { apiKey?: string }) => {
       'No API key found. To authenticate:',
       '',
       '  Run:   fintoc login',
-      '  Or:    export FINTOC_SECRET_KEY=sk_test_...',
+      '  Or:    export FINTOC_API_KEY=sk_test_...',
       '  Or:    fintoc --api-key sk_test_... <command>',
       '',
       `  Get your API keys at: ${DASHBOARD_API_KEYS_URL}`,

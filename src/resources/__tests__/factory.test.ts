@@ -604,7 +604,7 @@ describe('factory', () => {
         const program = createProgram()
         await program.parseAsync(['payment_intents', 'get', 'pi_123'], { from: 'user' })
 
-        expect(mockManager.get).toHaveBeenCalledWith('pi_123')
+        expect(mockManager.get).toHaveBeenCalledWith('pi_123', undefined)
         expect(printDetail).toHaveBeenCalledWith({ id: 'pi_123', amount: 10000 })
       })
     })
@@ -889,6 +889,94 @@ describe('factory', () => {
 
         expect(printJson).toHaveBeenCalledWith([{ id: 'tr_1' }])
         expect(printTable).not.toHaveBeenCalled()
+      })
+    })
+  })
+
+  describe('nested SDK path (dotted sdkMethod)', () => {
+    const nestedManager = {
+      get: vi.fn(),
+      list: vi.fn(),
+    }
+
+    const nestedResource: ResourceDef = {
+      name: 'movements',
+      displayName: 'movement',
+      cliCommand: 'movements',
+      sdkMethod: 'accounts.movements',
+      sdkNamespace: 'v2',
+      verbs: ['get', 'list'],
+      priorityColumns: ['id', 'amount', 'currency'],
+      getFlags: [{ name: 'account-id', type: 'string', required: true, description: 'Account ID' }],
+      listFlags: [
+        { name: 'account-id', type: 'string', required: true, description: 'Account ID' },
+      ],
+    }
+
+    const setupNestedClient = () => {
+      const client = { v2: { accounts: { movements: nestedManager } } }
+      vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>)
+    }
+
+    describe('when getting a resource with getFlags', () => {
+      test('passes getFlags as second argument to SDK get', async () => {
+        setupNestedClient()
+        const mockResult = { serialize: () => ({ id: 'mov_123', amount: 5000 }) }
+        nestedManager.get.mockResolvedValue(mockResult)
+
+        const program = createProgram(nestedResource)
+        await program.parseAsync(['movements', 'get', 'mov_123', '--account-id', 'acc_test_abc'], {
+          from: 'user',
+        })
+
+        expect(nestedManager.get).toHaveBeenCalledWith('mov_123', { account_id: 'acc_test_abc' })
+        expect(printDetail).toHaveBeenCalledWith({ id: 'mov_123', amount: 5000 })
+      })
+
+      test('exits with error when required getFlag is missing', async () => {
+        const exitSpy = mockProcessExit()
+
+        const program = createProgram(nestedResource)
+        await expect(
+          program.parseAsync(['movements', 'get', 'mov_123'], { from: 'user' }),
+        ).rejects.toThrow('process.exit')
+
+        expect(error).toHaveBeenCalledWith(
+          expect.stringContaining('Missing required flag: --account-id'),
+        )
+        expect(nestedManager.get).not.toHaveBeenCalled()
+        exitSpy.mockRestore()
+      })
+    })
+
+    describe('when listing resources with required listFlags', () => {
+      test('passes required listFlag to SDK list', async () => {
+        setupNestedClient()
+        nestedManager.list.mockResolvedValue(asyncGenerator([]))
+
+        const program = createProgram(nestedResource)
+        await program.parseAsync(['movements', 'list', '--account-id', 'acc_test_abc'], {
+          from: 'user',
+        })
+
+        expect(nestedManager.list).toHaveBeenCalledWith(
+          expect.objectContaining({ account_id: 'acc_test_abc', lazy: true }),
+        )
+      })
+
+      test('exits with error when required listFlag is missing', async () => {
+        const exitSpy = mockProcessExit()
+
+        const program = createProgram(nestedResource)
+        await expect(program.parseAsync(['movements', 'list'], { from: 'user' })).rejects.toThrow(
+          'process.exit',
+        )
+
+        expect(error).toHaveBeenCalledWith(
+          expect.stringContaining('Missing required flag: --account-id'),
+        )
+        expect(nestedManager.list).not.toHaveBeenCalled()
+        exitSpy.mockRestore()
       })
     })
   })

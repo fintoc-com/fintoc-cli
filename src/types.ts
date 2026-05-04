@@ -27,12 +27,13 @@ export type ResourceDef = {
   priorityColumns: string[]
   createFlags?: FlagDef[]
   listFlags?: FlagDef[]
+  getFlags?: FlagDef[]
   getArg?: { name: string; description: string }
 }
 
 export type SdkManager = {
   create?: (body: Record<string, unknown>) => Promise<unknown>
-  get?: (id: string) => Promise<unknown>
+  get?: (id: string, params?: Record<string, unknown>) => Promise<unknown>
   list?: (params: Record<string, unknown>) => Promise<unknown>
   delete?: (id: string) => Promise<unknown>
   expire?: (id: string) => Promise<unknown>

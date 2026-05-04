@@ -16,23 +16,23 @@ vi.mock('../version.js', () => ({
 }))
 
 describe('resolveAuth', () => {
-  const originalEnv = process.env.FINTOC_SECRET_KEY
+  const originalEnv = process.env.FINTOC_API_KEY
 
   beforeEach(() => {
     vi.clearAllMocks()
-    delete process.env.FINTOC_SECRET_KEY
+    delete process.env.FINTOC_API_KEY
   })
 
   afterEach(() => {
     if (originalEnv !== undefined) {
-      process.env.FINTOC_SECRET_KEY = originalEnv
+      process.env.FINTOC_API_KEY = originalEnv
     } else {
-      delete process.env.FINTOC_SECRET_KEY
+      delete process.env.FINTOC_API_KEY
     }
   })
 
   test('returns flag value with highest priority', () => {
-    process.env.FINTOC_SECRET_KEY = 'sk_test_env'
+    process.env.FINTOC_API_KEY = 'sk_test_env'
     vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
 
     const result = resolveAuth({ apiKey: 'sk_test_flag' })
@@ -40,7 +40,7 @@ describe('resolveAuth', () => {
   })
 
   test('returns env value when no flag', () => {
-    process.env.FINTOC_SECRET_KEY = 'sk_test_env'
+    process.env.FINTOC_API_KEY = 'sk_test_env'
     vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
 
     const result = resolveAuth()
@@ -55,31 +55,31 @@ describe('resolveAuth', () => {
   })
 
   test('throws when --api-key is empty string', () => {
-    process.env.FINTOC_SECRET_KEY = 'sk_test_env'
+    process.env.FINTOC_API_KEY = 'sk_test_env'
     vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
 
     expect(() => resolveAuth({ apiKey: '' })).toThrow('API key is empty')
   })
 
   test('throws when --api-key is only whitespace', () => {
-    process.env.FINTOC_SECRET_KEY = 'sk_test_env'
+    process.env.FINTOC_API_KEY = 'sk_test_env'
     vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
 
     expect(() => resolveAuth({ apiKey: '   ' })).toThrow('API key is empty')
   })
 
-  test('throws when FINTOC_SECRET_KEY is empty string', () => {
-    process.env.FINTOC_SECRET_KEY = ''
+  test('throws when FINTOC_API_KEY is empty string', () => {
+    process.env.FINTOC_API_KEY = ''
     vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
 
-    expect(() => resolveAuth()).toThrow('FINTOC_SECRET_KEY is set but empty')
+    expect(() => resolveAuth()).toThrow('FINTOC_API_KEY is set but empty')
   })
 
-  test('throws when FINTOC_SECRET_KEY is only whitespace', () => {
-    process.env.FINTOC_SECRET_KEY = '   '
+  test('throws when FINTOC_API_KEY is only whitespace', () => {
+    process.env.FINTOC_API_KEY = '   '
     vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
 
-    expect(() => resolveAuth()).toThrow('FINTOC_SECRET_KEY is set but empty')
+    expect(() => resolveAuth()).toThrow('FINTOC_API_KEY is set but empty')
   })
 
   test('throws when no key found', () => {
