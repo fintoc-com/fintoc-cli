@@ -179,3 +179,7 @@ If you have any feedback, [open an issue](https://github.com/fintoc-com/fintoc-c
 ## Contributing
 
 See [Developing the Fintoc CLI](../../wiki/developing-the-fintoc-cli) for more info on how to make contributions to this project.
+
+## License
+
+[BSD-3-Clause](LICENSE.md)
