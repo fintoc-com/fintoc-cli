@@ -23,7 +23,7 @@ describe('webhook relay handlers', () => {
 
     createWebhookRelayHandlers({}).webhook_event!(message)
 
-    expect(printJson).toHaveBeenCalledWith(message)
+    expect(printJson).toHaveBeenCalledWith({ id: 'evt_123' })
   })
 
   test('prints the full relay message in JSON mode', () => {
@@ -39,13 +39,7 @@ describe('webhook relay handlers', () => {
 
     createWebhookRelayHandlers({ json: true }).webhook_event!(message)
 
-    expect(printJson).toHaveBeenCalledWith({
-      type: 'webhook_event',
-      event: message.event,
-      signature: message.signature,
-      event_type: message.event_type,
-      timestamp: message.timestamp,
-    })
+    expect(printJson).toHaveBeenCalledWith({ id: 'evt_123' })
   })
 
   test('rejects malformed webhook messages', () => {
