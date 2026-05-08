@@ -12,6 +12,10 @@ type RootOpts = {
   json?: boolean
 }
 
+type ListenOpts = {
+  forwardTo?: string
+}
+
 export const webhooksCommand = (program: Command) => {
   const cmd = program.command('webhooks').description('Listen for webhook events')
   cmd.configureHelp({ showGlobalOptions: true })
@@ -20,7 +24,8 @@ export const webhooksCommand = (program: Command) => {
   cmd
     .command('listen')
     .description('Listen for webhook events in real time')
-    .action(async (_opts: unknown, actionCmd: Command) => {
+    .option('--forward-to <url>', 'Forward webhook events to a URL')
+    .action(async (opts: ListenOpts, actionCmd: Command) => {
       const rootOpts = actionCmd.parent!.parent!.opts<RootOpts>()
       const auth = resolveAuth(rootOpts)
 
@@ -53,7 +58,10 @@ export const webhooksCommand = (program: Command) => {
           websocketUrl: session.websocket_url,
           sessionId: session.id,
           secret: session.secret,
-          handlers: createWebhookRelayHandlers({ json: rootOpts.json }),
+          handlers: createWebhookRelayHandlers({
+            json: rootOpts.json,
+            forwardTo: opts.forwardTo,
+          }),
         })
       } catch (err) {
         caughtError = err

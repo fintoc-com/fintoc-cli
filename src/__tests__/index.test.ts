@@ -78,6 +78,12 @@ describe('help consistency', () => {
       expect(stdout).toContain('Listen for webhook events')
       expect(stdout).toContain('listen')
     })
+
+    test('shows listen forwarding option', () => {
+      const { stdout, exitCode } = run(['webhooks', 'listen', '--help'])
+      expect(exitCode).toBe(0)
+      expect(stdout).toContain('--forward-to')
+    })
   })
 
   describe('when operation --help is shown', () => {
