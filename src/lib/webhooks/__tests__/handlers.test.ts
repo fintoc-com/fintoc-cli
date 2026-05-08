@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { printJson } from '../../output.js'
 import { createWebhookRelayHandlers } from '../handlers.js'
 
@@ -11,7 +11,11 @@ describe('webhook relay handlers', () => {
     vi.clearAllMocks()
   })
 
-  test('pretty-prints the full event for webhook messages', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  test('pretty-prints the full event for webhook messages', async () => {
     const event = JSON.stringify({ id: 'evt_123' })
     const message = {
       type: 'webhook_event',
@@ -21,12 +25,12 @@ describe('webhook relay handlers', () => {
       timestamp: 1_234,
     } as const
 
-    createWebhookRelayHandlers({}).webhook_event!(message)
+    await createWebhookRelayHandlers({}).webhook_event!(message)
 
     expect(printJson).toHaveBeenCalledWith({ id: 'evt_123' })
   })
 
-  test('prints the full relay message in JSON mode', () => {
+  test('prints the full relay message in JSON mode', async () => {
     const message = {
       type: 'webhook_event',
       id: 'wem_123',
@@ -37,13 +41,40 @@ describe('webhook relay handlers', () => {
       timestamp: 1_234,
     } as const
 
-    createWebhookRelayHandlers({ json: true }).webhook_event!(message)
+    await createWebhookRelayHandlers({ json: true }).webhook_event!(message)
 
     expect(printJson).toHaveBeenCalledWith({ id: 'evt_123' })
   })
 
-  test('rejects malformed webhook messages', () => {
-    expect(() =>
+  test('forwards the raw event with the webhook signature', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const event = JSON.stringify({ id: 'evt_123' })
+    const message = {
+      type: 'webhook_event',
+      event,
+      signature: 'test_signature',
+      event_type: 'payment_intent.succeeded',
+      timestamp: 1_234,
+    } as const
+
+    await createWebhookRelayHandlers({
+      forwardTo: 'https://example.test/webhooks',
+    }).webhook_event!(message)
+
+    expect(fetchMock).toHaveBeenCalledWith('https://example.test/webhooks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Fintoc-Signature': 'test_signature',
+      },
+      body: event,
+    })
+    expect(printJson).toHaveBeenCalledWith({ id: 'evt_123' })
+  })
+
+  test('rejects malformed webhook messages', async () => {
+    await expect(
       createWebhookRelayHandlers({}).webhook_event!({
         type: 'webhook_event',
         event: '{}',
@@ -51,6 +82,6 @@ describe('webhook relay handlers', () => {
         event_type: 'payment_intent.succeeded',
         timestamp: 1.2,
       }),
-    ).toThrow('Invalid webhook event message')
+    ).rejects.toThrow('Invalid webhook event message')
   })
 })
