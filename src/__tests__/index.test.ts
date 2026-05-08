@@ -48,6 +48,7 @@ describe('help consistency', () => {
       expect(stdout).toContain('Auth:')
       expect(stdout).toContain('Resources:')
       expect(stdout).toContain('Utilities:')
+      expect(stdout).toContain('webhooks')
       expect(stdout).toContain('Get started: fintoc login')
     })
   })
@@ -67,6 +68,15 @@ describe('help consistency', () => {
       expect(stdout).toContain('Global Options:')
       expect(stdout).toContain('--api-key')
       expect(stdout).toContain('--json')
+    })
+  })
+
+  describe('when webhooks command is called without a verb', () => {
+    test('exits 0 and shows webhooks help', () => {
+      const { stdout, exitCode } = run(['webhooks'])
+      expect(exitCode).toBe(0)
+      expect(stdout).toContain('Listen for webhook events')
+      expect(stdout).toContain('listen')
     })
   })
 

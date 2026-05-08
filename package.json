@@ -34,11 +34,14 @@
     "@inquirer/prompts": "^8.4.2",
     "commander": "^14.0.3",
     "fintoc": "^1.19.0",
-    "smol-toml": "^1.6.1"
+    "smol-toml": "^1.6.1",
+    "ws": "^8.20.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^8.2.0",
     "@types/node": "^25.6.0",
+    "@types/ws": "^8.18.1",
     "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
