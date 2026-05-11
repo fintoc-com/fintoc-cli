@@ -56,10 +56,11 @@ export const _resetColorCache = () => {
   _colorEnabled = undefined
 }
 
-const green = (text: string) => (supportsColor() ? `\x1B[32m${text}\x1B[0m` : text)
-const yellow = (text: string) => (supportsColor() ? `\x1B[33m${text}\x1B[0m` : text)
-const red = (text: string) => (supportsColor() ? `\x1B[31m${text}\x1B[0m` : text)
-const dim = (text: string) => (supportsColor() ? `\x1B[2m${text}\x1B[0m` : text)
+export const green = (text: string) => (supportsColor() ? `\x1B[32m${text}\x1B[0m` : text)
+export const yellow = (text: string) => (supportsColor() ? `\x1B[33m${text}\x1B[0m` : text)
+export const red = (text: string) => (supportsColor() ? `\x1B[31m${text}\x1B[0m` : text)
+export const dim = (text: string) => (supportsColor() ? `\x1B[2m${text}\x1B[0m` : text)
+export const bold = (text: string) => (supportsColor() ? `\x1B[1m${text}\x1B[0m` : text)
 
 const STATUS_COLORS = {
   succeeded: green,

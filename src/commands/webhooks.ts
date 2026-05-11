@@ -71,16 +71,14 @@ export const webhooksCommand = (program: Command) => {
           streamType: 'webhook_event',
         })
 
-        if (!rootOpts.json) {
-          const whsMessage = session.webhook_secret
-            ? ` Your webhook signing secret is ${session.webhook_secret}`
-            : ''
+        const whsMessage = session.webhook_secret
+          ? ` Your webhook signing secret is ${session.webhook_secret}`
+          : ''
 
-          info(`Listening for webhooks.${whsMessage}`)
-          info('Press Ctrl+C to stop.')
+        info(`Listening for webhooks.${whsMessage}`)
+        info('Press Ctrl+C to stop.')
 
-          hint('')
-        }
+        hint('')
 
         await listenToRelay({
           websocketUrl: session.websocket_url,
