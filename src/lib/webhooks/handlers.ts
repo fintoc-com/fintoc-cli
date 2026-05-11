@@ -63,7 +63,7 @@ const displayWebhookEvent = (event: WebhookEvent, options: { json: boolean | und
     return
   }
 
-  log(`${dim(reformatDate(event.created_at))}  -->  ${bold(event.type)} [${event.id}]`)
+  log(`${dim(reformatDate(event.created_at))}  <--  ${bold(event.type)} [${event.id}]`)
 }
 
 const colorStatusCode = (statusCode: number) => {
@@ -89,7 +89,7 @@ const displayForwardResult = (
   const timestamp = dim(reformatDate(result.timestamp))
   const code = bold(colorStatusCode(result.statusCode))
 
-  log(`${timestamp}  <--  [${code}] ${result.method} ${result.url} [${result.event}]`)
+  log(`${timestamp}  -->  [${code}] ${result.method} ${result.url} [${result.event}]`)
 
   if (options.json) {
     log('\n')
