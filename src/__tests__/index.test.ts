@@ -94,6 +94,12 @@ describe('help consistency', () => {
       expect(exitCode).toBe(1)
       expect(stderr).toContain('Events must be a comma-separated list of non-empty strings')
     })
+
+    test('validates listen forward URL before running the command', () => {
+      const { stderr, exitCode } = run(['webhooks', 'listen', '--forward-to', 'not-a-url'], true)
+      expect(exitCode).toBe(1)
+      expect(stderr).toContain('Forward URL must be a valid URL')
+    })
   })
 
   describe('when operation --help is shown', () => {

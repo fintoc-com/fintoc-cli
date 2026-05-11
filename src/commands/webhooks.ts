@@ -1,5 +1,6 @@
 import type { Command } from 'commander'
 import { InvalidArgumentError } from 'commander'
+import * as z from 'zod/mini'
 import { listenToRelay } from '../lib/action-cable.js'
 import { resolveAuth } from '../lib/auth.js'
 import { addDefaultAction } from '../lib/commands.js'
@@ -28,6 +29,16 @@ const parseEvents = (value: string) => {
   return events
 }
 
+const parseForwardTo = (value: string) => {
+  const result = z.url().safeParse(value)
+
+  if (!result.success) {
+    throw new InvalidArgumentError('Forward URL must be a valid URL')
+  }
+
+  return result.data
+}
+
 export const webhooksCommand = (program: Command) => {
   const cmd = program.command('webhooks').description('Listen for webhook events')
   cmd.configureHelp({ showGlobalOptions: true })
@@ -36,7 +47,7 @@ export const webhooksCommand = (program: Command) => {
   cmd
     .command('listen')
     .description('Listen for webhook events in real time')
-    .option('--forward-to <url>', 'Forward webhook events to a URL')
+    .option('--forward-to <url>', 'Forward webhook events to a URL', parseForwardTo)
     .option(
       '--events <events>',
       'Comma-separated list of webhook events to listen for',
