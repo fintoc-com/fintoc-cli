@@ -1,4 +1,5 @@
 import type { Command } from 'commander'
+import { InvalidArgumentError } from 'commander'
 import { listenToRelay } from '../lib/action-cable.js'
 import { resolveAuth } from '../lib/auth.js'
 import { addDefaultAction } from '../lib/commands.js'
@@ -13,7 +14,18 @@ type RootOpts = {
 }
 
 type ListenOpts = {
+  events?: string[]
   forwardTo?: string
+}
+
+const parseEvents = (value: string) => {
+  const events = value.split(',').map((event) => event.trim())
+
+  if (events.length === 0 || events.some((event) => event.length === 0)) {
+    throw new InvalidArgumentError('Events must be a comma-separated list of non-empty strings')
+  }
+
+  return events
 }
 
 export const webhooksCommand = (program: Command) => {
@@ -25,6 +37,11 @@ export const webhooksCommand = (program: Command) => {
     .command('listen')
     .description('Listen for webhook events in real time')
     .option('--forward-to <url>', 'Forward webhook events to a URL')
+    .option(
+      '--events <events>',
+      'Comma-separated list of webhook events to listen for',
+      parseEvents,
+    )
     .action(async (opts: ListenOpts, actionCmd: Command) => {
       const rootOpts = actionCmd.parent!.parent!.opts<RootOpts>()
       const auth = resolveAuth(rootOpts)
@@ -61,6 +78,7 @@ export const webhooksCommand = (program: Command) => {
           handlers: createWebhookRelayHandlers({
             json: rootOpts.json,
             forwardTo: opts.forwardTo,
+            events: opts.events,
           }),
         })
       } catch (err) {
