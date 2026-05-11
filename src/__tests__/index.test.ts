@@ -79,10 +79,20 @@ describe('help consistency', () => {
       expect(stdout).toContain('listen')
     })
 
-    test('shows listen forwarding option', () => {
+    test('shows listen options', () => {
       const { stdout, exitCode } = run(['webhooks', 'listen', '--help'])
       expect(exitCode).toBe(0)
       expect(stdout).toContain('--forward-to')
+      expect(stdout).toContain('--events')
+    })
+
+    test('validates listen events before running the command', () => {
+      const { stderr, exitCode } = run(
+        ['webhooks', 'listen', '--events', 'payment.succeeded,'],
+        true,
+      )
+      expect(exitCode).toBe(1)
+      expect(stderr).toContain('Events must be a comma-separated list of non-empty strings')
     })
   })
 
