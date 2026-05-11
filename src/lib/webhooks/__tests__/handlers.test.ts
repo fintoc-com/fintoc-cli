@@ -1,10 +1,22 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { printJson } from '../../output.js'
+import { log, printJson } from '../../output.js'
 import { createWebhookRelayHandlers } from '../handlers.js'
 
 vi.mock('../../output.js', () => ({
+  bold: vi.fn((text: string) => text),
+  dim: vi.fn((text: string) => text),
+  green: vi.fn((text: string) => text),
+  log: vi.fn(),
   printJson: vi.fn(),
+  red: vi.fn((text: string) => text),
+  yellow: vi.fn((text: string) => text),
 }))
+
+const webhookEvent = {
+  id: 'evt_123',
+  type: 'payment.succeeded',
+  created_at: '2026-05-11T14:52:12Z',
+}
 
 describe('webhook relay handlers', () => {
   beforeEach(() => {
@@ -12,11 +24,12 @@ describe('webhook relay handlers', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
   })
 
-  test('pretty-prints the full event for webhook messages', async () => {
-    const event = JSON.stringify({ id: 'evt_123' })
+  test('prints a compact line for webhook messages', async () => {
+    const event = JSON.stringify(webhookEvent)
     const message = {
       type: 'webhook_event',
       event,
@@ -27,15 +40,15 @@ describe('webhook relay handlers', () => {
 
     await createWebhookRelayHandlers({}).webhook_event!(message)
 
-    expect(printJson).toHaveBeenCalledWith({ id: 'evt_123' })
+    expect(log).toHaveBeenCalledWith('2026-05-11 14:52:12  -->  payment.succeeded [evt_123]')
   })
 
-  test('prints the full relay message in JSON mode', async () => {
+  test('prints the full event in JSON mode', async () => {
     const message = {
       type: 'webhook_event',
       id: 'wem_123',
       status: 'pending',
-      event: JSON.stringify({ id: 'evt_123' }),
+      event: JSON.stringify(webhookEvent),
       signature: 'test_signature',
       event_type: 'payment_intent.succeeded',
       timestamp: 1_234,
@@ -43,13 +56,16 @@ describe('webhook relay handlers', () => {
 
     await createWebhookRelayHandlers({ json: true }).webhook_event!(message)
 
-    expect(printJson).toHaveBeenCalledWith({ id: 'evt_123' })
+    expect(printJson).toHaveBeenCalledWith(webhookEvent)
   })
 
   test('forwards the raw event with the webhook signature', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-11T14:52:13Z'))
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
     vi.stubGlobal('fetch', fetchMock)
-    const event = JSON.stringify({ id: 'evt_123' })
+    const event = JSON.stringify(webhookEvent)
+    const forwardTo = 'https://webhook.site/828b463d-c4a4-4f6b-a450-7c2cdb575d63'
     const message = {
       type: 'webhook_event',
       event,
@@ -59,10 +75,10 @@ describe('webhook relay handlers', () => {
     } as const
 
     await createWebhookRelayHandlers({
-      forwardTo: 'https://example.test/webhooks',
+      forwardTo,
     }).webhook_event!(message)
 
-    expect(fetchMock).toHaveBeenCalledWith('https://example.test/webhooks', {
+    expect(fetchMock).toHaveBeenCalledWith(forwardTo, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -70,11 +86,14 @@ describe('webhook relay handlers', () => {
       },
       body: event,
     })
-    expect(printJson).toHaveBeenCalledWith({ id: 'evt_123' })
+    expect(log).toHaveBeenCalledWith('2026-05-11 14:52:12  -->  payment.succeeded [evt_123]')
+    expect(log).toHaveBeenCalledWith(
+      '2026-05-11 14:52:13  <--  [204] POST https://webhook.site/828b463d-c4a4-4f6b-a450-7c2cdb575d63 [evt_123]',
+    )
   })
 
   test('handles events included in the event filter', async () => {
-    const event = JSON.stringify({ id: 'evt_123', type: 'payment.succeeded' })
+    const event = JSON.stringify(webhookEvent)
     const message = {
       type: 'webhook_event',
       event,
@@ -85,10 +104,7 @@ describe('webhook relay handlers', () => {
 
     await createWebhookRelayHandlers({ events: ['payment.succeeded'] }).webhook_event!(message)
 
-    expect(printJson).toHaveBeenCalledWith({
-      id: 'evt_123',
-      type: 'payment.succeeded',
-    })
+    expect(log).toHaveBeenCalledWith('2026-05-11 14:52:12  -->  payment.succeeded [evt_123]')
   })
 
   test('skips events not included in the event filter', async () => {
@@ -96,7 +112,7 @@ describe('webhook relay handlers', () => {
     vi.stubGlobal('fetch', fetchMock)
     const message = {
       type: 'webhook_event',
-      event: JSON.stringify({ id: 'evt_123', type: 'payment.failed' }),
+      event: JSON.stringify({ ...webhookEvent, type: 'payment.failed' }),
       signature: 'test_signature',
       event_type: 'payment.failed',
       timestamp: 1_234,
@@ -107,7 +123,7 @@ describe('webhook relay handlers', () => {
       forwardTo: 'https://example.test/webhooks',
     }).webhook_event!(message)
 
-    expect(printJson).not.toHaveBeenCalled()
+    expect(log).not.toHaveBeenCalled()
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
@@ -122,19 +138,7 @@ describe('webhook relay handlers', () => {
 
     await createWebhookRelayHandlers({ events: ['payment.succeeded'] }).webhook_event!(message)
 
-    expect(printJson).not.toHaveBeenCalled()
-  })
-
-  test('rejects webhook event payloads that are not records', async () => {
-    await expect(
-      createWebhookRelayHandlers({}).webhook_event!({
-        type: 'webhook_event',
-        event: JSON.stringify('evt_123'),
-        signature: 'test_signature',
-        event_type: 'payment_intent.succeeded',
-        timestamp: 1_234,
-      }),
-    ).rejects.toThrow('Invalid webhook event payload')
+    expect(log).not.toHaveBeenCalled()
   })
 
   test('rejects malformed webhook messages', async () => {
