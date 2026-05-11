@@ -73,6 +73,70 @@ describe('webhook relay handlers', () => {
     expect(printJson).toHaveBeenCalledWith({ id: 'evt_123' })
   })
 
+  test('handles events included in the event filter', async () => {
+    const event = JSON.stringify({ id: 'evt_123', type: 'payment.succeeded' })
+    const message = {
+      type: 'webhook_event',
+      event,
+      signature: 'test_signature',
+      event_type: 'payment.succeeded',
+      timestamp: 1_234,
+    } as const
+
+    await createWebhookRelayHandlers({ events: ['payment.succeeded'] }).webhook_event!(message)
+
+    expect(printJson).toHaveBeenCalledWith({
+      id: 'evt_123',
+      type: 'payment.succeeded',
+    })
+  })
+
+  test('skips events not included in the event filter', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const message = {
+      type: 'webhook_event',
+      event: JSON.stringify({ id: 'evt_123', type: 'payment.failed' }),
+      signature: 'test_signature',
+      event_type: 'payment.failed',
+      timestamp: 1_234,
+    } as const
+
+    await createWebhookRelayHandlers({
+      events: ['payment.succeeded'],
+      forwardTo: 'https://example.test/webhooks',
+    }).webhook_event!(message)
+
+    expect(printJson).not.toHaveBeenCalled()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  test('skips filtered events without a type key', async () => {
+    const message = {
+      type: 'webhook_event',
+      event: JSON.stringify({ id: 'evt_123' }),
+      signature: 'test_signature',
+      event_type: 'payment.succeeded',
+      timestamp: 1_234,
+    } as const
+
+    await createWebhookRelayHandlers({ events: ['payment.succeeded'] }).webhook_event!(message)
+
+    expect(printJson).not.toHaveBeenCalled()
+  })
+
+  test('rejects webhook event payloads that are not records', async () => {
+    await expect(
+      createWebhookRelayHandlers({}).webhook_event!({
+        type: 'webhook_event',
+        event: JSON.stringify('evt_123'),
+        signature: 'test_signature',
+        event_type: 'payment_intent.succeeded',
+        timestamp: 1_234,
+      }),
+    ).rejects.toThrow('Invalid webhook event payload')
+  })
+
   test('rejects malformed webhook messages', async () => {
     await expect(
       createWebhookRelayHandlers({}).webhook_event!({

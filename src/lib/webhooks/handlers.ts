@@ -18,6 +18,7 @@ export type WebhookRelayHandler = (
 type WebhookRelayOptions = {
   json?: boolean
   forwardTo?: string
+  events?: string[]
 }
 
 const forwardWebhookEvent = async (
@@ -38,13 +39,33 @@ const forwardWebhookEvent = async (
   }
 }
 
+const parseWebhookEvent = (event: string) => {
+  const eventResult = z.record(z.string(), z.unknown()).safeParse(JSON.parse(event))
+  if (!eventResult.success) {
+    throw new Error(`Invalid webhook event payload: ${z.prettifyError(eventResult.error)}`)
+  }
+
+  return eventResult.data
+}
+
 export const handleWebhookEvent: WebhookRelayHandler = async (message, options) => {
   const result = webhookEventMessageSchema.safeParse(message)
   if (!result.success) {
     throw new Error(`Invalid webhook event message: ${z.prettifyError(result.error)}`)
   }
 
-  printJson(JSON.parse(result.data.event))
+  const parsed = parseWebhookEvent(result.data.event)
+
+  if (
+    options.events &&
+    (!('type' in parsed) ||
+      typeof parsed.type !== 'string' ||
+      !options.events.includes(parsed.type))
+  ) {
+    return
+  }
+
+  printJson(parsed)
 
   if (options.forwardTo) {
     await forwardWebhookEvent(options.forwardTo, result.data)
