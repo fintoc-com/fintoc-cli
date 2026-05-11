@@ -40,7 +40,7 @@ describe('webhook relay handlers', () => {
 
     await createWebhookRelayHandlers({}).webhook_event!(message)
 
-    expect(log).toHaveBeenCalledWith('2026-05-11 14:52:12  -->  payment.succeeded [evt_123]')
+    expect(log).toHaveBeenCalledWith('2026-05-11 14:52:12  <--  payment.succeeded [evt_123]')
   })
 
   test('prints the full event in JSON mode', async () => {
@@ -86,9 +86,9 @@ describe('webhook relay handlers', () => {
       },
       body: event,
     })
-    expect(log).toHaveBeenCalledWith('2026-05-11 14:52:12  -->  payment.succeeded [evt_123]')
+    expect(log).toHaveBeenCalledWith('2026-05-11 14:52:12  <--  payment.succeeded [evt_123]')
     expect(log).toHaveBeenCalledWith(
-      '2026-05-11 14:52:13  <--  [204] POST https://webhook.site/828b463d-c4a4-4f6b-a450-7c2cdb575d63 [evt_123]',
+      '2026-05-11 14:52:13  -->  [204] POST https://webhook.site/828b463d-c4a4-4f6b-a450-7c2cdb575d63 [evt_123]',
     )
   })
 
@@ -104,7 +104,7 @@ describe('webhook relay handlers', () => {
 
     await createWebhookRelayHandlers({ events: ['payment.succeeded'] }).webhook_event!(message)
 
-    expect(log).toHaveBeenCalledWith('2026-05-11 14:52:12  -->  payment.succeeded [evt_123]')
+    expect(log).toHaveBeenCalledWith('2026-05-11 14:52:12  <--  payment.succeeded [evt_123]')
   })
 
   test('skips events not included in the event filter', async () => {
