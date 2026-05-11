@@ -67,37 +67,38 @@ fintoc logout                                        # Remove stored credentials
 
 ### Auth
 
-| Command | Description |
-|---|---|
-| `fintoc login` | Authenticate with your API key |
-| `fintoc logout` | Remove stored credentials |
-| `fintoc config show` | Show active configuration |
+| Command              | Description                    |
+| -------------------- | ------------------------------ |
+| `fintoc login`       | Authenticate with your API key |
+| `fintoc logout`      | Remove stored credentials      |
+| `fintoc config show` | Show active configuration      |
 
 ### Resources
 
 Resources follow the pattern `fintoc <resource> <action> [flags]`.
 
-| Resource | Actions |
-|---|---|
-| `payment_intents` | get, list |
-| `charges` | create, get, list |
-| `webhook_endpoints` | create, get, list, delete |
-| `checkout_sessions` | create, get, expire |
-| `subscriptions` | get, list |
-| `links` | get, list, delete |
-| `api_keys` | list |
-| `v2 transfers` | create, get, list |
-| `v2 accounts` | get, list |
-| `v2 account_verifications` | create, get, list |
-| `v2 account_numbers` | create, get, list, delete |
-| `v2 movements` | get, list |
+| Resource                   | Actions                   |
+| -------------------------- | ------------------------- |
+| `payment_intents`          | get, list                 |
+| `charges`                  | create, get, list         |
+| `webhook_endpoints`        | create, get, list, delete |
+| `checkout_sessions`        | create, get, expire       |
+| `subscriptions`            | get, list                 |
+| `links`                    | get, list, delete         |
+| `api_keys`                 | list                      |
+| `v2 transfers`             | create, get, list         |
+| `v2 accounts`              | get, list                 |
+| `v2 account_verifications` | create, get, list         |
+| `v2 account_numbers`       | create, get, list, delete |
+| `v2 movements`             | get, list                 |
 
 ### Utilities
 
-| Command | Description |
-|---|---|
-| `fintoc doctor` | Check CLI setup and connectivity |
-| `fintoc open dashboard` | Open the Fintoc dashboard in your browser |
+| Command                  | Description                               |
+| ------------------------ | ----------------------------------------- |
+| `fintoc doctor`          | Check CLI setup and connectivity          |
+| `fintoc open dashboard`  | Open the Fintoc dashboard in your browser |
+| `fintoc webhooks listen` | Listen for webhook events in real time    |
 
 ## Usage examples
 
@@ -133,6 +134,16 @@ Flags can be mixed with `--from-json` — flag values take precedence over JSON 
 ```bash
 fintoc webhook_endpoints delete we_test_abc123
 fintoc webhook_endpoints delete we_test_abc123 --yes   # Skip confirmation (CI-friendly)
+```
+
+### Listen for webhooks
+
+You can listen for webhook events locally in real time without the need to set up any additional services. By default, all events are listened to, but you can filter by specific event types or forward them to a local endpoint for testing.
+
+```bash
+fintoc webhooks listen
+fintoc webhooks listen --events payment.succeeded,payment.failed
+fintoc webhooks listen --forward-to http://localhost:3000/webhooks
 ```
 
 ### V2 transfers (JWS required)
