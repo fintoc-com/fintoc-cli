@@ -1,0 +1,64 @@
+name: Update Homebrew tap
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a sincronizar (default: último release publicado)'
+        required: false
+        type: string
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        env:
+          RAW_VERSION: ${{ inputs.version || github.event.release.tag_name }}
+        run: ./.github/scripts/update-homebrew/resolve-version.sh
+
+      - name: Wait for npm publish
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: ./.github/scripts/update-homebrew/wait-npm.sh
+
+      - name: Download tarball and compute SHA256
+        id: sha
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: ./.github/scripts/update-homebrew/download-tarball.sh
+
+      - name: Generate App token for homebrew-tap
+        id: tap-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.FIN_RELEASES_APP_ID }}
+          private-key: ${{ secrets.FIN_RELEASES_PRIVATE_KEY }}
+          owner: fintoc-com
+          repositories: homebrew-tap
+
+      - name: Clone homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: fintoc-com/homebrew-tap
+          token: ${{ steps.tap-token.outputs.token }}
+          path: homebrew-tap
+
+      - name: Update formula
+        env:
+          TARBALL_URL: ${{ steps.sha.outputs.url }}
+          TARBALL_SHA256: ${{ steps.sha.outputs.sha256 }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: ./.github/scripts/update-homebrew/update-formula.sh
+
+      - name: Commit and push
+        env:
+          APP_SLUG: ${{ steps.tap-token.outputs.app-slug }}
+          TOKEN: ${{ steps.tap-token.outputs.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: ./.github/scripts/update-homebrew/commit-push.sh
