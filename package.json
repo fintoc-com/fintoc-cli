@@ -1,6 +1,6 @@
 {
   "name": "@fintoc/cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Fintoc CLI — manage your Fintoc resources from the terminal",
   "type": "module",
   "bin": {
