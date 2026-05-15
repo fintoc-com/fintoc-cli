@@ -1,32 +1,30 @@
-# Release
+# Releasing
 
-## How to publish a new version
+Manual desde Actions. Toma ~3–5 min.
 
-1. Create a release branch and bump the version:
+## Cómo
 
-```bash
-git checkout main && git pull
-git checkout -b release/vX.X.X
-npm version patch --no-git-tag-version   # or minor/major
-```
+1. https://github.com/fintoc-com/fintoc-cli/actions → **Release** → **Run workflow**.
+2. `bump`: `patch` / `minor` / `major`. `release-notes`: markdown opcional.
+3. **Run workflow**. Solo corre desde `main`.
 
-2. Commit, push, and create a PR:
+## Qué hace
 
-```bash
-git add package.json package-lock.json
-git commit -m "chore: bump version to X.X.X"
-git push -u origin release/vX.X.X
-gh pr create --title "Version X.X.X 🎉"
-```
+`Release` workflow (`release.yml`):
 
-3. Merge the PR. Everything else is automatic — `release.yml` detects the merged `release/*` branch, creates a `vX.X.X` tag, and publishes to npm.
+`npm ci` + `lint` + `typecheck` + `build` + `test` →
+[`release/prepare`](https://github.com/fintoc-com/release-action/tree/main/prepare) bumpea local →
+`npm publish --access public --provenance` →
+[`release/finalize`](https://github.com/fintoc-com/release-action/tree/main/finalize) pushea commit + tag, crea GitHub Release.
 
-4. Verify:
+Eso dispara automáticamente `Update Homebrew tap` (`update-homebrew.yml`):
 
-```bash
-npm view @fintoc/cli version
-```
+Espera propagación de npm → descarga tarball, calcula SHA → actualiza `Formula/fintoc.rb` en [`homebrew-tap`](https://github.com/fintoc-com/homebrew-tap) → push como `fin-releases[bot]`.
 
-## CI requirements
+## Si falla
 
-The publish workflow requires a `NPM_TOKEN` secret in the repo (Settings → Secrets and variables → Actions). This is a Granular Access Token from npmjs.com with read/write permissions on `@fintoc/cli` and 2FA bypass enabled.
+| Falla en | Estado | Recovery |
+|---|---|---|
+| Antes o durante `npm publish` | Nada en el remote | Re-run del Release workflow |
+| `release/finalize` (post-publish) | Paquete en npm, sin tag/release | PR con el commit del bump + `gh release create` |
+| `Update Homebrew tap` | npm + tag + release OK, fórmula atrasada | Re-run del Update Homebrew (acepta `version` input para una versión específica) |
