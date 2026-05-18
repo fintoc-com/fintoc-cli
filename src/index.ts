@@ -5,6 +5,7 @@ import { doctorCommand } from './commands/doctor.js'
 import { loginCommand } from './commands/login.js'
 import { logoutCommand } from './commands/logout.js'
 import { openCommand } from './commands/open.js'
+import { triggerCommand } from './commands/trigger.js'
 import { webhooksCommand } from './commands/webhooks.js'
 import { addDefaultAction } from './lib/commands.js'
 import { error } from './lib/output.js'
@@ -16,7 +17,7 @@ declare const __CLI_VERSION__: string
 const versionString = `fintoc/${__CLI_VERSION__} ${process.platform} node-${process.version}`
 
 const AUTH_COMMANDS = new Set(['login', 'logout', 'config'])
-const UTILITY_COMMANDS = new Set(['doctor', 'open', 'webhooks'])
+const UTILITY_COMMANDS = new Set(['doctor', 'open', 'trigger', 'webhooks'])
 
 type HelpEntry = { name: () => string; description: () => string }
 
@@ -77,6 +78,7 @@ logoutCommand(program)
 configCommand(program)
 doctorCommand(program)
 openCommand(program)
+triggerCommand(program)
 webhooksCommand(program)
 registerResourceCommands(program, v1Resources)
 
