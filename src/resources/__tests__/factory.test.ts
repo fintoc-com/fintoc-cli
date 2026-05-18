@@ -40,6 +40,7 @@ const mockManager = {
   get: vi.fn(),
   list: vi.fn(),
   delete: vi.fn(),
+  test: vi.fn(),
 }
 
 const mockClient = {
@@ -760,6 +761,64 @@ describe('factory', () => {
 
         Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true })
       })
+    })
+  })
+
+  describe('test command', () => {
+    const testResourceWithTest: ResourceDef = {
+      name: 'webhook_endpoints',
+      displayName: 'webhook endpoint',
+      cliCommand: 'webhook_endpoints',
+      sdkMethod: 'paymentIntents',
+      sdkNamespace: 'v1',
+      verbs: ['test'],
+      priorityColumns: ['id'],
+      testFlags: [
+        { name: 'type', type: 'string', required: true, description: 'Event type to test' },
+      ],
+    }
+
+    test('calls SDK test with id and parsed flags', async () => {
+      const mockResult = { serialize: () => ({ id: 'we_123', status: 'ok' }) }
+      mockManager.test.mockResolvedValue(mockResult)
+
+      const program = createProgram(testResourceWithTest)
+      await program.parseAsync(
+        ['webhook_endpoints', 'test', 'we_123', '--type', 'payment_intent.succeeded'],
+        { from: 'user' },
+      )
+
+      expect(mockManager.test).toHaveBeenCalledWith('we_123', { type: 'payment_intent.succeeded' })
+      expect(success).toHaveBeenCalledWith(expect.stringContaining('we_123'))
+      expect(printDetail).toHaveBeenCalledWith({ id: 'we_123', status: 'ok' })
+    })
+
+    test('exits with error when required flag is missing', async () => {
+      const exitSpy = mockProcessExit()
+
+      const program = createProgram(testResourceWithTest)
+      await expect(
+        program.parseAsync(['webhook_endpoints', 'test', 'we_123'], { from: 'user' }),
+      ).rejects.toThrow('process.exit')
+
+      expect(mockManager.test).not.toHaveBeenCalled()
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('--type'))
+
+      exitSpy.mockRestore()
+    })
+
+    test('outputs JSON when --json flag is set', async () => {
+      const mockResult = { serialize: () => ({ id: 'we_123', status: 'ok' }) }
+      mockManager.test.mockResolvedValue(mockResult)
+
+      const program = createProgram(testResourceWithTest)
+      await program.parseAsync(
+        ['--json', 'webhook_endpoints', 'test', 'we_123', '--type', 'payment_intent.succeeded'],
+        { from: 'user' },
+      )
+
+      expect(printJson).toHaveBeenCalledWith({ id: 'we_123', status: 'ok' })
+      expect(success).not.toHaveBeenCalled()
     })
   })
 

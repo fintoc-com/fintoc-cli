@@ -4,7 +4,7 @@ export type FintocConfig = {
   color?: boolean
 }
 
-export type Verb = 'create' | 'get' | 'list' | 'delete' | 'expire'
+export type Verb = 'create' | 'get' | 'list' | 'delete' | 'expire' | 'test'
 
 export type FlagType = 'string' | 'integer' | 'boolean' | 'string[]'
 
@@ -28,6 +28,7 @@ export type ResourceDef = {
   createFlags?: FlagDef[]
   listFlags?: FlagDef[]
   getFlags?: FlagDef[]
+  testFlags?: FlagDef[]
   getArg?: { name: string; description: string }
 }
 
@@ -37,6 +38,7 @@ export type SdkManager = {
   list?: (params: Record<string, unknown>) => Promise<unknown>
   delete?: (id: string) => Promise<unknown>
   expire?: (id: string) => Promise<unknown>
+  test?: (id: string, args: Record<string, unknown>) => Promise<unknown>
 }
 
 export type Serializable = {

@@ -36,7 +36,7 @@ describe('resource registry', () => {
     })
 
     test('verbs are valid', () => {
-      const validVerbs = new Set(['create', 'get', 'list', 'delete', 'expire'])
+      const validVerbs = new Set(['create', 'get', 'list', 'delete', 'expire', 'test'])
       resources.forEach((resource) => {
         resource.verbs.forEach((verb) => {
           expect(validVerbs.has(verb)).toBe(true)
@@ -63,6 +63,9 @@ describe('resource registry', () => {
           expect(validTypes.has(flag.type)).toBe(true)
         }
         for (const flag of resource.getFlags ?? []) {
+          expect(validTypes.has(flag.type)).toBe(true)
+        }
+        for (const flag of resource.testFlags ?? []) {
           expect(validTypes.has(flag.type)).toBe(true)
         }
       }
@@ -161,6 +164,13 @@ describe('resource registry', () => {
       const webhooks = resources.find((r) => r.name === 'webhook_endpoints')!
       const eventsFlag = webhooks.createFlags!.find((f) => f.name === 'enabled-events')!
       expect(eventsFlag.type).toBe('string[]')
+    })
+
+    test('webhook_endpoints supports test verb with required type flag', () => {
+      const webhooks = resources.find((r) => r.name === 'webhook_endpoints')!
+      expect(webhooks.verbs).toContain('test')
+      const requiredTestFlags = webhooks.testFlags!.filter((f) => f.required).map((f) => f.name)
+      expect(requiredTestFlags).toEqual(['type'])
     })
 
     test('account_verifications requires account-number and needs JWS', () => {
