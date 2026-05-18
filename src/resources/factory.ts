@@ -1,13 +1,14 @@
 import type { Command } from 'commander'
 import type { Fintoc } from 'fintoc'
 import type { FlagDef, ResourceDef, SdkManager, Serializable } from '../types.js'
-import { readFileSync } from 'node:fs'
 import { confirm } from '@inquirer/prompts'
+import { merge, set } from 'es-toolkit/compat'
 import { createClient, resolveAuth } from '../lib/auth.js'
 import { addDefaultAction } from '../lib/commands.js'
 import { readConfig } from '../lib/config.js'
 import { DEFAULT_LIST_LIMIT } from '../lib/constants.js'
 import { handleError } from '../lib/errors.js'
+import { readJsonBody } from '../lib/json-body.js'
 import { error, hint, printDetail, printJson, printTable, success } from '../lib/output.js'
 
 type RootOpts = {
@@ -72,19 +73,6 @@ const addFlags = (cmd: Command, flags: FlagDef[]) => {
   }
 }
 
-const setNestedValue = (obj: Record<string, unknown>, path: string, value: unknown) => {
-  const keys = path.split('.')
-  let current = obj
-  for (let i = 0; i < keys.length - 1; i++) {
-    const key = keys[i]
-    if (!(key in current) || typeof current[key] !== 'object' || current[key] === null) {
-      current[key] = {}
-    }
-    current = current[key] as Record<string, unknown>
-  }
-  current[keys[keys.length - 1]] = value
-}
-
 const collectSetOptions = (cmd: Command, flags: FlagDef[]) => {
   const opts = cmd.opts()
   const result: Record<string, unknown> = {}
@@ -94,7 +82,7 @@ const collectSetOptions = (cmd: Command, flags: FlagDef[]) => {
     if (opts[camelName] !== undefined) {
       const value = parseFlagValue(String(opts[camelName]), flag)
       if (flag.nestedPath) {
-        setNestedValue(result, flag.nestedPath, value)
+        set(result, flag.nestedPath, value)
       } else {
         const snakeName = toSnakeCase(flag.name)
         result[snakeName] = value
@@ -103,59 +91,6 @@ const collectSetOptions = (cmd: Command, flags: FlagDef[]) => {
   }
 
   return result
-}
-
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v)
-
-const deepMerge = (
-  target: Record<string, unknown>,
-  source: Record<string, unknown>,
-): Record<string, unknown> => {
-  const result = { ...target }
-  for (const key of Object.keys(source)) {
-    const sourceVal = source[key]
-    const targetVal = result[key]
-    if (isPlainObject(sourceVal) && isPlainObject(targetVal)) {
-      result[key] = deepMerge(targetVal, sourceVal)
-    } else {
-      result[key] = sourceVal
-    }
-  }
-  return result
-}
-
-const readJsonBody = (fromJson: string): Record<string, unknown> => {
-  if (fromJson === '-' && process.stdin.isTTY) {
-    error('--from-json -: no input on stdin. Pipe a file or use a path instead')
-    process.exit(1)
-  }
-
-  let raw: string
-  try {
-    raw = fromJson === '-' ? readFileSync(0, 'utf-8') : readFileSync(fromJson, 'utf-8')
-  } catch (err) {
-    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
-      error(`--from-json: file '${fromJson}' not found`)
-      process.exit(1)
-    }
-    throw err
-  }
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    error(`--from-json: invalid JSON${fromJson !== '-' ? ` in ${fromJson}` : ''}`)
-    process.exit(1)
-  }
-
-  if (!isPlainObject(parsed)) {
-    error('--from-json must contain a JSON object')
-    process.exit(1)
-  }
-
-  return parsed as Record<string, unknown>
 }
 
 const validateRequired = (cmd: Command, flags: FlagDef[], fullCliPath: string, verb: string) => {
@@ -225,7 +160,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
     try {
       const jsonBody = localOpts.fromJson ? readJsonBody(localOpts.fromJson) : {}
       const flagBody = collectSetOptions(actionCmd, resource.createFlags ?? [])
-      const body = deepMerge(jsonBody, flagBody)
+      const body = merge({}, jsonBody, flagBody) as Record<string, unknown>
 
       const client = resolveClient(rootOpts, resource, localOpts.jwsPrivateKey)
       const manager = getManager(client, resource)
