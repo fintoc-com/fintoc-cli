@@ -425,12 +425,51 @@ const registerExpire = (parent: Command, resource: ResourceDef) => {
   })
 }
 
+const registerTest = (parent: Command, resource: ResourceDef) => {
+  const cmd = parent
+    .command('test <id>')
+    .description(`Send a test event to a ${resource.displayName}`)
+  addFlags(cmd, resource.testFlags ?? [])
+  cmd.action(async (id: string, _opts: unknown, actionCmd: Command) => {
+    const rootOpts = getRootOpts(actionCmd)
+    const flags = resource.testFlags ?? []
+
+    validateRequired(actionCmd, flags, resourceCliPath(resource), 'test')
+
+    try {
+      const args = collectSetOptions(actionCmd, flags)
+      const client = resolveClient(rootOpts, resource)
+      const manager = getManager(client, resource)
+
+      const result = await manager.test!(id, args)
+      const data = serialize(result)
+
+      if (rootOpts.json) {
+        printJson(data)
+      } else {
+        success(`Test event sent to ${resource.displayName} '${id}'`)
+        hint('')
+        printDetail(data)
+      }
+    } catch (err) {
+      handleError(err, {
+        cliPath: resourceCliPath(resource),
+        verb: 'test',
+        id,
+        json: rootOpts.json,
+        availableVerbs: resource.verbs,
+      })
+    }
+  })
+}
+
 const verbRegistrars = {
   create: registerCreate,
   get: registerGet,
   list: registerList,
   delete: registerDelete,
   expire: registerExpire,
+  test: registerTest,
 } satisfies Record<string, (parent: Command, resource: ResourceDef) => void>
 
 export const registerResourceCommands = (program: Command, resourceDefs: ResourceDef[]) => {

@@ -137,7 +137,7 @@ export const resources: ResourceDef[] = [
     cliCommand: 'webhook_endpoints',
     sdkMethod: 'webhookEndpoints',
     sdkNamespace: 'v1',
-    verbs: ['create', 'get', 'list', 'delete'],
+    verbs: ['create', 'get', 'list', 'delete', 'test'],
     priorityColumns: ['id', 'name', 'url', 'status', 'created_at'],
     createFlags: [
       {
@@ -155,6 +155,14 @@ export const resources: ResourceDef[] = [
       { name: 'description', type: 'string', description: 'Description of the webhook endpoint' },
     ],
     listFlags: [],
+    testFlags: [
+      {
+        name: 'type',
+        type: 'string',
+        required: true,
+        description: 'Event type to test (e.g., payment_intent.succeeded)',
+      },
+    ],
   },
   {
     name: 'charges',
