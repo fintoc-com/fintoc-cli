@@ -99,6 +99,7 @@ Resources follow the pattern `fintoc <resource> <action> [flags]`.
 | `fintoc doctor`          | Check CLI setup and connectivity          |
 | `fintoc open dashboard`  | Open the Fintoc dashboard in your browser |
 | `fintoc webhooks listen` | Listen for webhook events in real time    |
+| `fintoc trigger`         | Trigger a test event                      |
 
 ## Usage examples
 
@@ -127,13 +128,30 @@ fintoc charges create --from-json payload.json
 cat payload.json | fintoc charges create --from-json -
 ```
 
-Flags can be mixed with `--from-json` — flag values take precedence over JSON keys.
+Flags can be mixed with `--from-json` — flag values take precedence over JSON keys. Objects deep-merge, but arrays are replaced wholesale: a flag that writes an array overwrites the JSON array completely instead of merging element-by-element.
+
+```bash
+# payload.json: { "url": "https://example.com", "enabled_events": ["a", "b", "c"] }
+fintoc webhook_endpoints create --from-json payload.json --enabled-events only
+# → sent as { url: "https://example.com", enabled_events: ["only"] }
+```
 
 ### Delete with confirmation
 
 ```bash
 fintoc webhook_endpoints delete we_test_abc123
 fintoc webhook_endpoints delete we_test_abc123 --yes   # Skip confirmation (CI-friendly)
+```
+
+### Trigger test events
+
+Fire a test event against your account — useful for exercising webhook handlers without producing real activity. Combine `--override` (dot-notation, repeatable) and `--from-json` to shape the payload; flags take precedence over JSON, and arrays are replaced wholesale (same semantics as `create --from-json`).
+
+```bash
+fintoc trigger payment_intent.succeeded
+fintoc trigger payment_intent.succeeded --override amount=5000 --override currency=CLP
+fintoc trigger payment_intent.succeeded --override metadata.order_id=abc123
+fintoc trigger payment_intent.succeeded --from-json overrides.json
 ```
 
 ### Listen for webhooks

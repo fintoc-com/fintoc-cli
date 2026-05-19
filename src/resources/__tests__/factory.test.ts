@@ -448,6 +448,51 @@ describe('factory', () => {
         })
       })
 
+      test('a string[] flag replaces the JSON array completely, leaving no leftover elements', async () => {
+        const webhookEndpointsResource: ResourceDef = {
+          name: 'webhook_endpoints',
+          displayName: 'webhook endpoint',
+          cliCommand: 'webhook_endpoints',
+          sdkMethod: 'paymentIntents',
+          sdkNamespace: 'v1',
+          verbs: ['create'],
+          priorityColumns: ['id'],
+          createFlags: [
+            { name: 'url', type: 'string', required: true },
+            { name: 'enabled-events', type: 'string[]', required: true },
+          ],
+          listFlags: [],
+        }
+
+        vi.mocked(readFileSync).mockReturnValue(
+          JSON.stringify({
+            url: 'https://example.com/hook',
+            enabled_events: ['payment_intent.succeeded', 'payment_intent.failed', 'charge.created'],
+          }),
+        )
+
+        const mockResult = { serialize: () => ({ id: 'we_array' }) }
+        mockManager.create.mockResolvedValue(mockResult)
+
+        const program = createProgram(webhookEndpointsResource)
+        await program.parseAsync(
+          [
+            'webhook_endpoints',
+            'create',
+            '--from-json',
+            'base.json',
+            '--enabled-events',
+            'charge.refunded',
+          ],
+          { from: 'user' },
+        )
+
+        expect(mockManager.create).toHaveBeenCalledWith({
+          url: 'https://example.com/hook',
+          enabled_events: ['charge.refunded'],
+        })
+      })
+
       test('deep merges nested flag values over JSON', async () => {
         const nestedResource: ResourceDef = {
           name: 'checkout_sessions',
