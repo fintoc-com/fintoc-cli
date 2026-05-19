@@ -1,8 +1,9 @@
 import type { Command } from 'commander'
 import type { Serializable } from '../types.js'
 import { InvalidArgumentError } from 'commander'
-import { merge, set } from 'es-toolkit/compat'
+import { set } from 'es-toolkit/compat'
 import { createClient, resolveAuth } from '../lib/auth.js'
+import { deepMerge } from '../lib/deep-merge.js'
 import { handleError } from '../lib/errors.js'
 import { readJsonBody } from '../lib/json-body.js'
 import { hint, printDetail, printJson, success } from '../lib/output.js'
@@ -79,7 +80,7 @@ export const triggerCommand = (program: Command) => {
   cmd.action(async (eventType: string, opts: TriggerOpts, actionCmd: Command) => {
     const rootOpts = actionCmd.parent!.opts<RootOpts>()
     const base = opts.fromJson ? readJsonBody(opts.fromJson) : {}
-    const overrides = merge({}, base, opts.override) as Record<string, unknown>
+    const overrides = deepMerge(base, opts.override)
 
     try {
       const auth = resolveAuth(rootOpts)

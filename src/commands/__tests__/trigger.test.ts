@@ -256,6 +256,41 @@ describe('trigger command', () => {
     })
   })
 
+  describe('with an --override targeting an array key', () => {
+    test('replaces the array completely, leaving no leftover elements from --from-json', async () => {
+      vi.mocked(readFileSync).mockReturnValue(
+        JSON.stringify({
+          tags: ['a', 'b', 'c'],
+          metadata: { labels: ['old-1', 'old-2', 'old-3'] },
+        }),
+      )
+      const trigger = createTriggerStub()
+      const program = createProgram()
+
+      await program.parseAsync(
+        [
+          'trigger',
+          'payment_intent.succeeded',
+          '--from-json',
+          '/tmp/base.json',
+          '--override',
+          'tags=["x"]',
+          '--override',
+          'metadata.labels=["only"]',
+        ],
+        { from: 'user' },
+      )
+
+      expect(trigger).toHaveBeenCalledWith({
+        type: 'payment_intent.succeeded',
+        overrides: {
+          tags: ['x'],
+          metadata: { labels: ['only'] },
+        },
+      })
+    })
+  })
+
   describe('with multiple --override flags', () => {
     test('merges them into one overrides object', async () => {
       const trigger = createTriggerStub()

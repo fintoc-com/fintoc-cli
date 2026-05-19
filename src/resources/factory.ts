@@ -2,11 +2,12 @@ import type { Command } from 'commander'
 import type { Fintoc } from 'fintoc'
 import type { FlagDef, ResourceDef, SdkManager, Serializable } from '../types.js'
 import { confirm } from '@inquirer/prompts'
-import { merge, set } from 'es-toolkit/compat'
+import { set } from 'es-toolkit/compat'
 import { createClient, resolveAuth } from '../lib/auth.js'
 import { addDefaultAction } from '../lib/commands.js'
 import { readConfig } from '../lib/config.js'
 import { DEFAULT_LIST_LIMIT } from '../lib/constants.js'
+import { deepMerge } from '../lib/deep-merge.js'
 import { handleError } from '../lib/errors.js'
 import { readJsonBody } from '../lib/json-body.js'
 import { error, hint, printDetail, printJson, printTable, success } from '../lib/output.js'
@@ -160,7 +161,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
     try {
       const jsonBody = localOpts.fromJson ? readJsonBody(localOpts.fromJson) : {}
       const flagBody = collectSetOptions(actionCmd, resource.createFlags ?? [])
-      const body = merge({}, jsonBody, flagBody) as Record<string, unknown>
+      const body = deepMerge(jsonBody, flagBody)
 
       const client = resolveClient(rootOpts, resource, localOpts.jwsPrivateKey)
       const manager = getManager(client, resource)
