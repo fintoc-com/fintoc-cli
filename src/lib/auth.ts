@@ -8,20 +8,16 @@ export type AuthSource = 'flag' | 'env' | 'config'
 export type ResolvedAuth = {
   secretKey: string
   source: AuthSource
+  keyName?: string
+  expiresAt?: string
 }
 
-export type WhoamiResponse = {
-  organizationName: string
-  mode: string
-  apiVersion: string
-}
-
-export const resolveAuth = (options?: { apiKey?: string }) => {
+export const resolveAuth = (options?: { apiKey?: string }): ResolvedAuth => {
   if (options?.apiKey !== undefined) {
     if (!options.apiKey.trim()) {
       throw new Error('API key is empty. Provide a valid key with --api-key or remove the flag.')
     }
-    return { secretKey: options.apiKey, source: 'flag' as const }
+    return { secretKey: options.apiKey, source: 'flag' }
   }
 
   const envKey = process.env.FINTOC_API_KEY
@@ -29,12 +25,17 @@ export const resolveAuth = (options?: { apiKey?: string }) => {
     if (!envKey.trim()) {
       throw new Error('FINTOC_API_KEY is set but empty. Provide a valid key or unset the variable.')
     }
-    return { secretKey: envKey, source: 'env' as const }
+    return { secretKey: envKey, source: 'env' }
   }
 
   const config = readConfig()
   if (config.secret_key) {
-    return { secretKey: config.secret_key, source: 'config' as const }
+    return {
+      secretKey: config.secret_key,
+      source: 'config',
+      keyName: config.key_name,
+      expiresAt: config.expires_at,
+    }
   }
 
   throw new Error(
@@ -59,9 +60,13 @@ export const createClient = (secretKey: string, jwsPrivateKey?: string) => {
 export const whoami = async (secretKey: string) => {
   const client = createClient(secretKey)
   const result = await client.whoami.get('whoami')
+  const mode = result.api_key.mode
+  if (mode !== 'test' && mode !== 'live') {
+    throw new Error(`Unexpected mode from API: ${mode}`)
+  }
   return {
     organizationName: result.organization.name,
-    mode: result.api_key.mode,
+    mode,
     apiVersion:
       result.organization.api_version instanceof Date
         ? result.organization.api_version.toISOString().slice(0, 10)
