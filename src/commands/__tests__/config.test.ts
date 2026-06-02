@@ -1,3 +1,4 @@
+import type { FintocConfig } from '../../types.js'
 import { Command } from 'commander'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { resolveAuth, whoami } from '../../lib/auth.js'
@@ -13,7 +14,7 @@ vi.mock('../../lib/auth.js', () => ({
 
 vi.mock('../../lib/config.js', () => ({
   CONFIG_PATH: '/mock-home/.fintoc/config.toml',
-  readConfig: vi.fn(),
+  readConfig: vi.fn(() => ({})),
   writeConfig: vi.fn(),
 }))
 
@@ -39,11 +40,14 @@ describe('config show command', () => {
     vi.clearAllMocks()
   })
 
-  const setupAuth = () => {
+  const setupAuth = (storedConfig: FintocConfig = { secret_key: 'sk_test_abc123' }) => {
     vi.mocked(resolveAuth).mockReturnValue({
       secretKey: 'sk_test_abc123',
       source: 'config',
+      keyName: storedConfig.key_name,
+      expiresAt: storedConfig.expires_at,
     })
+    vi.mocked(readConfig).mockReturnValue(storedConfig)
     vi.mocked(whoami).mockResolvedValue({
       organizationName: 'Acme Corp',
       mode: 'test',
@@ -159,6 +163,65 @@ describe('config show command', () => {
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('Unable to reach Fintoc API'))
       expect(log).toHaveBeenCalledWith(expect.stringContaining('  -'))
       expect(log).toHaveBeenCalledWith(expect.stringContaining('env var'))
+    })
+  })
+
+  describe('when stored config has key_name and expires_at', () => {
+    test('shows them in the text output', async () => {
+      setupAuth({
+        secret_key: 'sk_test_abc123',
+        key_name: 'francisca-mac-cli',
+        expires_at: '2026-08-16T12:00:00Z',
+      })
+
+      const program = createProgram()
+      await program.parseAsync(['config', 'show'], { from: 'user' })
+
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('francisca-mac-cli'))
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('2026-08-16T12:00:00Z'))
+    })
+
+    test('includes them in the JSON output', async () => {
+      setupAuth({
+        secret_key: 'sk_test_abc123',
+        key_name: 'francisca-mac-cli',
+        expires_at: '2026-08-16T12:00:00Z',
+      })
+
+      const program = createProgram()
+      await program.parseAsync(['--json', 'config', 'show'], { from: 'user' })
+
+      expect(printJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          key_name: 'francisca-mac-cli',
+          expires_at: '2026-08-16T12:00:00Z',
+        }),
+      )
+    })
+  })
+
+  describe('when the active key comes from a flag/env (not the stored one)', () => {
+    test('does not leak the stored key_name', async () => {
+      vi.mocked(resolveAuth).mockReturnValue({
+        secretKey: 'sk_test_inline',
+        source: 'flag',
+      })
+      vi.mocked(readConfig).mockReturnValue({
+        secret_key: 'sk_test_stored',
+        key_name: 'stored-name',
+      })
+      vi.mocked(whoami).mockResolvedValue({
+        organizationName: 'Acme',
+        mode: 'test',
+        apiVersion: '2023-03-15',
+      })
+
+      const program = createProgram()
+      await program.parseAsync(['--json', 'config', 'show'], { from: 'user' })
+
+      expect(printJson).toHaveBeenCalledWith(
+        expect.objectContaining({ key_name: null, expires_at: null }),
+      )
     })
   })
 })
