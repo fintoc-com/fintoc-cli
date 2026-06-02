@@ -5,8 +5,12 @@ export const NPM_CHECK_TIMEOUT_MS = 10_000
 export const CONFIG_FILE_PERMISSIONS = 0o600
 export const CONFIG_DIR_PERMISSIONS = 0o700
 
-export const DASHBOARD_URL = 'https://dashboard.fintoc.com/'
-export const DASHBOARD_API_KEYS_URL = 'https://dashboard.fintoc.com/api-keys'
+export const DASHBOARD_ORIGIN = 'https://dashboard.fintoc.com'
+export const DASHBOARD_URL = `${DASHBOARD_ORIGIN}/`
+export const DASHBOARD_AUTHORIZE_URL = `${DASHBOARD_ORIGIN}/cli/authorize`
+export const DASHBOARD_API_KEYS_URL = `${DASHBOARD_ORIGIN}/api-keys`
+export const BROWSER_LOGIN_TIMEOUT_MS = 5 * 60 * 1000
+export const BROWSER_LOGIN_SUGGESTED_EXPIRATION = '90d'
 export const DOCS_TRANSFERS_URL = 'https://docs.fintoc.com/docs/transfers'
 export const DOCS_PAYMENT_INTENTS_URL =
   'https://docs.fintoc.com/reference/payment-intent-object-copy.md'
