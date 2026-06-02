@@ -31,6 +31,7 @@ export type BrowserLoginOptions = {
 export type BrowserLoginSession = {
   url: string
   result: Promise<BrowserLoginResult>
+  cancel: () => void
 }
 
 export type BrowserLoginErrorReason = 'denied' | 'timeout' | 'mismatch'
@@ -200,6 +201,8 @@ export const startBrowserLogin = async (
   }, timeoutMs)
   timeout.unref()
 
+  const cancel = () => reject(new Error('Browser login cancelled'))
+
   const result = baseResult.finally(() => {
     clearTimeout(timeout)
     server.close()
@@ -276,5 +279,5 @@ export const startBrowserLogin = async (
 
   openInBrowser(url).catch(() => {})
 
-  return { url, result }
+  return { url, result, cancel }
 }
