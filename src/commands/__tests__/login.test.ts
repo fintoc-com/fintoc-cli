@@ -285,6 +285,47 @@ describe('login command', () => {
     })
   })
 
+  describe('when the pasted key prefix does not match --mode', () => {
+    test('rejects with mismatch and hints at the right --mode', async () => {
+      mockBrowserPending()
+      vi.mocked(password).mockResolvedValue('sk_live_pasted')
+
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit')
+      })
+
+      const program = createProgram()
+      await expect(program.parseAsync(['login'], { from: 'user' })).rejects.toThrow('process.exit')
+
+      expect(whoami).not.toHaveBeenCalled()
+      expect(writeConfig).not.toHaveBeenCalled()
+      expect(error).toHaveBeenCalledWith(expect.stringContaining("'live'"))
+      expect(hint).toHaveBeenCalledWith(expect.stringContaining('fintoc login --mode live'))
+
+      exitSpy.mockRestore()
+    })
+
+    test('rejects sk_test_ paste when --mode live was requested', async () => {
+      mockBrowserPending()
+      vi.mocked(password).mockResolvedValue('sk_test_pasted')
+
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit')
+      })
+
+      const program = createProgram()
+      await expect(
+        program.parseAsync(['login', '--mode', 'live'], { from: 'user' }),
+      ).rejects.toThrow('process.exit')
+
+      expect(whoami).not.toHaveBeenCalled()
+      expect(writeConfig).not.toHaveBeenCalled()
+      expect(hint).toHaveBeenCalledWith(expect.stringContaining('fintoc login --mode test'))
+
+      exitSpy.mockRestore()
+    })
+  })
+
   describe('when the browser flow times out', () => {
     test('exits with an error and hints', async () => {
       mockBrowserRejects(

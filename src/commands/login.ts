@@ -16,7 +16,15 @@ import { error, hint, info, success, warn } from '../lib/output.js'
 type LoginOpts = { mode: FintocMode; yes?: boolean }
 type RootOpts = { apiKey?: string }
 
-const SECRET_KEY_PATTERN = /^sk_(?:test|live)_/
+const modeFromSecret = (secret: string): FintocMode | null => {
+  if (secret.startsWith('sk_live_')) {
+    return 'live'
+  }
+  if (secret.startsWith('sk_test_')) {
+    return 'test'
+  }
+  return null
+}
 
 const isPromptCancelled = (err: unknown): boolean =>
   err instanceof Error && err.name === 'ExitPromptError'
@@ -51,7 +59,7 @@ const persistAndAnnounce = (existingConfig: FintocConfig, outcome: BrowserLoginR
 }
 
 const saveSecret = async (existingConfig: FintocConfig, secretKey: string) => {
-  if (!SECRET_KEY_PATTERN.test(secretKey)) {
+  if (!modeFromSecret(secretKey)) {
     error(`Invalid key format. Expected 'sk_test_...' or 'sk_live_...'.`)
     process.exit(1)
   }
@@ -70,7 +78,7 @@ const confirmRelogin = async ({ config, skipPrompt }: ConfirmReloginOpts): Promi
     return true
   }
 
-  const mode = config.secret_key.startsWith('sk_live_') ? 'live' : 'test'
+  const mode = modeFromSecret(config.secret_key) ?? 'test'
   const keySuffix = config.key_name ? ` (key '${config.key_name}')` : ''
 
   if (!process.stdin.isTTY) {
@@ -96,7 +104,7 @@ const promptPaste = (signal: AbortSignal) =>
       message: 'Or paste your secret key:',
       mask: '•',
       validate: (v) =>
-        SECRET_KEY_PATTERN.test(v.trim()) || `Expected 'sk_test_...' or 'sk_live_...'`,
+        modeFromSecret(v.trim()) !== null || `Expected 'sk_test_...' or 'sk_live_...'`,
     },
     { signal },
   ).then((s) => s.trim())
@@ -140,6 +148,13 @@ const runBrowserFlow = async (existingConfig: FintocConfig, mode: FintocMode) =>
     if (winner.kind === 'callback') {
       persistAndAnnounce(existingConfig, winner.result)
     } else {
+      const pastedMode = modeFromSecret(winner.secretKey)
+      if (pastedMode !== mode) {
+        throw new BrowserLoginError(
+          'mismatch',
+          `Pasted key looks like '${pastedMode}' but expected '${mode}'`,
+        )
+      }
       await saveSecret(existingConfig, winner.secretKey)
     }
   } catch (err) {
