@@ -56,7 +56,8 @@ The CLI resolves your API key in this order:
 3. `~/.fintoc/config.toml` (saved via `fintoc login`)
 
 ```bash
-fintoc login                                         # Interactive login
+fintoc login                                         # Interactive login (test mode by default)
+fintoc login --mode live                             # Authenticate in live mode
 fintoc login --api-key sk_test_...                   # Non-interactive login
 fintoc payment_intents list --api-key sk_test_...    # One-off override
 fintoc config show                                   # Show active configuration
