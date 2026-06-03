@@ -1,3 +1,5 @@
+export type FintocMode = 'test' | 'live'
+
 export type FintocConfig = {
   secret_key?: string
   jws_private_key?: string

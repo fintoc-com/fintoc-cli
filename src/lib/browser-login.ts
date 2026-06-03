@@ -1,5 +1,6 @@
 import type { IncomingMessage, Server, ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import type { FintocMode } from '../types.js'
 import { Buffer } from 'node:buffer'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { createServer } from 'node:http'
@@ -13,18 +14,16 @@ import {
   DASHBOARD_ORIGIN,
 } from './constants.js'
 
-export type BrowserLoginMode = 'test' | 'live'
-
 export type BrowserLoginResult = {
   secret: string
   organizationName: string
-  mode: BrowserLoginMode
+  mode: FintocMode
   keyName?: string
   expiresAt?: string
 }
 
 export type BrowserLoginOptions = {
-  mode: BrowserLoginMode
+  mode: FintocMode
   timeoutMs?: number
 }
 
@@ -65,7 +64,7 @@ export const buildAuthorizeUrl = ({
   callback,
   suggestedName,
 }: {
-  mode: BrowserLoginMode
+  mode: FintocMode
   state: string
   callback: string
   suggestedName: string
@@ -137,7 +136,7 @@ const callbackPayloadSchema = z.union([deniedPayloadSchema, successPayloadSchema
 export const parseCallback = (
   body: unknown,
   expectedState: string,
-  expectedMode: BrowserLoginMode,
+  expectedMode: FintocMode,
 ): CallbackOutcome => {
   const parsed = callbackPayloadSchema.safeParse(body)
   if (!parsed.success) {

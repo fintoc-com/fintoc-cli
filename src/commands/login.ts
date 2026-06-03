@@ -1,11 +1,7 @@
 import type { Command } from 'commander'
 
-import type {
-  BrowserLoginMode,
-  BrowserLoginResult,
-  BrowserLoginSession,
-} from '../lib/browser-login.js'
-import type { FintocConfig } from '../types.js'
+import type { BrowserLoginResult, BrowserLoginSession } from '../lib/browser-login.js'
+import type { FintocConfig, FintocMode } from '../types.js'
 
 import { confirm, password } from '@inquirer/prompts'
 import { Option } from 'commander'
@@ -17,7 +13,7 @@ import { BROWSER_LOGIN_TIMEOUT_MS } from '../lib/constants.js'
 import { handleError } from '../lib/errors.js'
 import { error, hint, info, success, warn } from '../lib/output.js'
 
-type LoginOpts = { mode: BrowserLoginMode; yes?: boolean }
+type LoginOpts = { mode: FintocMode; yes?: boolean }
 type RootOpts = { apiKey?: string }
 
 const SECRET_KEY_PATTERN = /^sk_(?:test|live)_/
@@ -105,7 +101,7 @@ const promptPaste = (signal: AbortSignal) =>
     { signal },
   ).then((s) => s.trim())
 
-const handleBrowserError = (err: BrowserLoginError, mode: BrowserLoginMode): never => {
+const handleBrowserError = (err: BrowserLoginError, mode: FintocMode): never => {
   error(err.message)
   switch (err.reason) {
     case 'mismatch': {
@@ -124,7 +120,7 @@ const handleBrowserError = (err: BrowserLoginError, mode: BrowserLoginMode): nev
   process.exit(1)
 }
 
-const runBrowserFlow = async (existingConfig: FintocConfig, mode: BrowserLoginMode) => {
+const runBrowserFlow = async (existingConfig: FintocConfig, mode: FintocMode) => {
   const promptAc = new AbortController()
   let session: BrowserLoginSession | undefined
   try {
