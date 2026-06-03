@@ -1,6 +1,8 @@
 export type FintocConfig = {
   secret_key?: string
   jws_private_key?: string
+  key_name?: string
+  expires_at?: string
   color?: boolean
 }
 

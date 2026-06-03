@@ -54,6 +54,47 @@ describe('resolveAuth', () => {
     expect(result).toEqual({ secretKey: 'sk_test_config', source: 'config' })
   })
 
+  test('propagates key_name and expires_at when source is config', () => {
+    vi.mocked(readConfig).mockReturnValue({
+      secret_key: 'sk_test_config',
+      key_name: 'francisca-mac-cli',
+      expires_at: '2026-08-16T12:00:00Z',
+    })
+
+    const result = resolveAuth()
+    expect(result).toEqual({
+      secretKey: 'sk_test_config',
+      source: 'config',
+      keyName: 'francisca-mac-cli',
+      expiresAt: '2026-08-16T12:00:00Z',
+    })
+  })
+
+  test('does not propagate key_name or expires_at when source is flag', () => {
+    vi.mocked(readConfig).mockReturnValue({
+      secret_key: 'sk_test_config',
+      key_name: 'francisca-mac-cli',
+      expires_at: '2026-08-16T12:00:00Z',
+    })
+
+    const result = resolveAuth({ apiKey: 'sk_test_flag' })
+    expect(result.keyName).toBeUndefined()
+    expect(result.expiresAt).toBeUndefined()
+  })
+
+  test('does not propagate key_name or expires_at when source is env', () => {
+    process.env.FINTOC_API_KEY = 'sk_test_env'
+    vi.mocked(readConfig).mockReturnValue({
+      secret_key: 'sk_test_config',
+      key_name: 'francisca-mac-cli',
+      expires_at: '2026-08-16T12:00:00Z',
+    })
+
+    const result = resolveAuth()
+    expect(result.keyName).toBeUndefined()
+    expect(result.expiresAt).toBeUndefined()
+  })
+
   test('throws when --api-key is empty string', () => {
     process.env.FINTOC_API_KEY = 'sk_test_env'
     vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })

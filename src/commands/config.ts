@@ -1,4 +1,5 @@
 import type { Command } from 'commander'
+import type { AuthSource } from '../lib/auth.js'
 import type { FintocConfig } from '../types.js'
 import { maskKey, resolveAuth, whoami } from '../lib/auth.js'
 import { CONFIG_PATH, readConfig, writeConfig } from '../lib/config.js'
@@ -21,13 +22,15 @@ export const configCommand = (program: Command) => {
     .description('Show current configuration')
     .action(async (_opts: unknown, cmd: Command) => {
       let secretKey: string
-      let source: 'flag' | 'env' | 'config'
+      let source: AuthSource
+      let keyName: string | null = null
+      let expiresAt: string | null = null
 
       const sourceLabels = {
         flag: 'inline flag (--api-key)',
         env: 'env var (FINTOC_API_KEY)',
         config: 'config file',
-      } satisfies Record<string, string>
+      } satisfies Record<AuthSource, string>
 
       const rootOpts = cmd.optsWithGlobals<{ apiKey?: string; json?: boolean }>()
 
@@ -35,6 +38,8 @@ export const configCommand = (program: Command) => {
         const auth = resolveAuth(rootOpts)
         secretKey = auth.secretKey
         source = auth.source
+        keyName = auth.keyName ?? null
+        expiresAt = auth.expiresAt ?? null
       } catch {
         if (rootOpts.json) {
           printJson({ authenticated: false, config_path: CONFIG_PATH })
@@ -69,6 +74,8 @@ export const configCommand = (program: Command) => {
           organization: orgName,
           mode,
           secret_key: maskKey(secretKey),
+          key_name: keyName,
+          expires_at: expiresAt,
           api_version: apiVersion,
           config_path: CONFIG_PATH,
           source,
@@ -80,6 +87,12 @@ export const configCommand = (program: Command) => {
       log(`  Organization:  ${orgName ?? '-'}`)
       log(`  Mode:          ${mode ?? '-'}`)
       log(`  Secret key:    ${maskKey(secretKey)}`)
+      if (keyName) {
+        log(`  Key name:      ${keyName}`)
+      }
+      if (expiresAt) {
+        log(`  Expires at:    ${expiresAt}`)
+      }
       log(`  API version:   ${apiVersion ?? '-'}`)
       log(`  Config path:   ${CONFIG_PATH}`)
       log(`  Source:        ${sourceLabels[source]}`)
