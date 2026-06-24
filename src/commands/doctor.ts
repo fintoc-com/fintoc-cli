@@ -6,9 +6,12 @@ import { CONFIG_PATH, readConfig } from '../lib/config.js'
 import {
   API_HOST,
   CONFIG_FILE_PERMISSIONS,
+  DASHBOARD_API_KEYS_URL,
+  IP_ALLOWLIST_ERROR_CODES,
   NPM_CHECK_TIMEOUT_MS,
   NPM_PACKAGE_NAME,
 } from '../lib/constants.js'
+import { parseFintocError } from '../lib/errors.js'
 import { error, hint, info, success, warn } from '../lib/output.js'
 import { getCliVersion } from '../lib/version.js'
 
@@ -71,7 +74,23 @@ const checkConnectivity = async (secretKey: string) => {
     const info = await whoami(secretKey)
     success(`Connectivity        ${API_HOST} reachable`)
     success(`Organization        ${info.organizationName} (${info.mode} mode)`)
-  } catch {
+  } catch (err) {
+    const fields = parseFintocError(err)
+
+    if (fields?.code && IP_ALLOWLIST_ERROR_CODES.has(fields.code)) {
+      error(`Connectivity        ${API_HOST} reachable, but your IP is not allow-listed`)
+      hint(`                    ${fields.message ?? 'Your IP is not in the allowed CIDR blocks.'}`)
+      hint('                    Add your IP to the allow list in the dashboard:')
+      hint(`                    ${DASHBOARD_API_KEYS_URL}`)
+      return
+    }
+
+    if (fields?.type === 'authentication_error') {
+      error(`Connectivity        ${API_HOST} reachable, but the API key was rejected`)
+      hint('                    Check your API key is valid for this environment.')
+      return
+    }
+
     error(`Connectivity        could not reach ${API_HOST}`)
     hint('                    Check your internet connection and API key')
   }
