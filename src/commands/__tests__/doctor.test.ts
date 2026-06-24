@@ -123,7 +123,7 @@ describe('doctor command', () => {
       await program.parseAsync(['doctor'], { from: 'user' })
 
       expect(error).toHaveBeenCalledWith(expect.stringContaining('API key'))
-      expect(hint).toHaveBeenCalledWith(expect.stringContaining('skipped'))
+      expect(info).toHaveBeenCalledWith(expect.stringContaining('skipped'))
       expect(whoami).not.toHaveBeenCalled()
     })
   })

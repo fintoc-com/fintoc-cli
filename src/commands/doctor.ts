@@ -15,6 +15,13 @@ import { parseFintocError } from '../lib/errors.js'
 import { error, hint, info, success, warn } from '../lib/output.js'
 import { getCliVersion } from '../lib/version.js'
 
+const LABEL_WIDTH = 20
+const DETAIL_INDENT = 2 + LABEL_WIDTH
+
+const row = (label: string, value: string) => `${label.padEnd(LABEL_WIDTH)}${value}`
+
+const detail = (text: string) => hint(`${' '.repeat(DETAIL_INDENT)}${text}`)
+
 const checkCliVersion = () => {
   const currentVersion = getCliVersion()
   try {
@@ -25,22 +32,22 @@ const checkCliVersion = () => {
     }).trim()
 
     if (latest === currentVersion) {
-      success(`CLI version         ${currentVersion} (latest)`)
+      success(row('CLI version', `${currentVersion} (latest)`))
     } else {
-      warn(`CLI version         ${currentVersion} (latest: ${latest})`)
+      warn(row('CLI version', `${currentVersion} (latest: ${latest})`))
     }
   } catch {
-    success(`CLI version         ${currentVersion}`)
-    hint('                    (could not check for updates)')
+    success(row('CLI version', currentVersion))
+    detail('(could not check for updates)')
   }
 }
 
 const checkConfigFile = (authSource?: string) => {
   if (!existsSync(CONFIG_PATH)) {
     if (authSource) {
-      warn(`Config file         ${CONFIG_PATH} not found (using ${authSource})`)
+      warn(row('Config file', `${CONFIG_PATH} not found (using ${authSource})`))
     } else {
-      error(`Config file         ${CONFIG_PATH} not found`)
+      error(row('Config file', `${CONFIG_PATH} not found`))
     }
     return
   }
@@ -49,22 +56,22 @@ const checkConfigFile = (authSource?: string) => {
   const mode = stats.mode & 0o777
   if (mode !== CONFIG_FILE_PERMISSIONS) {
     warn(
-      `Config file         ${CONFIG_PATH} found (permissions: ${mode.toString(8)}, expected: 600)`,
+      row('Config file', `${CONFIG_PATH} found (permissions: ${mode.toString(8)}, expected: 600)`),
     )
     return
   }
 
-  success(`Config file         ${CONFIG_PATH} found`)
+  success(row('Config file', `${CONFIG_PATH} found`))
 }
 
 const checkApiKey = (options?: { apiKey?: string }) => {
   try {
     const auth = resolveAuth(options)
-    success(`API key             ${maskKey(auth.secretKey)} (source: ${auth.source})`)
+    success(row('API key', `${maskKey(auth.secretKey)} (source: ${auth.source})`))
     return auth
   } catch {
-    error('API key             not configured')
-    hint('                    Run `fintoc login` or set FINTOC_API_KEY')
+    error(row('API key', 'not configured'))
+    detail('Run `fintoc login` or set FINTOC_API_KEY')
     return null
   }
 }
@@ -72,43 +79,43 @@ const checkApiKey = (options?: { apiKey?: string }) => {
 const checkConnectivity = async (secretKey: string) => {
   try {
     const info = await whoami(secretKey)
-    success(`Connectivity        ${API_HOST} reachable`)
-    success(`Organization        ${info.organizationName} (${info.mode} mode)`)
+    success(row('Connectivity', `${API_HOST} reachable`))
+    success(row('Organization', `${info.organizationName} (${info.mode} mode)`))
   } catch (err) {
     const fields = parseFintocError(err)
 
     if (fields?.code && IP_ALLOWLIST_ERROR_CODES.has(fields.code)) {
-      error(`Connectivity        ${API_HOST} reachable, but your IP is not allow-listed`)
-      hint(`                    ${fields.message ?? 'Your IP is not in the allowed CIDR blocks.'}`)
-      hint('                    Add your IP to the allow list in the dashboard:')
-      hint(`                    ${DASHBOARD_API_KEYS_URL}`)
+      error(row('Connectivity', `${API_HOST} reachable, but your IP is not allow-listed`))
+      detail(fields.message ?? 'Your IP is not in the allowed CIDR blocks.')
+      detail('Add your IP to the allow list in the dashboard:')
+      detail(DASHBOARD_API_KEYS_URL)
       return
     }
 
     if (fields?.type === 'authentication_error') {
-      error(`Connectivity        ${API_HOST} reachable, but the API key was rejected`)
-      hint('                    Check your API key is valid for this environment.')
+      error(row('Connectivity', `${API_HOST} reachable, but the API key was rejected`))
+      detail('Check your API key is valid for this environment.')
       return
     }
 
-    error(`Connectivity        could not reach ${API_HOST}`)
-    hint('                    Check your internet connection and API key')
+    error(row('Connectivity', `could not reach ${API_HOST}`))
+    detail('Check your internet connection and API key')
   }
 }
 
 const checkJwsKey = () => {
   const config = readConfig()
   if (!config.jws_private_key) {
-    info('JWS private key     not configured (only needed for transfers create)')
+    info(row('JWS private key', 'not configured (only needed for transfers create)'))
     return
   }
 
   if (!existsSync(config.jws_private_key)) {
-    error(`JWS private key     file not found: ${config.jws_private_key}`)
+    error(row('JWS private key', `file not found: ${config.jws_private_key}`))
     return
   }
 
-  success(`JWS private key     ${config.jws_private_key}`)
+  success(row('JWS private key', config.jws_private_key))
 }
 
 export const doctorCommand = (program: Command) => {
@@ -125,8 +132,8 @@ export const doctorCommand = (program: Command) => {
     if (auth) {
       await checkConnectivity(auth.secretKey)
     } else {
-      hint('  ⏭ Connectivity     skipped (no API key)')
-      hint('  ⏭ Organization     skipped (no API key)')
+      info(row('Connectivity', 'skipped (no API key)'))
+      info(row('Organization', 'skipped (no API key)'))
     }
 
     checkJwsKey()
