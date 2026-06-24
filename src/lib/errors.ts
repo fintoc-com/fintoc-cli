@@ -3,6 +3,7 @@ import {
   DASHBOARD_API_KEYS_URL,
   DOCS_LINKS_URL,
   DOCS_TRANSFERS_URL,
+  IP_ALLOWLIST_ERROR_CODES,
 } from './constants.js'
 import { error, hint } from './output.js'
 
@@ -43,7 +44,7 @@ const FINTOC_ERROR_CLASSES = new Set([
 const isFintocError = (err: unknown): err is Error =>
   err instanceof Error && FINTOC_ERROR_CLASSES.has(err.constructor.name)
 
-const parseFintocError = (err: unknown): FintocErrorFields | undefined => {
+export const parseFintocError = (err: unknown): FintocErrorFields | undefined => {
   if (isFintocError(err)) {
     const lines = err.message.split('\n')
     const firstLine = lines[0] ?? ''
@@ -163,6 +164,15 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       if (context?.cliPath && context.availableVerbs?.includes('list')) {
         printNextSteps([`List available: fintoc ${context.cliPath} list`])
       }
+      return process.exit(1)
+    }
+
+    if (fields.code && IP_ALLOWLIST_ERROR_CODES.has(fields.code)) {
+      error(fields.message ?? 'Your IP is not in the allowed CIDR blocks.')
+      printNextSteps([
+        'Your organization restricts API access by IP address.',
+        `Add your IP to the allow list at: ${DASHBOARD_API_KEYS_URL}`,
+      ])
       return process.exit(1)
     }
 
