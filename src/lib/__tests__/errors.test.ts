@@ -182,6 +182,43 @@ describe('handleError', () => {
     })
   })
 
+  describe('IP not allow-listed', () => {
+    test('formats allowed_cidr_blocks_does_not_contain_ip with IP allow list next steps', () => {
+      const err = createFintocError('AuthenticationError', {
+        type: 'authentication_error',
+        code: 'allowed_cidr_blocks_does_not_contain_ip',
+        message:
+          'IP is not in allowed CIDR blocks. Please check that your allowed CIDR blocks contains your IP.',
+      })
+
+      expect(() => handleError(err)).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith(
+        'IP is not in allowed CIDR blocks. Please check that your allowed CIDR blocks contains your IP.',
+      )
+      expect(hint).toHaveBeenCalledWith('  Your organization restricts API access by IP address.')
+      expect(hint).toHaveBeenCalledWith(
+        '  Add your IP to the allow list at: https://dashboard.fintoc.com/api-keys',
+      )
+      expect(hint).not.toHaveBeenCalledWith(expect.stringContaining('Check your API key'))
+    })
+
+    test('formats missing_allowed_cidr_block as an IP allow list error', () => {
+      const err = createFintocError('AuthenticationError', {
+        type: 'authentication_error',
+        code: 'missing_allowed_cidr_block',
+        message:
+          'IP Restriction is enabled but no allowed CIDR blocks were found. Please add some allowed CIDR blocks or turn off IP Restriction from the dashboard.',
+      })
+
+      expect(() => handleError(err)).toThrow('process.exit')
+
+      expect(hint).toHaveBeenCalledWith(
+        '  Add your IP to the allow list at: https://dashboard.fintoc.com/api-keys',
+      )
+    })
+  })
+
   describe('authentication error', () => {
     test('formats AuthenticationError with next steps', () => {
       const err = createFintocError('AuthenticationError', {

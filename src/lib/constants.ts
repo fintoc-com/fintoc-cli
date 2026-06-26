@@ -1,5 +1,10 @@
 export const API_HOST = 'api.fintoc.com'
 export const NPM_PACKAGE_NAME = '@fintoc/cli'
+
+export const IP_ALLOWLIST_ERROR_CODES = new Set([
+  'allowed_cidr_blocks_does_not_contain_ip',
+  'missing_allowed_cidr_block',
+])
 export const DEFAULT_LIST_LIMIT = 10
 export const NPM_CHECK_TIMEOUT_MS = 10_000
 export const CONFIG_FILE_PERMISSIONS = 0o600

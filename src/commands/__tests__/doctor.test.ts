@@ -123,7 +123,7 @@ describe('doctor command', () => {
       await program.parseAsync(['doctor'], { from: 'user' })
 
       expect(error).toHaveBeenCalledWith(expect.stringContaining('API key'))
-      expect(hint).toHaveBeenCalledWith(expect.stringContaining('skipped'))
+      expect(info).toHaveBeenCalledWith(expect.stringContaining('skipped'))
       expect(whoami).not.toHaveBeenCalled()
     })
   })
@@ -138,6 +138,55 @@ describe('doctor command', () => {
       await program.parseAsync(['doctor'], { from: 'user' })
 
       expect(error).toHaveBeenCalledWith(expect.stringContaining('could not reach'))
+    })
+  })
+
+  describe('when the IP is not allow-listed', () => {
+    beforeEach(() => {
+      const err = new Error(
+        'authentication_error: allowed_cidr_blocks_does_not_contain_ip\n' +
+          'IP is not in allowed CIDR blocks. Please check that your allowed CIDR blocks contains your IP.',
+      )
+      Object.defineProperty(err, 'constructor', { value: { name: 'AuthenticationError' } })
+      vi.mocked(whoami).mockRejectedValue(err)
+    })
+
+    test('reports the API as reachable but the IP as blocked', async () => {
+      const program = createProgram()
+      await program.parseAsync(['doctor'], { from: 'user' })
+
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining('reachable, but your IP is not allow-listed'),
+      )
+      expect(error).not.toHaveBeenCalledWith(expect.stringContaining('could not reach'))
+    })
+
+    test('points to the dashboard to fix the allow list', async () => {
+      const program = createProgram()
+      await program.parseAsync(['doctor'], { from: 'user' })
+
+      expect(hint).toHaveBeenCalledWith(expect.stringContaining('allowed CIDR blocks'))
+      expect(hint).toHaveBeenCalledWith(
+        expect.stringContaining('https://dashboard.fintoc.com/api-keys'),
+      )
+    })
+  })
+
+  describe('when the API key is rejected', () => {
+    beforeEach(() => {
+      const err = new Error('authentication_error\nInvalid API key')
+      Object.defineProperty(err, 'constructor', { value: { name: 'AuthenticationError' } })
+      vi.mocked(whoami).mockRejectedValue(err)
+    })
+
+    test('reports the API as reachable but the key as rejected', async () => {
+      const program = createProgram()
+      await program.parseAsync(['doctor'], { from: 'user' })
+
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining('reachable, but the API key was rejected'),
+      )
+      expect(error).not.toHaveBeenCalledWith(expect.stringContaining('could not reach'))
     })
   })
 
