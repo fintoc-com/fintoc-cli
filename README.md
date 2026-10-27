@@ -78,20 +78,20 @@ fintoc logout                                        # Remove stored credentials
 
 Resources follow the pattern `fintoc <resource> <action> [flags]`.
 
-| Resource                   | Actions                   |
-| -------------------------- | ------------------------- |
-| `payment_intents`          | get, list                 |
-| `charges`                  | create, get, list         |
-| `webhook_endpoints`        | create, get, list, delete |
-| `checkout_sessions`        | create, get, expire       |
-| `subscriptions`            | get, list                 |
-| `links`                    | get, list, delete         |
-| `api_keys`                 | list                      |
-| `v2 transfers`             | create, get, list         |
-| `v2 accounts`              | get, list                 |
-| `v2 account_verifications` | create, get, list         |
-| `v2 account_numbers`       | create, get, list, delete |
-| `v2 movements`             | get, list                 |
+| Resource                   | Actions                         |
+| -------------------------- | ------------------------------- |
+| `payment_intents`          | get, list                       |
+| `charges`                  | create, get, list               |
+| `webhook_endpoints`        | create, get, list, delete, test |
+| `checkout_sessions`        | create, get, expire             |
+| `subscriptions`            | get, list                       |
+| `links`                    | get, list, delete               |
+| `api_keys`                 | list                            |
+| `v2 transfers`             | create, get, list               |
+| `v2 accounts`              | get, list                       |
+| `v2 account_verifications` | create, get, list               |
+| `v2 account_numbers`       | create, get, list, delete       |
+| `v2 movements`             | get, list                       |
 
 ### Utilities
 
