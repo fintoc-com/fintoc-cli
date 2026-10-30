@@ -178,3 +178,52 @@ describe('error formatting', () => {
     })
   })
 })
+
+describe('json errors', () => {
+  test.each([
+    [['charges', 'create', '--amount', '1.5'], 'invalid_value', 'amount'],
+    [['charges', 'list', '--bogus'], 'unknown_option', 'bogus'],
+    [
+      ['v2', 'subscription_items', 'update', 'si_1', '--quantity', '2'],
+      'missing_flag',
+      'subscription-id',
+    ],
+  ])('%j emits a JSON usage error on stderr', (args, code, param) => {
+    const { stdout, stderr, exitCode } = run(['--json', ...args], true)
+
+    expect(exitCode).toBe(1)
+    expect(stdout).toBe('')
+    expect(JSON.parse(stderr).error).toMatchObject({ type: 'usage_error', code, param })
+  })
+})
+
+describe('missing command', () => {
+  test('is a JSON error with --json instead of help text', () => {
+    const { stdout, stderr, exitCode } = run(['--json', 'v2', 'transfers'], true)
+
+    expect(exitCode).toBe(1)
+    expect(stdout).toBe('')
+    expect(JSON.parse(stderr).error).toMatchObject({ code: 'missing_command' })
+    expect(JSON.parse(stderr).error.message).toContain('fintoc v2 transfers --help')
+  })
+})
+
+describe('commands', () => {
+  test('lists every resource command as JSON', () => {
+    const commands = JSON.parse(run(['--json', 'commands']).stdout) as {
+      command: string
+      kind: string
+      options: string[]
+    }[]
+    const names = commands.map((c) => c.command)
+    expect(names).toContain('fintoc v2 transfers create')
+    expect(names).toEqual(
+      expect.arrayContaining(['fintoc login', 'fintoc config set', 'fintoc doctor']),
+    )
+    expect(names).not.toContain('fintoc config')
+    expect(commands.find((c) => c.command === 'fintoc trigger')).toMatchObject({
+      kind: 'utility',
+      options: ['--override', '--from-json'],
+    })
+  })
+})

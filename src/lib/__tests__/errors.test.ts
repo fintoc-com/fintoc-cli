@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { handleError } from '../errors.js'
+import { handleError, UsageError } from '../errors.js'
 import { error, hint } from '../output.js'
 
 vi.mock('../output.js', () => ({
@@ -89,7 +89,7 @@ describe('handleError', () => {
 
       expect(() => handleError(err)).toThrow('process.exit')
 
-      expect(error).toHaveBeenCalledWith('JWS private key required for transfer operations')
+      expect(error).toHaveBeenCalledWith('JWS private key required to sign this request')
       expect(hint).toHaveBeenCalledWith('  More info:  https://docs.fintoc.com/docs/transfers')
     })
   })
@@ -309,7 +309,7 @@ describe('handleError', () => {
 
       expect(() => handleError(err)).toThrow('process.exit')
 
-      expect(error).toHaveBeenCalledWith('JWS private key required for transfer operations')
+      expect(error).toHaveBeenCalledWith('JWS private key required to sign this request')
     })
   })
 
@@ -393,7 +393,27 @@ describe('handleError', () => {
         error: {
           type: 'invalid_request_error',
           code: 'missing_resource',
+          param: 'id',
           message: 'No such payment_intent: pi_invalid',
+        },
+      })
+    })
+
+    test('emits JSON for usage errors with code and param', () => {
+      const err = new UsageError('Missing required flag: --amount', {
+        code: 'missing_flag',
+        param: 'amount',
+        hints: ['Usage: fintoc charges create --amount <integer>'],
+      })
+
+      expect(() => handleError(err, { json: true })).toThrow('process.exit')
+
+      expect(JSON.parse(stderrSpy.mock.calls[0][0] as string)).toEqual({
+        error: {
+          type: 'usage_error',
+          code: 'missing_flag',
+          param: 'amount',
+          message: 'Missing required flag: --amount',
         },
       })
     })

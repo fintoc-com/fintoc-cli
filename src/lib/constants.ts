@@ -6,6 +6,8 @@ export const IP_ALLOWLIST_ERROR_CODES = new Set([
   'missing_allowed_cidr_block',
 ])
 export const DEFAULT_LIST_LIMIT = 10
+export const JWS_COMMANDS =
+  'v2 transfers create and return, v2 transfer_batches create and v2 account_verifications create'
 export const NPM_CHECK_TIMEOUT_MS = 10_000
 export const CONFIG_FILE_PERMISSIONS = 0o600
 export const CONFIG_DIR_PERMISSIONS = 0o700
@@ -26,3 +28,17 @@ export const DOCS_ACCOUNT_VERIFICATIONS_URL =
   'https://docs.fintoc.com/reference/account-verification-object.md'
 export const DOCS_ACCOUNT_NUMBERS_URL = 'https://docs.fintoc.com/reference/account-number-object.md'
 export const DOCS_MOVEMENTS_URL = 'https://docs.fintoc.com/reference/movement-object.md'
+export const DOCS_ACCOUNTS_URL = 'https://docs.fintoc.com/reference/account-object.md'
+export const DOCS_REFUNDS_URL = 'https://docs.fintoc.com/reference/refund-object.md'
+export const DOCS_DISPUTES_URL = 'https://docs.fintoc.com/reference/dispute-object.md'
+export const DOCS_FISCAL_INVOICES_URL =
+  'https://docs.fintoc.com/reference/fiscal-invoices-object.md'
+export const DOCS_CHECKOUT_SESSIONS_URL =
+  'https://docs.fintoc.com/reference/checkout-session-object.md'
+export const DOCS_ENTITIES_URL = 'https://docs.fintoc.com/reference/entity-object.md'
+export const DOCS_RECIPIENTS_URL =
+  'https://docs.fintoc.com/api/business-accounts-api/recipients/recipient-object.md'
+export const DOCS_PAYOUTS_URL = 'https://docs.fintoc.com/reference/payout-object.md'
+export const DOCS_EVENTS_URL = 'https://docs.fintoc.com/reference/events-object.md'
+export const DOCS_TRANSFER_BATCHES_URL =
+  'https://docs.fintoc.com/api/business-accounts-api/transfer-batches/transfer-batch-object.md'

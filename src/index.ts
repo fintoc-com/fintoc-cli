@@ -1,5 +1,6 @@
 import type { Help, Option } from 'commander'
 import { Command, CommanderError } from 'commander'
+import { commandsCommand } from './commands/commands.js'
 import { configCommand } from './commands/config.js'
 import { doctorCommand } from './commands/doctor.js'
 import { loginCommand } from './commands/login.js'
@@ -17,7 +18,7 @@ declare const __CLI_VERSION__: string
 const versionString = `fintoc/${__CLI_VERSION__} ${process.platform} node-${process.version}`
 
 const AUTH_COMMANDS = new Set(['login', 'logout', 'config'])
-const UTILITY_COMMANDS = new Set(['doctor', 'open', 'trigger', 'webhooks'])
+const UTILITY_COMMANDS = new Set(['commands', 'doctor', 'open', 'trigger', 'webhooks'])
 
 type HelpEntry = { name: () => string; description: () => string }
 
@@ -49,12 +50,46 @@ const formatOptions = (lines: string[], title: string, options: Option[], helper
   }
 }
 
+const wantsJson = process.argv.includes('--json')
+
+// Same codes as the UsageErrors thrown by the resource factory, so agents see one vocabulary
+const COMMANDER_ERROR_CODES: Record<string, string> = {
+  'commander.invalidArgument': 'invalid_value',
+  'commander.missingMandatoryOptionValue': 'missing_flag',
+  'commander.optionMissingArgument': 'missing_value',
+  'commander.missingArgument': 'missing_argument',
+  'commander.unknownOption': 'unknown_option',
+  'commander.unknownCommand': 'unknown_command',
+  'commander.missingCommand': 'missing_command',
+  'commander.excessArguments': 'too_many_arguments',
+}
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+
+const commanderErrorJson = (err: CommanderError) => {
+  const message = capitalize(
+    err.message
+      .replace(/^error:\s*/i, '')
+      .replace(/\s*\n\s*/g, ' ')
+      .trim(),
+  )
+  return {
+    error: {
+      type: 'usage_error',
+      code: COMMANDER_ERROR_CODES[err.code] ?? 'invalid_usage',
+      param: message.match(/'--([\w-]+)/)?.[1],
+      message,
+    },
+  }
+}
+
 const program = new Command()
 
 program
   .name('fintoc')
   .description('Fintoc CLI — manage your Fintoc resources from the terminal')
-  .version(versionString, '-v, --version')
+  .version(versionString, '-v, --version', 'Show the CLI version')
+  .helpOption('-h, --help', 'Show help for a command')
   .option('--api-key <key>', 'Override API key for this command')
   .option('--json', 'Output as JSON')
   .option('--no-color', 'Disable colored output')
@@ -62,10 +97,13 @@ program
   .showSuggestionAfterError(true)
   .configureOutput({
     writeErr: (str: string) => {
+      if (wantsJson) {
+        return
+      }
       const match = str.match(/^error:\s*(.*)/is)
       const message = match ? match[1].trim() : str.trim()
       if (message) {
-        error(message)
+        error(capitalize(message))
       }
     },
     writeOut: (str: string) => {
@@ -80,6 +118,7 @@ doctorCommand(program)
 openCommand(program)
 triggerCommand(program)
 webhooksCommand(program)
+commandsCommand(program)
 registerResourceCommands(program, v1Resources)
 
 const v2Cmd = program.command('v2').description('API v2 resources')
@@ -93,7 +132,7 @@ program.configureHelp({
 
     lines.push(cmd.description())
     lines.push('')
-    lines.push(`Usage: ${cmd.name()} <command> [flags]`)
+    lines.push(`Usage: ${cmd.name()} <command> [options]`)
 
     const subcommands = cmd.commands
 
@@ -119,7 +158,7 @@ program.configureHelp({
     formatGroup(lines, 'Resources', resourceEntries, padWidth)
     formatGroup(lines, 'Utilities', utilityEntries, padWidth)
 
-    formatOptions(lines, 'Flags', helper.visibleOptions(cmd), helper)
+    formatOptions(lines, 'Options', helper.visibleOptions(cmd), helper)
 
     lines.push('')
     lines.push('Get started: fintoc login')
@@ -144,6 +183,9 @@ try {
   program.parse()
 } catch (err) {
   if (err instanceof CommanderError) {
+    if (wantsJson && err.exitCode !== 0) {
+      process.stderr.write(`${JSON.stringify(commanderErrorJson(err))}\n`)
+    }
     process.exit(err.exitCode)
   }
   throw err

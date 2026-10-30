@@ -4,6 +4,7 @@ import {
   DOCS_LINKS_URL,
   DOCS_TRANSFERS_URL,
   IP_ALLOWLIST_ERROR_CODES,
+  JWS_COMMANDS,
 } from './constants.js'
 import { error, hint } from './output.js'
 
@@ -78,6 +79,27 @@ export const parseFintocError = (err: unknown): FintocErrorFields | undefined =>
   return undefined
 }
 
+export class UsageError extends Error {
+  readonly code: string
+  readonly param?: string
+  readonly hints: string[]
+
+  constructor(
+    message: string,
+    {
+      code = 'invalid_usage',
+      param,
+      hints = [],
+    }: { code?: string; param?: string; hints?: string[] } = {},
+  ) {
+    super(message)
+    this.name = 'UsageError'
+    this.code = code
+    this.param = param
+    this.hints = hints
+  }
+}
+
 const isNoAuthError = (err: unknown): boolean =>
   err instanceof Error && err.message.includes('No API key found')
 
@@ -94,12 +116,33 @@ const printNextSteps = (steps: string[]) => {
   steps.forEach((step) => hint(`  ${step}`))
 }
 
-const exitJsonError = (fields: { type: string; code?: string; message: string }): never => {
+const exitJsonError = (fields: {
+  type: string
+  code?: string
+  param?: string
+  message: string
+}): never => {
   console.error(JSON.stringify({ error: fields }))
   return process.exit(1)
 }
 
 export const handleError = (err: unknown, context?: ErrorContext): never => {
+  if (err instanceof UsageError) {
+    if (context?.json) {
+      return exitJsonError({
+        type: 'usage_error',
+        code: err.code,
+        param: err.param,
+        message: err.message,
+      })
+    }
+    error(err.message)
+    if (err.hints.length > 0) {
+      printNextSteps(err.hints)
+    }
+    return process.exit(1)
+  }
+
   if (isNoAuthError(err)) {
     if (context?.json) {
       return exitJsonError({ type: 'auth_error', message: 'No API key found' })
@@ -134,15 +177,17 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       return exitJsonError({
         type: fields.type,
         code: fields.code,
+        param: fields.param,
         message: fields.message ?? (err as Error).message,
       })
     }
 
     if (fields.code === 'missing_jws_signature_header') {
-      error('JWS private key required for transfer operations')
+      error('JWS private key required to sign this request')
       printNextSteps([
         'Pass:       --jws-private-key <path>',
         'Or set in:  ~/.fintoc/config.toml (jws_private_key = "<path>")',
+        `Needed for: ${JWS_COMMANDS}`,
         `More info:  ${DOCS_TRANSFERS_URL}`,
       ])
       return process.exit(1)

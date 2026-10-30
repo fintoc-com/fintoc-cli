@@ -1,0 +1,2965 @@
+{
+  "payment_intents get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "payment_intents list": {
+    "args": [],
+    "flags": {
+      "status": {
+        "type": "string",
+        "required": false
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 transfers create": {
+    "args": [],
+    "flags": {
+      "amount": {
+        "type": "integer",
+        "required": true
+      },
+      "currency": {
+        "type": "string",
+        "required": true
+      },
+      "account-id": {
+        "type": "string",
+        "required": true
+      },
+      "counterparty-account-number": {
+        "type": "string",
+        "required": true
+      },
+      "counterparty-institution-id": {
+        "type": "string",
+        "required": true
+      },
+      "counterparty-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "counterparty-account-type": {
+        "type": "string",
+        "required": false
+      },
+      "comment": {
+        "type": "string",
+        "required": false
+      },
+      "counterparty-holder-name": {
+        "type": "string",
+        "required": false
+      },
+      "counterparty-email": {
+        "type": "string",
+        "required": false
+      },
+      "reference-id": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--jws-private-key",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 transfers get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 transfers list": {
+    "args": [],
+    "flags": {
+      "status": {
+        "type": "string[]",
+        "required": false
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      },
+      "account-id": {
+        "type": "string",
+        "required": false
+      },
+      "account-number-id": {
+        "type": "string",
+        "required": false
+      },
+      "direction": {
+        "type": "string",
+        "required": false
+      },
+      "tracking-key": {
+        "type": "string",
+        "required": false
+      },
+      "transfer-batch-id": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 accounts get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 accounts list": {
+    "args": [],
+    "flags": {
+      "type": {
+        "type": "string",
+        "required": false
+      },
+      "entity-id": {
+        "type": "string",
+        "required": false
+      },
+      "status": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "webhook_endpoints create": {
+    "args": [],
+    "flags": {
+      "url": {
+        "type": "string",
+        "required": true
+      },
+      "enabled-events": {
+        "type": "string[]",
+        "required": true
+      },
+      "description": {
+        "type": "string",
+        "required": false
+      },
+      "name": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "webhook_endpoints get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "webhook_endpoints list": {
+    "args": [],
+    "flags": {},
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "webhook_endpoints delete": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "webhook_endpoints test": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "type": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "charges create": {
+    "args": [],
+    "flags": {
+      "amount": {
+        "type": "integer",
+        "required": true
+      },
+      "currency": {
+        "type": "string",
+        "required": true
+      },
+      "subscription-id": {
+        "type": "string",
+        "required": true
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      },
+      "business-profile-category": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-name": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-tax-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-number": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-type": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "charges get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "charges list": {
+    "args": [],
+    "flags": {
+      "status": {
+        "type": "string",
+        "required": false
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      },
+      "subscription-id": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "subscriptions get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "subscriptions list": {
+    "args": [],
+    "flags": {
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "links get": {
+    "args": [
+      "link_token"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "links list": {
+    "args": [],
+    "flags": {
+      "status": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "links delete": {
+    "args": [
+      "link_token"
+    ],
+    "flags": {},
+    "options": [
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "checkout_sessions create": {
+    "args": [],
+    "flags": {
+      "amount": {
+        "type": "integer",
+        "required": true
+      },
+      "currency": {
+        "type": "string",
+        "required": true
+      },
+      "success-url": {
+        "type": "string",
+        "required": false
+      },
+      "cancel-url": {
+        "type": "string",
+        "required": false
+      },
+      "customer-email": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-type": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-number": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-tax-id": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-name": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-category": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "checkout_sessions get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "checkout_sessions expire": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--yes",
+      "--idempotency-key"
+    ],
+    "confirm": true
+  },
+  "v2 account_verifications create": {
+    "args": [],
+    "flags": {
+      "account-number": {
+        "type": "string",
+        "required": true
+      },
+      "institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "account-type": {
+        "type": "string",
+        "required": false
+      },
+      "holder-id": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--jws-private-key",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 account_verifications get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 account_verifications list": {
+    "args": [],
+    "flags": {
+      "account-number": {
+        "type": "string",
+        "required": false
+      },
+      "transfer-id": {
+        "type": "string",
+        "required": false
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 account_numbers create": {
+    "args": [],
+    "flags": {
+      "account-id": {
+        "type": "string",
+        "required": true
+      },
+      "description": {
+        "type": "string",
+        "required": false
+      },
+      "options-min-amount": {
+        "type": "integer",
+        "required": false
+      },
+      "options-max-amount": {
+        "type": "integer",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 account_numbers get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 account_numbers list": {
+    "args": [],
+    "flags": {
+      "account-id": {
+        "type": "string",
+        "required": false
+      },
+      "without-transfers-since": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 account_numbers delete": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 movements get": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "account-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "v2 movements list": {
+    "args": [],
+    "flags": {
+      "account-id": {
+        "type": "string",
+        "required": true
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      },
+      "resource-id": {
+        "type": "string",
+        "required": false
+      },
+      "direction": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "api_keys list": {
+    "args": [],
+    "flags": {},
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "payment_intents create": {
+    "args": [],
+    "flags": {
+      "amount": {
+        "type": "integer",
+        "required": true
+      },
+      "currency": {
+        "type": "string",
+        "required": true
+      },
+      "payment-type": {
+        "type": "string",
+        "required": false
+      },
+      "customer-email": {
+        "type": "string",
+        "required": false
+      },
+      "customer-phone": {
+        "type": "string",
+        "required": false
+      },
+      "expires-at": {
+        "type": "string",
+        "required": false
+      },
+      "reference-number": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-number": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-type": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "sender-account-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "sender-account-institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      },
+      "cash-send-voucher": {
+        "type": "boolean",
+        "required": false
+      },
+      "cash-send-reminders": {
+        "type": "boolean",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "payment_intents expire": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 transfers receipt": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 transfers return": {
+    "args": [
+      "transfer_id"
+    ],
+    "flags": {},
+    "options": [
+      "--from-json",
+      "--idempotency-key",
+      "--jws-private-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 accounts create": {
+    "args": [],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      },
+      "description": {
+        "type": "string",
+        "required": false
+      },
+      "number": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 accounts update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "description": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "webhook_endpoints update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "url": {
+        "type": "string",
+        "required": false
+      },
+      "enabled-events": {
+        "type": "string[]",
+        "required": false
+      },
+      "name": {
+        "type": "string",
+        "required": false
+      },
+      "description": {
+        "type": "string",
+        "required": false
+      },
+      "disabled": {
+        "type": "boolean",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "charges update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "amount": {
+        "type": "integer",
+        "required": false
+      },
+      "currency": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "charges cancel": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "links update": {
+    "args": [
+      "link_token"
+    ],
+    "flags": {
+      "active": {
+        "type": "boolean",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "links exchange": {
+    "args": [],
+    "flags": {
+      "exchange-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "v2 account_numbers update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "description": {
+        "type": "string",
+        "required": false
+      },
+      "status": {
+        "type": "string",
+        "required": false
+      },
+      "options-min-amount": {
+        "type": "integer",
+        "required": false
+      },
+      "options-max-amount": {
+        "type": "integer",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "refunds create": {
+    "args": [],
+    "flags": {
+      "resource-id": {
+        "type": "string",
+        "required": true
+      },
+      "resource-type": {
+        "type": "string",
+        "required": true
+      },
+      "amount": {
+        "type": "integer",
+        "required": false
+      },
+      "recipient-account-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-holder-name": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-number": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-type": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "refunds get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "refunds list": {
+    "args": [],
+    "flags": {
+      "status": {
+        "type": "string",
+        "required": false
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "refunds cancel": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "refunds voucher_url": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "subscription_intents create": {
+    "args": [],
+    "flags": {
+      "business-profile-name": {
+        "type": "string",
+        "required": false
+      },
+      "customer-email": {
+        "type": "string",
+        "required": false
+      },
+      "reference-id": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "subscription_intents get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "subscription_intents list": {
+    "args": [],
+    "flags": {
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "payment_links create": {
+    "args": [],
+    "flags": {
+      "amount": {
+        "type": "integer",
+        "required": true
+      },
+      "currency": {
+        "type": "string",
+        "required": true
+      },
+      "customer-email": {
+        "type": "string",
+        "required": false
+      },
+      "expires-after-seconds": {
+        "type": "integer",
+        "required": false
+      },
+      "checkout-description": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-number": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-type": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-tax-id": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-name": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-category": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "payment_links get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "payment_links list": {
+    "args": [],
+    "flags": {
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "payment_links cancel": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "disputes get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "disputes list": {
+    "args": [],
+    "flags": {
+      "status": {
+        "type": "string",
+        "required": false
+      },
+      "resource-id": {
+        "type": "string",
+        "required": false
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "disputes submit_for_review": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "disputes create_document": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "accounts get": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "accounts list": {
+    "args": [],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "movements get": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "account-id": {
+        "type": "string",
+        "required": true
+      },
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "movements list": {
+    "args": [],
+    "flags": {
+      "account-id": {
+        "type": "string",
+        "required": true
+      },
+      "link-token": {
+        "type": "string",
+        "required": true
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      },
+      "updated-since": {
+        "type": "string",
+        "required": false
+      },
+      "confirmed-only": {
+        "type": "boolean",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "invoices get": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "invoices list": {
+    "args": [],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      },
+      "updated-since": {
+        "type": "string",
+        "required": false
+      },
+      "issue-type": {
+        "type": "string",
+        "required": false
+      },
+      "invoice-status": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "tax_returns get": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "tax_returns list": {
+    "args": [],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "refresh_intents create": {
+    "args": [],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      },
+      "refresh-type": {
+        "type": "string",
+        "required": false
+      },
+      "result-status": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "refresh_intents get": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "refresh_intents list": {
+    "args": [],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 checkout_sessions create": {
+    "args": [],
+    "flags": {
+      "currency": {
+        "type": "string",
+        "required": true
+      },
+      "amount": {
+        "type": "integer",
+        "required": false
+      },
+      "flow": {
+        "type": "string",
+        "required": false
+      },
+      "customer": {
+        "type": "string",
+        "required": false
+      },
+      "customer-email": {
+        "type": "string",
+        "required": false
+      },
+      "customer-phone": {
+        "type": "string",
+        "required": false
+      },
+      "payment-method-types": {
+        "type": "string[]",
+        "required": false
+      },
+      "payment-method": {
+        "type": "string",
+        "required": false
+      },
+      "save-payment-method": {
+        "type": "string",
+        "required": false
+      },
+      "success-url": {
+        "type": "string",
+        "required": false
+      },
+      "cancel-url": {
+        "type": "string",
+        "required": false
+      },
+      "expires-at": {
+        "type": "string",
+        "required": false
+      },
+      "ui-mode": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-tax-id": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-name": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-category": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      },
+      "subscription": {
+        "type": "string",
+        "required": false
+      },
+      "trial-end": {
+        "type": "string",
+        "required": false
+      },
+      "billing-cycle-anchor": {
+        "type": "string",
+        "required": false
+      },
+      "subscription-cancel-at": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-name": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-email": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-phone": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-tax-id-type": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-tax-id-value": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-address-line1": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-address-line2": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-address-city": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-address-state": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-address-postal-code": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-address-country": {
+        "type": "string",
+        "required": false
+      },
+      "customer-data-metadata": {
+        "type": "map",
+        "required": false
+      },
+      "card-types": {
+        "type": "string[]",
+        "required": false
+      },
+      "card-kinds": {
+        "type": "string[]",
+        "required": false
+      },
+      "mx-direct-debit-max-amount": {
+        "type": "integer",
+        "required": false
+      },
+      "mx-direct-debit-interval": {
+        "type": "string",
+        "required": false
+      },
+      "bank-transfer-reference-number": {
+        "type": "string",
+        "required": false
+      },
+      "cash-send-voucher": {
+        "type": "boolean",
+        "required": false
+      },
+      "cash-send-reminders": {
+        "type": "boolean",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 checkout_sessions get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 checkout_sessions list": {
+    "args": [],
+    "flags": {},
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 checkout_sessions expire": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 customers create": {
+    "args": [],
+    "flags": {
+      "name": {
+        "type": "string",
+        "required": false
+      },
+      "email": {
+        "type": "string",
+        "required": false
+      },
+      "phone": {
+        "type": "string",
+        "required": false
+      },
+      "tax-id-type": {
+        "type": "string",
+        "required": false
+      },
+      "tax-id-value": {
+        "type": "string",
+        "required": false
+      },
+      "address-line1": {
+        "type": "string",
+        "required": false
+      },
+      "address-line2": {
+        "type": "string",
+        "required": false
+      },
+      "address-city": {
+        "type": "string",
+        "required": false
+      },
+      "address-state": {
+        "type": "string",
+        "required": false
+      },
+      "address-postal-code": {
+        "type": "string",
+        "required": false
+      },
+      "address-country": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 customers get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 customers list": {
+    "args": [],
+    "flags": {
+      "tax-id": {
+        "type": "string",
+        "required": false
+      },
+      "tax-id-type": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 entities create": {
+    "args": [],
+    "flags": {
+      "country-code": {
+        "type": "string",
+        "required": true
+      },
+      "holder-name": {
+        "type": "string",
+        "required": true
+      },
+      "holder-id": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 entities get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 entities list": {
+    "args": [],
+    "flags": {
+      "holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "status": {
+        "type": "string[]",
+        "required": false
+      },
+      "is-root": {
+        "type": "boolean",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 entities settlement_account": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 onboardings create": {
+    "args": [],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      },
+      "type": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 onboardings get": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "v2 onboardings list": {
+    "args": [],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 onboardings submit": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 onboardings upload_document": {
+    "args": [
+      "id",
+      "slot_key"
+    ],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "v2 onboardings add_document": {
+    "args": [
+      "id",
+      "slot_key"
+    ],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 onboardings delete_document": {
+    "args": [
+      "id",
+      "slot_key",
+      "document_id"
+    ],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 onboardings upload_shareholder_document": {
+    "args": [
+      "id",
+      "shareholder_id"
+    ],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "v2 onboardings upload_legal_representative_document": {
+    "args": [
+      "id",
+      "legal_representative_id",
+      "slot_key"
+    ],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "v2 payment_intents create": {
+    "args": [],
+    "flags": {
+      "amount": {
+        "type": "integer",
+        "required": true
+      },
+      "currency": {
+        "type": "string",
+        "required": true
+      },
+      "payment-method": {
+        "type": "string",
+        "required": true
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 payment_intents get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 payment_intents list": {
+    "args": [],
+    "flags": {
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 payment_intents cancel": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 payment_intents voucher_url": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 payment_intents check_eligibility": {
+    "args": [],
+    "flags": {
+      "amount": {
+        "type": "integer",
+        "required": true
+      },
+      "currency": {
+        "type": "string",
+        "required": true
+      },
+      "sender-account-institution-id": {
+        "type": "string",
+        "required": true
+      },
+      "sender-account-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-number": {
+        "type": "string",
+        "required": false
+      },
+      "recipient-account-type": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 payment_methods create": {
+    "args": [],
+    "flags": {
+      "type": {
+        "type": "string",
+        "required": true
+      },
+      "customer": {
+        "type": "string",
+        "required": true
+      },
+      "mx-direct-debit-account-number": {
+        "type": "string",
+        "required": true
+      },
+      "mx-direct-debit-account-type": {
+        "type": "string",
+        "required": true
+      },
+      "mx-direct-debit-institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "mx-direct-debit-interval": {
+        "type": "string",
+        "required": true
+      },
+      "mx-direct-debit-max-amount": {
+        "type": "integer",
+        "required": true
+      },
+      "mx-direct-debit-account-holder-name": {
+        "type": "string",
+        "required": false
+      },
+      "mx-direct-debit-account-holder-email": {
+        "type": "string",
+        "required": false
+      },
+      "mx-direct-debit-account-holder-rfc": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 payment_methods get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 payment_methods list": {
+    "args": [],
+    "flags": {
+      "customer": {
+        "type": "string",
+        "required": false
+      },
+      "payment-options-amount": {
+        "type": "integer",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 payment_methods cancel": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 payment_methods mandate_document": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 products create": {
+    "args": [],
+    "flags": {
+      "name": {
+        "type": "string",
+        "required": true
+      },
+      "description": {
+        "type": "string",
+        "required": false
+      },
+      "image-url": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 products get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 products list": {
+    "args": [],
+    "flags": {
+      "inline": {
+        "type": "boolean",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 products update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "name": {
+        "type": "string",
+        "required": false
+      },
+      "description": {
+        "type": "string",
+        "required": false
+      },
+      "image-url": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "v2 subscriptions create": {
+    "args": [],
+    "flags": {
+      "customer": {
+        "type": "string",
+        "required": true
+      },
+      "collection-method": {
+        "type": "string",
+        "required": false
+      },
+      "payment-method": {
+        "type": "string",
+        "required": false
+      },
+      "trial-end": {
+        "type": "string",
+        "required": false
+      },
+      "billing-cycle-anchor": {
+        "type": "string",
+        "required": false
+      },
+      "cancel-at": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-tax-id": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-name": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-category": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 subscriptions get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 subscriptions list": {
+    "args": [],
+    "flags": {},
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 subscriptions update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "trial-end": {
+        "type": "string",
+        "required": false
+      },
+      "payment-method": {
+        "type": "string",
+        "required": false
+      },
+      "collection-method": {
+        "type": "string",
+        "required": false
+      },
+      "cancel-at": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "v2 subscriptions cancel": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 subscriptions detach_payment_method": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 invoices create": {
+    "args": [],
+    "flags": {
+      "customer": {
+        "type": "string",
+        "required": true
+      },
+      "collection-method": {
+        "type": "string",
+        "required": false
+      },
+      "default-payment-method": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-tax-id": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-name": {
+        "type": "string",
+        "required": false
+      },
+      "business-profile-category": {
+        "type": "string",
+        "required": false
+      },
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 invoices get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 invoices list": {
+    "args": [],
+    "flags": {
+      "subscription": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 invoices update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "v2 invoices finalize": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 invoices pay": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "payment-method": {
+        "type": "string",
+        "required": false
+      },
+      "external-payment": {
+        "type": "boolean",
+        "required": false
+      }
+    },
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 invoices void": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 invoices mark_uncollectible": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 invoices add_lines": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 invoices remove_lines": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "lines": {
+        "type": "string[]",
+        "required": true
+      }
+    },
+    "options": [
+      "--idempotency-key",
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 account_statements list": {
+    "args": [],
+    "flags": {
+      "account-id": {
+        "type": "string",
+        "required": true
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 recipients create": {
+    "args": [],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": true
+      },
+      "account-number": {
+        "type": "string",
+        "required": true
+      },
+      "holder-name": {
+        "type": "string",
+        "required": true
+      },
+      "holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "holder-type": {
+        "type": "string",
+        "required": false
+      },
+      "institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "account-type": {
+        "type": "string",
+        "required": false
+      },
+      "alias": {
+        "type": "string",
+        "required": false
+      },
+      "email": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 recipients get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 recipients list": {
+    "args": [],
+    "flags": {
+      "entity-id": {
+        "type": "string",
+        "required": false
+      },
+      "holder-type": {
+        "type": "string",
+        "required": false
+      },
+      "holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "account-number": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 recipients update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "alias": {
+        "type": "string",
+        "required": false
+      },
+      "holder-name": {
+        "type": "string",
+        "required": false
+      },
+      "holder-type": {
+        "type": "string",
+        "required": false
+      },
+      "account-type": {
+        "type": "string",
+        "required": false
+      },
+      "email": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "v2 recipients delete": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 transfer_batches create": {
+    "args": [],
+    "flags": {
+      "description": {
+        "type": "string",
+        "required": true
+      },
+      "currency": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key",
+      "--jws-private-key"
+    ],
+    "confirm": false
+  },
+  "v2 transfer_batches get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 transfer_batches list": {
+    "args": [],
+    "flags": {
+      "status": {
+        "type": "string[]",
+        "required": false
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "payouts get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "payouts list": {
+    "args": [],
+    "flags": {
+      "status": {
+        "type": "string",
+        "required": false
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "payouts resources": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "resource-type": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "institutions list": {
+    "args": [],
+    "flags": {
+      "country": {
+        "type": "string",
+        "required": false
+      },
+      "type": {
+        "type": "string",
+        "required": false
+      },
+      "product": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "link_intents create": {
+    "args": [],
+    "flags": {
+      "country": {
+        "type": "string",
+        "required": true
+      },
+      "holder-type": {
+        "type": "string",
+        "required": true
+      },
+      "product": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "tax_statements get": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [],
+    "confirm": false
+  },
+  "tax_statements list": {
+    "args": [],
+    "flags": {
+      "link-token": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 events get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 events list": {
+    "args": [],
+    "flags": {
+      "type": {
+        "type": "string",
+        "required": false
+      },
+      "resource-id": {
+        "type": "string",
+        "required": false
+      },
+      "since": {
+        "type": "string",
+        "required": false
+      },
+      "until": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--limit"
+    ],
+    "confirm": false
+  },
+  "v2 setup_intents get": {
+    "args": [
+      "id"
+    ],
+    "flags": {},
+    "options": [],
+    "confirm": false
+  },
+  "v2 subscription_items create": {
+    "args": [],
+    "flags": {
+      "subscription-id": {
+        "type": "string",
+        "required": true
+      },
+      "quantity": {
+        "type": "integer",
+        "required": true
+      },
+      "price-data-currency": {
+        "type": "string",
+        "required": true
+      },
+      "price-data-unit-amount": {
+        "type": "integer",
+        "required": true
+      },
+      "price-data-recurring-interval": {
+        "type": "string",
+        "required": true
+      },
+      "price-data-recurring-interval-count": {
+        "type": "integer",
+        "required": true
+      },
+      "price-data-product": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-product-data-name": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-product-data-description": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-product-data-image-url": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-product-data-metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  },
+  "v2 subscription_items update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "subscription-id": {
+        "type": "string",
+        "required": true
+      },
+      "quantity": {
+        "type": "integer",
+        "required": false
+      },
+      "price-data-currency": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-unit-amount": {
+        "type": "integer",
+        "required": false
+      },
+      "price-data-recurring-interval": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-recurring-interval-count": {
+        "type": "integer",
+        "required": false
+      },
+      "price-data-product": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-product-data-name": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-product-data-description": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-product-data-image-url": {
+        "type": "string",
+        "required": false
+      },
+      "price-data-product-data-metadata": {
+        "type": "map",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "v2 subscription_items delete": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "subscription-id": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "options": [
+      "--yes"
+    ],
+    "confirm": true
+  },
+  "v2 invoice_lines update": {
+    "args": [
+      "id"
+    ],
+    "flags": {
+      "invoice-id": {
+        "type": "string",
+        "required": true
+      },
+      "amount": {
+        "type": "integer",
+        "required": false
+      },
+      "currency": {
+        "type": "string",
+        "required": false
+      },
+      "quantity": {
+        "type": "integer",
+        "required": false
+      },
+      "name": {
+        "type": "string",
+        "required": false
+      },
+      "description": {
+        "type": "string",
+        "required": false
+      },
+      "period-start": {
+        "type": "string",
+        "required": false
+      },
+      "period-end": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json"
+    ],
+    "confirm": false
+  },
+  "v2 simulate receive_transfer": {
+    "args": [],
+    "flags": {
+      "account-number-id": {
+        "type": "string",
+        "required": true
+      },
+      "amount": {
+        "type": "integer",
+        "required": true
+      },
+      "currency": {
+        "type": "string",
+        "required": true
+      },
+      "comment": {
+        "type": "string",
+        "required": false
+      },
+      "reference-id": {
+        "type": "string",
+        "required": false
+      },
+      "counterparty-account-number": {
+        "type": "string",
+        "required": false
+      },
+      "counterparty-account-type": {
+        "type": "string",
+        "required": false
+      },
+      "counterparty-institution-id": {
+        "type": "string",
+        "required": false
+      },
+      "counterparty-holder-id": {
+        "type": "string",
+        "required": false
+      },
+      "counterparty-holder-name": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "options": [
+      "--from-json",
+      "--idempotency-key"
+    ],
+    "confirm": false
+  }
+}
