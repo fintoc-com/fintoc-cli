@@ -788,11 +788,11 @@ type FlagSchema = {
   deprecated?: string
 }
 
-type CommandSchema = {
+export type CommandSchema = {
   command: string
   aliases: string[]
   description: string
-  kind: 'read' | 'list' | 'write'
+  kind: 'read' | 'list' | 'write' | 'utility'
   args: ArgDef[]
   flags: FlagSchema[]
   files: FileDef[]

@@ -210,7 +210,20 @@ describe('missing command', () => {
 
 describe('commands', () => {
   test('lists every resource command as JSON', () => {
-    const commands = JSON.parse(run(['--json', 'commands']).stdout) as { command: string }[]
-    expect(commands.map((c) => c.command)).toContain('fintoc v2 transfers create')
+    const commands = JSON.parse(run(['--json', 'commands']).stdout) as {
+      command: string
+      kind: string
+      options: string[]
+    }[]
+    const names = commands.map((c) => c.command)
+    expect(names).toContain('fintoc v2 transfers create')
+    expect(names).toEqual(
+      expect.arrayContaining(['fintoc login', 'fintoc config set', 'fintoc doctor']),
+    )
+    expect(names).not.toContain('fintoc config')
+    expect(commands.find((c) => c.command === 'fintoc trigger')).toMatchObject({
+      kind: 'utility',
+      options: ['--override', '--from-json'],
+    })
   })
 })
