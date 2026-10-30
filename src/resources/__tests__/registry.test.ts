@@ -262,13 +262,13 @@ describe('resource registry', () => {
   describe('resource-specific flags', () => {
     test('checkout_sessions requires amount and currency', () => {
       const checkoutSessions = find('checkout_sessions', 'v1')
-      const requiredFlags = checkoutSessions.createFlags!.filter((f) => f.required)
+      const requiredFlags = checkoutSessions.createFlags!.filter((f) => f.required || f.pathParam)
       expect(requiredFlags.map((f) => f.name)).toEqual(['amount', 'currency'])
     })
 
     test('transfers requires amount, currency, account-id and counterparty-account-number', () => {
       const transfers = find('transfers', 'v2')
-      const requiredFlags = transfers.createFlags!.filter((f) => f.required)
+      const requiredFlags = transfers.createFlags!.filter((f) => f.required || f.pathParam)
       expect(requiredFlags.map((f) => f.name)).toEqual([
         'amount',
         'currency',
@@ -279,7 +279,7 @@ describe('resource registry', () => {
 
     test('webhook_endpoints requires url and enabled-events', () => {
       const webhooks = find('webhook_endpoints', 'v1')
-      const requiredFlags = webhooks.createFlags!.filter((f) => f.required)
+      const requiredFlags = webhooks.createFlags!.filter((f) => f.required || f.pathParam)
       expect(requiredFlags.map((f) => f.name)).toEqual(['url', 'enabled-events'])
     })
 
@@ -293,14 +293,16 @@ describe('resource registry', () => {
       const webhooks = find('webhook_endpoints', 'v1')
       const testAction = webhooks.actions!.find((a) => a.name === 'test')!
       expect(testAction.sdkMethod).toBe('test')
-      const requiredTestFlags = testAction.flags!.filter((f) => f.required).map((f) => f.name)
+      const requiredTestFlags = testAction
+        .flags!.filter((f) => f.required || f.pathParam)
+        .map((f) => f.name)
       expect(requiredTestFlags).toEqual(['type'])
     })
 
     test('refresh_intents create requires link-token', () => {
       const refreshIntents = find('refresh_intents', 'v1')
       expect(refreshIntents.verbs).toContain('create')
-      const requiredFlags = refreshIntents.createFlags!.filter((f) => f.required)
+      const requiredFlags = refreshIntents.createFlags!.filter((f) => f.required || f.pathParam)
       expect(requiredFlags.map((f) => f.name)).toEqual(['link-token'])
     })
 
@@ -317,25 +319,25 @@ describe('resource registry', () => {
     test('account_verifications requires account-number and needs JWS', () => {
       const av = find('account_verifications', 'v2')
       expect(av.needsJws).toBe(true)
-      const requiredFlags = av.createFlags!.filter((f) => f.required)
+      const requiredFlags = av.createFlags!.filter((f) => f.required || f.pathParam)
       expect(requiredFlags.map((f) => f.name)).toEqual(['account-number'])
     })
 
     test('account_numbers requires account-id for create', () => {
       const an = find('account_numbers', 'v2')
-      const requiredFlags = an.createFlags!.filter((f) => f.required)
+      const requiredFlags = an.createFlags!.filter((f) => f.required || f.pathParam)
       expect(requiredFlags.map((f) => f.name)).toEqual(['account-id'])
     })
 
     test('movements requires account-id for get and list', () => {
       const movements = find('movements', 'v2')
       expect(movements.getFlags).toBeDefined()
-      expect(movements.getFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
-        'account-id',
-      ])
-      expect(movements.listFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
-        'account-id',
-      ])
+      expect(
+        movements.getFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+      ).toEqual(['account-id'])
+      expect(
+        movements.listFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+      ).toEqual(['account-id'])
     })
 
     test('movements uses nested sdkMethod path', () => {
@@ -356,53 +358,53 @@ describe('resource registry', () => {
       ['link_intents', 'v1', ['country', 'holder-type', 'product']],
     ] as const)('%s (%s) required create flags', (name, namespace, expected) => {
       const resource = find(name, namespace)
-      expect(resource.createFlags!.filter((f) => f.required).map((f) => f.name)).toEqual(expected)
+      expect(
+        resource.createFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+      ).toEqual(expected)
     })
 
     test.each(['accounts', 'invoices', 'tax_returns', 'tax_statements', 'refresh_intents'])(
       'v1 %s requires link-token for get and list',
       (name) => {
         const resource = find(name, 'v1')
-        expect(resource.getFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
-          'link-token',
-        ])
-        expect(resource.listFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
-          'link-token',
-        ])
+        expect(
+          resource.getFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+        ).toEqual(['link-token'])
+        expect(
+          resource.listFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+        ).toEqual(['link-token'])
       },
     )
 
     test('v1 movements requires account-id and link-token for get and list', () => {
       const movements = find('movements', 'v1')
       expect(movements.sdkMethod).toBe('accounts.movements')
-      expect(movements.getFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
-        'account-id',
-        'link-token',
-      ])
-      expect(movements.listFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
-        'account-id',
-        'link-token',
-      ])
+      expect(
+        movements.getFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+      ).toEqual(['account-id', 'link-token'])
+      expect(
+        movements.listFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+      ).toEqual(['account-id', 'link-token'])
     })
 
     test('onboardings uses nested sdkMethod and requires entity-id', () => {
       const onboardings = find('onboardings', 'v2')
       expect(onboardings.sdkMethod).toBe('entities.onboardings')
-      expect(onboardings.getFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
-        'entity-id',
-      ])
-      expect(onboardings.listFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
-        'entity-id',
-      ])
+      expect(
+        onboardings.getFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+      ).toEqual(['entity-id'])
+      expect(
+        onboardings.listFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+      ).toEqual(['entity-id'])
     })
 
     test('account_statements uses nested sdkMethod, list only, requires account-id', () => {
       const statements = find('account_statements', 'v2')
       expect(statements.sdkMethod).toBe('accounts.accountStatements')
       expect(statements.verbs).toEqual(['list'])
-      expect(statements.listFlags!.filter((f) => f.required).map((f) => f.name)).toEqual([
-        'account-id',
-      ])
+      expect(
+        statements.listFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
+      ).toEqual(['account-id'])
     })
   })
 
@@ -454,10 +456,10 @@ describe('resource registry', () => {
       }
     })
 
-    test('transfers return needs JWS and takes no id', () => {
+    test('transfers return needs JWS and sends its positional id in the body', () => {
       const returnAction = find('transfers', 'v2').actions!.find((a) => a.name === 'return')!
       expect(returnAction.needsJws).toBe(true)
-      expect(returnAction.idArg).toBe(false)
+      expect(returnAction.idArg).toMatchObject({ name: 'transfer_id', bodyField: 'transfer_id' })
     })
 
     test('nested write resources mark their parent id as a path param', () => {
@@ -484,5 +486,94 @@ describe('resource registry', () => {
       ])
       expect(files.every((f) => f.required)).toBe(true)
     })
+  })
+})
+
+const allFlags = resources.flatMap((r) => {
+  const where = `${r.sdkNamespace} ${r.cliCommand}`
+  const groups = {
+    create: r.createFlags,
+    get: r.getFlags,
+    list: r.listFlags,
+    update: r.updateFlags,
+    delete: r.deleteFlags,
+  }
+  return [
+    ...Object.entries(groups).flatMap(([verb, flags]) =>
+      (flags ?? []).map((flag) => ({ flag, where: `${where} ${verb}` })),
+    ),
+    ...(r.actions ?? []).flatMap((a) =>
+      (a.flags ?? []).map((flag) => ({ flag, where: `${where} ${a.name}` })),
+    ),
+  ]
+})
+
+const SHARED_FLAGS = [
+  'recipient-account-holder-id',
+  'recipient-account-institution-id',
+  'recipient-account-number',
+  'recipient-account-type',
+  'sender-account-holder-id',
+  'sender-account-institution-id',
+  'business-profile-tax-id',
+  'business-profile-name',
+  'business-profile-category',
+  'customer-email',
+  'collection-method',
+  'mx-direct-debit-interval',
+  'mx-direct-debit-max-amount',
+  'options-min-amount',
+  'options-max-amount',
+  'metadata',
+]
+
+describe('style', () => {
+  test('flag descriptions follow the style guide', () => {
+    const violations = allFlags
+      .filter(({ flag }) => !flag.deprecated)
+      .flatMap(({ flag, where }) => {
+        const d = flag.description ?? ''
+        const problems = [
+          !/^[A-Z]/.test(d) && 'starts lowercase',
+          /\.$/.test(d) && 'ends with a period',
+          /true or false/.test(d) && 'repeats "true or false"',
+          d.startsWith('New ') && 'starts with "New"',
+          /(?<!the )smallest currency unit/.test(d) &&
+            'says "smallest currency unit" without "the"',
+          /for CL\b|\(Chile\)|centavos/.test(d) && 'uses a non-canonical country or unit note',
+          /e\.g\. /.test(d) && 'writes "e.g." without a comma',
+        ].filter(Boolean)
+        return problems.map((p) => `${where} --${flag.name}: ${p}`)
+      })
+    expect(violations).toEqual([])
+  })
+
+  test.each(SHARED_FLAGS)('--%s has the same description everywhere', (name) => {
+    const descriptions = new Set(
+      allFlags.filter(({ flag }) => flag.name === name).map(({ flag }) => flag.description),
+    )
+    expect([...descriptions]).toHaveLength(1)
+  })
+
+  test('write actions have a success message and positionals a description', () => {
+    const problems = resources.flatMap((r) =>
+      (r.actions ?? []).flatMap((a) => [
+        ...((a.kind ?? 'write') === 'write' && !a.successMessage
+          ? [`${r.cliCommand} ${a.name}: missing successMessage`]
+          : []),
+        ...[...(a.idArg ? [a.idArg] : []), ...(a.extraArgs ?? [])]
+          .filter((arg) => !arg.description)
+          .map((arg) => `${r.cliCommand} ${a.name} <${arg.name}>: missing description`),
+      ]),
+    )
+    expect(problems).toEqual([])
+  })
+
+  test('command descriptions are sentence case without a trailing period', () => {
+    const descriptions = resources.flatMap((r) => [
+      ...(r.description ? [r.description] : []),
+      ...(r.actions ?? []).map((a) => a.description),
+    ])
+    expect(descriptions.filter((d) => !/^[A-Z]/.test(d) || /\.$/.test(d))).toEqual([])
   })
 })

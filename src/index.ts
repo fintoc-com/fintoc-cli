@@ -64,11 +64,15 @@ const COMMANDER_ERROR_CODES: Record<string, string> = {
   'commander.excessArguments': 'too_many_arguments',
 }
 
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+
 const commanderErrorJson = (err: CommanderError) => {
-  const message = err.message
-    .replace(/^error:\s*/i, '')
-    .replace(/\s*\n\s*/g, ' ')
-    .trim()
+  const message = capitalize(
+    err.message
+      .replace(/^error:\s*/i, '')
+      .replace(/\s*\n\s*/g, ' ')
+      .trim(),
+  )
   return {
     error: {
       type: 'usage_error',
@@ -84,7 +88,8 @@ const program = new Command()
 program
   .name('fintoc')
   .description('Fintoc CLI — manage your Fintoc resources from the terminal')
-  .version(versionString, '-v, --version')
+  .version(versionString, '-v, --version', 'Show the CLI version')
+  .helpOption('-h, --help', 'Show help for a command')
   .option('--api-key <key>', 'Override API key for this command')
   .option('--json', 'Output as JSON')
   .option('--no-color', 'Disable colored output')
@@ -98,7 +103,7 @@ program
       const match = str.match(/^error:\s*(.*)/is)
       const message = match ? match[1].trim() : str.trim()
       if (message) {
-        error(message)
+        error(capitalize(message))
       }
     },
     writeOut: (str: string) => {
@@ -127,7 +132,7 @@ program.configureHelp({
 
     lines.push(cmd.description())
     lines.push('')
-    lines.push(`Usage: ${cmd.name()} <command> [flags]`)
+    lines.push(`Usage: ${cmd.name()} <command> [options]`)
 
     const subcommands = cmd.commands
 
@@ -153,7 +158,7 @@ program.configureHelp({
     formatGroup(lines, 'Resources', resourceEntries, padWidth)
     formatGroup(lines, 'Utilities', utilityEntries, padWidth)
 
-    formatOptions(lines, 'Flags', helper.visibleOptions(cmd), helper)
+    formatOptions(lines, 'Options', helper.visibleOptions(cmd), helper)
 
     lines.push('')
     lines.push('Get started: fintoc login')

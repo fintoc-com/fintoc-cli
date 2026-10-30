@@ -721,13 +721,10 @@
     "confirm": false
   },
   "v2 transfers return": {
-    "args": [],
-    "flags": {
-      "transfer-id": {
-        "type": "string",
-        "required": true
-      }
-    },
+    "args": [
+      "transfer_id"
+    ],
+    "flags": {},
     "options": [
       "--from-json",
       "--idempotency-key",

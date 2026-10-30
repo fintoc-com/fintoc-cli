@@ -6,7 +6,7 @@ import { resources } from '../resources/registry.js'
 export const commandsCommand = (program: Command) => {
   program
     .command('commands')
-    .description('List every resource command, with --json for args, flags and API params')
+    .description('List resource commands (with --json: arguments, flags and API parameters)')
     .configureHelp({ showGlobalOptions: true })
     .action((_opts: unknown, actionCmd: Command) => {
       const commands = describeCommands(resources)

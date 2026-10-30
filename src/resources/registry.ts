@@ -23,6 +23,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'payment_intents',
     displayName: 'payment intent',
+    description: 'Manage payment intents (API v1)',
     cliCommand: 'payment_intents',
     sdkMethod: 'paymentIntents',
     sdkNamespace: 'v1',
@@ -33,7 +34,7 @@ export const resources: ResourceDef[] = [
         name: 'amount',
         type: 'integer',
         required: true,
-        description: 'Amount to pay in smallest currency unit',
+        description: 'Amount to pay in the smallest currency unit',
       },
       {
         name: 'currency',
@@ -49,7 +50,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'customer-email',
         type: 'string',
-        description: 'Customer email for payment notifications',
+        description: 'Customer email to send notifications and receipts to',
       },
       {
         name: 'customer-phone',
@@ -59,7 +60,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'expires-at',
         type: 'string',
-        description: 'When the payment expires (ISO 8601 datetime in UTC)',
+        description: 'When the payment expires (ISO 8601 datetime, UTC)',
       },
       {
         name: 'reference-number',
@@ -69,13 +70,13 @@ export const resources: ResourceDef[] = [
       {
         name: 'recipient-account-holder-id',
         type: 'string',
-        description: 'Recipient account holder tax ID (RUT, Chile only)',
+        description: 'Recipient account holder tax ID (e.g., RUT in Chile)',
         nestedPath: 'recipient_account.holder_id',
       },
       {
         name: 'recipient-account-number',
         type: 'string',
-        description: 'Recipient account number (Chile only)',
+        description: 'Recipient account number',
         nestedPath: 'recipient_account.number',
       },
       {
@@ -93,13 +94,13 @@ export const resources: ResourceDef[] = [
       {
         name: 'sender-account-holder-id',
         type: 'string',
-        description: 'Sender account holder tax ID (RUT, Chile only)',
+        description: 'Sender account holder tax ID (e.g., RUT in Chile)',
         nestedPath: 'sender_account.holder_id',
       },
       {
         name: 'sender-account-institution-id',
         type: 'string',
-        description: 'Sender bank institution ID (Chile only)',
+        description: 'Sender bank institution ID (e.g., cl_banco_estado)',
         nestedPath: 'sender_account.institution_id',
       },
       {
@@ -111,13 +112,13 @@ export const resources: ResourceDef[] = [
         name: 'cash-send-voucher',
         type: 'boolean',
         nestedPath: 'payment_type_options.cash.notification_preferences.send_voucher',
-        description: 'Send the cash payment voucher to the customer (true or false)',
+        description: 'Send the cash payment voucher to the customer',
       },
       {
         name: 'cash-send-reminders',
         type: 'boolean',
         nestedPath: 'payment_type_options.cash.notification_preferences.send_reminders',
-        description: 'Store the payment reminders preference (true or false)',
+        description: 'Store the payment reminders preference',
       },
     ],
     listFlags: [
@@ -129,12 +130,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
     actions: [
@@ -162,7 +163,7 @@ export const resources: ResourceDef[] = [
         name: 'amount',
         type: 'integer',
         required: true,
-        description: 'Amount in smallest currency unit',
+        description: 'Amount in the smallest currency unit',
       },
       {
         name: 'currency',
@@ -187,25 +188,26 @@ export const resources: ResourceDef[] = [
         name: 'counterparty-institution-id',
         type: 'string',
         description:
-          'Destination bank institution ID (e.g., cl_banco_estado). Required in Chile, and for debit cards in Mexico',
+          'Destination bank institution ID (e.g., cl_banco_estado; required in Chile and for debit cards in Mexico)',
         nestedPath: 'counterparty.institution_id',
       },
       {
         name: 'counterparty-holder-id',
         type: 'string',
-        description: 'Counterparty holder ID (e.g., RUT in Chile, required for CL)',
+        description: 'Destination account holder tax ID (e.g., RUT in Chile; required in Chile)',
         nestedPath: 'counterparty.holder_id',
       },
       {
         name: 'counterparty-account-type',
         type: 'string',
-        description: 'Counterparty account type (checking_account, sight_account, required for CL)',
+        description:
+          'Destination account type (checking_account, sight_account; required in Chile)',
         nestedPath: 'counterparty.account_type',
       },
       {
         name: 'comment',
         type: 'string',
-        description: 'Reference visible to the recipient',
+        description: 'Comment shown to the recipient (up to 40 characters)',
       },
       {
         name: 'counterparty-holder-name',
@@ -222,7 +224,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'reference-id',
         type: 'string',
-        description: 'Numeric reference shown to the counterparty in Mexico (up to 7 digits)',
+        description: 'Numeric reference shown to the recipient (up to 7 digits; Mexico only)',
       },
       {
         name: 'metadata',
@@ -239,12 +241,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
       {
         name: 'account-id',
@@ -284,25 +286,22 @@ export const resources: ResourceDef[] = [
         idempotencyKey: true,
         sdkMethod: 'return',
         description: 'Return an inbound transfer',
-        idArg: false,
-        flags: [
-          {
-            name: 'transfer-id',
-            type: 'string',
-            required: true,
-            description: 'ID of the inbound transfer to return',
-          },
-        ],
+        idArg: {
+          name: 'transfer_id',
+          description: 'ID of the inbound transfer to return',
+          bodyField: 'transfer_id',
+        },
         fromJson: true,
         confirm: true,
         needsJws: true,
-        successMessage: 'Transfer returned',
+        successMessage: "{resource} '{id}' returned",
       },
     ],
   },
   {
     name: 'accounts',
     displayName: 'account',
+    description: 'Manage accounts (Transfers API)',
     cliCommand: 'accounts',
     sdkMethod: 'accounts',
     sdkNamespace: 'v2',
@@ -354,7 +353,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'description',
         type: 'string',
-        description: 'New description of the account (up to 40 characters)',
+        description: 'Description of the account (up to 40 characters)',
       },
     ],
   },
@@ -391,7 +390,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'url',
         type: 'string',
-        description: 'HTTPS URL that receives the events',
+        description: 'Endpoint URL to receive webhooks',
       },
       {
         name: 'enabled-events',
@@ -445,19 +444,19 @@ export const resources: ResourceDef[] = [
         name: 'amount',
         type: 'integer',
         required: true,
-        description: 'Amount in smallest currency unit',
+        description: 'Amount in the smallest currency unit',
       },
       {
         name: 'currency',
         type: 'string',
         required: true,
-        description: 'Currency code (e.g., CLP)',
+        description: 'Currency code (CLP)',
       },
       {
         name: 'subscription-id',
         type: 'string',
         required: true,
-        description: 'Subscription ID to charge',
+        description: 'ID of the subscription to charge',
       },
       {
         name: 'metadata',
@@ -468,43 +467,43 @@ export const resources: ResourceDef[] = [
         name: 'business-profile-category',
         type: 'string',
         nestedPath: 'business_profile.category',
-        description: 'Activity code of the enrolled merchant',
+        description: 'Business activity code (e.g., MCC; 6 characters in Chile)',
       },
       {
         name: 'business-profile-name',
         type: 'string',
         nestedPath: 'business_profile.name',
-        description: 'Name of the enrolled merchant',
+        description: 'Business name shown to the payer',
       },
       {
         name: 'business-profile-tax-id',
         type: 'string',
         nestedPath: 'business_profile.tax_id',
-        description: 'RUT of the enrolled merchant',
+        description: 'Business tax ID (e.g., RUT in Chile)',
       },
       {
         name: 'recipient-account-holder-id',
         type: 'string',
         nestedPath: 'recipient_account.holder_id',
-        description: 'RUT of the recipient account holder',
+        description: 'Recipient account holder tax ID (e.g., RUT in Chile)',
       },
       {
         name: 'recipient-account-institution-id',
         type: 'string',
         nestedPath: 'recipient_account.institution_id',
-        description: 'Institution ID of the recipient account',
+        description: 'Recipient bank institution ID (e.g., cl_banco_estado)',
       },
       {
         name: 'recipient-account-number',
         type: 'string',
         nestedPath: 'recipient_account.number',
-        description: 'Recipient account number, digits only',
+        description: 'Recipient account number',
       },
       {
         name: 'recipient-account-type',
         type: 'string',
         nestedPath: 'recipient_account.type',
-        description: 'Recipient account type (e.g., checking_account)',
+        description: 'Recipient account type (e.g., checking_account, sight_account)',
       },
     ],
     listFlags: [
@@ -516,12 +515,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
       {
         name: 'subscription-id',
@@ -533,7 +532,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'amount',
         type: 'integer',
-        description: 'New amount in smallest currency unit',
+        description: 'Amount in the smallest currency unit',
       },
       {
         name: 'currency',
@@ -555,6 +554,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'subscriptions',
     displayName: 'subscription',
+    description: 'Manage direct debit subscriptions (legacy)',
     cliCommand: 'subscriptions',
     sdkMethod: 'subscriptions',
     sdkNamespace: 'v1',
@@ -571,12 +571,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
   },
@@ -627,6 +627,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'checkout_sessions',
     displayName: 'checkout session',
+    description: 'Manage checkout sessions (API v1)',
     cliCommand: 'checkout_sessions',
     sdkMethod: 'checkoutSessions',
     sdkNamespace: 'v1',
@@ -637,7 +638,7 @@ export const resources: ResourceDef[] = [
         name: 'amount',
         type: 'integer',
         required: true,
-        description: 'Amount to pay in smallest currency unit (must be > 0 and < 7000000)',
+        description: 'Amount to pay in the smallest currency unit (up to 6999999)',
       },
       {
         name: 'currency',
@@ -653,17 +654,17 @@ export const resources: ResourceDef[] = [
       {
         name: 'cancel-url',
         type: 'string',
-        description: 'Redirect URL if customer cancels',
+        description: 'Redirect URL when the payment is not completed',
       },
       {
         name: 'customer-email',
         type: 'string',
-        description: 'Customer email for refund notifications',
+        description: 'Customer email to send notifications and receipts to',
       },
       {
         name: 'recipient-account-type',
         type: 'string',
-        description: 'Recipient account type (checking_account, sight_account)',
+        description: 'Recipient account type (e.g., checking_account, sight_account)',
         nestedPath: 'payment_method_options.payment_intent.recipient_account.type',
       },
       {
@@ -675,7 +676,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'recipient-account-holder-id',
         type: 'string',
-        description: 'Recipient account holder ID (e.g., RUT in Chile)',
+        description: 'Recipient account holder tax ID (e.g., RUT in Chile)',
         nestedPath: 'payment_method_options.payment_intent.recipient_account.holder_id',
       },
       {
@@ -687,19 +688,19 @@ export const resources: ResourceDef[] = [
       {
         name: 'business-profile-tax-id',
         type: 'string',
-        description: 'Merchant tax ID (e.g., RUT in Chile)',
+        description: 'Business tax ID (e.g., RUT in Chile)',
         nestedPath: 'business_profile.tax_id',
       },
       {
         name: 'business-profile-name',
         type: 'string',
-        description: 'Merchant display name',
+        description: 'Business name shown to the payer',
         nestedPath: 'business_profile.name',
       },
       {
         name: 'business-profile-category',
         type: 'string',
-        description: 'Merchant activity code (6 characters in Chile)',
+        description: 'Business activity code (e.g., MCC; 6 characters in Chile)',
         nestedPath: 'business_profile.category',
       },
     ],
@@ -741,18 +742,18 @@ export const resources: ResourceDef[] = [
         name: 'institution-id',
         type: 'string',
         description:
-          'Institution ID. Required in Chile, and for debit cards or phone numbers in Mexico',
+          'Bank institution ID (e.g., cl_banco_estado; required in Chile and for debit cards or phone numbers in Mexico)',
       },
       {
         name: 'account-type',
         type: 'string',
         description:
-          'Account type, required in Chile: checking_account, sight_account or savings_account',
+          'Account type (checking_account, sight_account, savings_account; required in Chile)',
       },
       {
         name: 'holder-id',
         type: 'string',
-        description: 'RUT of the expected account holder, required in Chile',
+        description: 'Expected account holder tax ID (e.g., RUT in Chile; required in Chile)',
       },
     ],
     listFlags: [
@@ -769,12 +770,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
   },
@@ -802,13 +803,13 @@ export const resources: ResourceDef[] = [
         name: 'options-min-amount',
         type: 'integer',
         nestedPath: 'options.min_amount',
-        description: 'Minimum inbound amount, in the smallest currency unit',
+        description: 'Minimum inbound amount in the smallest currency unit (Mexico only)',
       },
       {
         name: 'options-max-amount',
         type: 'integer',
         nestedPath: 'options.max_amount',
-        description: 'Maximum inbound amount, in the smallest currency unit',
+        description: 'Maximum inbound amount in the smallest currency unit (Mexico only)',
       },
       {
         name: 'metadata',
@@ -843,13 +844,13 @@ export const resources: ResourceDef[] = [
       {
         name: 'options-min-amount',
         type: 'integer',
-        description: 'Minimum inbound amount in smallest currency unit (Mexico only)',
+        description: 'Minimum inbound amount in the smallest currency unit (Mexico only)',
         nestedPath: 'options.min_amount',
       },
       {
         name: 'options-max-amount',
         type: 'integer',
-        description: 'Maximum inbound amount in smallest currency unit (Mexico only)',
+        description: 'Maximum inbound amount in the smallest currency unit (Mexico only)',
         nestedPath: 'options.max_amount',
       },
       {
@@ -862,6 +863,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'movements',
     displayName: 'movement',
+    description: 'Manage account movements (Transfers API)',
     cliCommand: 'movements',
     sdkMethod: 'accounts.movements',
     sdkNamespace: 'v2',
@@ -871,7 +873,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'account-id',
         type: 'string',
-        required: true,
+        pathParam: true,
         description: 'Account ID to retrieve the movement from',
       },
     ],
@@ -879,18 +881,18 @@ export const resources: ResourceDef[] = [
       {
         name: 'account-id',
         type: 'string',
-        required: true,
+        pathParam: true,
         description: 'Account ID to list movements for',
       },
       {
         name: 'since',
         type: 'string',
-        description: 'Show results with post_date after this date (ISO 8601)',
+        description: 'Show movements with a post date on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results with post_date before this date (ISO 8601)',
+        description: 'Show movements with a post date on or before this date (ISO 8601)',
       },
       {
         name: 'resource-id',
@@ -938,7 +940,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'amount',
         type: 'integer',
-        description: 'Amount to refund in smallest currency unit (defaults to the full amount)',
+        description: 'Amount to refund in the smallest currency unit (defaults to the full amount)',
       },
       {
         name: 'recipient-account-holder-id',
@@ -961,7 +963,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'recipient-account-type',
         type: 'string',
-        description: 'Recipient account type (checking_account, sight_account)',
+        description: 'Recipient account type (e.g., checking_account, sight_account)',
         nestedPath: 'recipient_account.type',
       },
       {
@@ -985,12 +987,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
     actions: [
@@ -1022,13 +1024,13 @@ export const resources: ResourceDef[] = [
       {
         name: 'business-profile-name',
         type: 'string',
-        description: "Name displayed to the payer as the subscription's recipient",
+        description: 'Business name shown to the payer',
         nestedPath: 'business_profile.name',
       },
       {
         name: 'customer-email',
         type: 'string',
-        description: 'Payer email to send the subscription receipt to',
+        description: 'Customer email to send notifications and receipts to',
       },
       {
         name: 'reference-id',
@@ -1040,12 +1042,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
   },
@@ -1062,7 +1064,7 @@ export const resources: ResourceDef[] = [
         name: 'amount',
         type: 'integer',
         required: true,
-        description: 'Amount to collect in smallest currency unit',
+        description: 'Amount to collect in the smallest currency unit',
       },
       {
         name: 'currency',
@@ -1073,7 +1075,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'customer-email',
         type: 'string',
-        description: 'Customer email for transaction notifications',
+        description: 'Customer email to send notifications and receipts to',
       },
       {
         name: 'expires-after-seconds',
@@ -1089,7 +1091,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'recipient-account-holder-id',
         type: 'string',
-        description: 'Recipient account holder ID (e.g., RUT in Chile)',
+        description: 'Recipient account holder tax ID (e.g., RUT in Chile)',
         nestedPath: 'recipient_account.holder_id',
       },
       {
@@ -1113,19 +1115,19 @@ export const resources: ResourceDef[] = [
       {
         name: 'business-profile-tax-id',
         type: 'string',
-        description: 'Merchant tax ID (e.g., RUT in Chile)',
+        description: 'Business tax ID (e.g., RUT in Chile)',
         nestedPath: 'business_profile.tax_id',
       },
       {
         name: 'business-profile-name',
         type: 'string',
-        description: 'Merchant display name',
+        description: 'Business name shown to the payer',
         nestedPath: 'business_profile.name',
       },
       {
         name: 'business-profile-category',
         type: 'string',
-        description: 'Merchant activity code (6 characters in Chile)',
+        description: 'Business activity code (e.g., MCC; 6 characters in Chile)',
         nestedPath: 'business_profile.category',
       },
       {
@@ -1138,12 +1140,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
     actions: [
@@ -1178,17 +1180,18 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
     actions: [
       {
         name: 'submit_for_review',
+        confirmPhrase: "submit {resource} '{id}' for review",
         idempotencyKey: true,
         sdkMethod: 'submitForReview',
         description: 'Submit a dispute for review',
@@ -1208,6 +1211,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'accounts',
     displayName: 'account',
+    description: 'Manage accounts of links (Movements API)',
     cliCommand: 'accounts',
     sdkMethod: 'accounts',
     sdkNamespace: 'v1',
@@ -1233,6 +1237,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'movements',
     displayName: 'movement',
+    description: 'Manage movements of link accounts (Movements API)',
     cliCommand: 'movements',
     sdkMethod: 'accounts.movements',
     sdkNamespace: 'v1',
@@ -1242,7 +1247,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'account-id',
         type: 'string',
-        required: true,
+        pathParam: true,
         description: 'Account ID to retrieve the movement from',
       },
       {
@@ -1256,7 +1261,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'account-id',
         type: 'string',
-        required: true,
+        pathParam: true,
         description: 'Account ID to list movements for',
       },
       {
@@ -1268,17 +1273,17 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results with post_date after this date (ISO 8601)',
+        description: 'Show movements with a post date on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results with post_date before this date (ISO 8601)',
+        description: 'Show movements with a post date on or before this date (ISO 8601)',
       },
       {
         name: 'updated-since',
         type: 'string',
-        description: 'Show results created or updated after this date (ISO 8601)',
+        description: 'Show results created or updated on or after this date (ISO 8601)',
       },
       {
         name: 'confirmed-only',
@@ -1290,6 +1295,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'invoices',
     displayName: 'invoice',
+    description: 'Manage tax invoices (Fiscal API)',
     cliCommand: 'invoices',
     sdkMethod: 'invoices',
     sdkNamespace: 'v1',
@@ -1323,7 +1329,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'updated-since',
         type: 'string',
-        description: 'Show invoices updated on or after this datetime (ISO 8601)',
+        description: 'Show invoices updated on or after this date (ISO 8601)',
       },
       {
         name: 'issue-type',
@@ -1408,6 +1414,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'checkout_sessions',
     displayName: 'checkout session',
+    description: 'Manage checkout sessions (API v2)',
     cliCommand: 'checkout_sessions',
     sdkMethod: 'checkoutSessions',
     sdkNamespace: 'v2',
@@ -1423,7 +1430,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'amount',
         type: 'integer',
-        description: 'Amount to charge in smallest currency unit',
+        description: 'Amount to charge in the smallest currency unit',
       },
       {
         name: 'flow',
@@ -1438,7 +1445,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'customer-email',
         type: 'string',
-        description: 'Customer email to send the payment receipt to',
+        description: 'Customer email to send notifications and receipts to',
       },
       {
         name: 'customer-phone',
@@ -1473,7 +1480,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'expires-at',
         type: 'string',
-        description: 'When the session expires (ISO 8601 datetime in UTC)',
+        description: 'When the session expires (ISO 8601 datetime, UTC)',
       },
       {
         name: 'ui-mode',
@@ -1483,19 +1490,19 @@ export const resources: ResourceDef[] = [
       {
         name: 'business-profile-tax-id',
         type: 'string',
-        description: 'Business tax ID',
+        description: 'Business tax ID (e.g., RUT in Chile)',
         nestedPath: 'business_profile.tax_id',
       },
       {
         name: 'business-profile-name',
         type: 'string',
-        description: 'Business name',
+        description: 'Business name shown to the payer',
         nestedPath: 'business_profile.name',
       },
       {
         name: 'business-profile-category',
         type: 'string',
-        description: 'Business merchant category code (MCC)',
+        description: 'Business activity code (e.g., MCC; 6 characters in Chile)',
         nestedPath: 'business_profile.category',
       },
       {
@@ -1511,17 +1518,19 @@ export const resources: ResourceDef[] = [
       {
         name: 'trial-end',
         type: 'string',
-        description: 'End of the trial of the subscription the session starts (ISO 8601)',
+        description:
+          'End of the trial of the subscription the session starts (ISO 8601 datetime, UTC)',
       },
       {
         name: 'billing-cycle-anchor',
         type: 'string',
-        description: 'First charge of the subscription the session starts (ISO 8601)',
+        description: 'First charge of the subscription the session starts (ISO 8601 datetime, UTC)',
       },
       {
         name: 'subscription-cancel-at',
         type: 'string',
-        description: 'Scheduled cancellation of the subscription the session starts (ISO 8601)',
+        description:
+          'Scheduled cancellation of the subscription the session starts (ISO 8601 datetime, UTC)',
       },
       {
         name: 'customer-data-name',
@@ -1611,13 +1620,13 @@ export const resources: ResourceDef[] = [
         name: 'mx-direct-debit-max-amount',
         type: 'integer',
         nestedPath: 'payment_method_options.mx_direct_debit.max_amount',
-        description: 'Maximum debit per interval, in centavos',
+        description: 'Maximum debit per interval in the smallest currency unit',
       },
       {
         name: 'mx-direct-debit-interval',
         type: 'string',
         nestedPath: 'payment_method_options.mx_direct_debit.interval',
-        description: 'Period of the maximum debit: week, month or year',
+        description: 'Period of the maximum debit (week, month, year)',
       },
       {
         name: 'bank-transfer-reference-number',
@@ -1629,13 +1638,13 @@ export const resources: ResourceDef[] = [
         name: 'cash-send-voucher',
         type: 'boolean',
         nestedPath: 'payment_method_options.cash.notification_preferences.send_voucher',
-        description: 'Send the cash payment voucher to the customer (true or false)',
+        description: 'Send the cash payment voucher to the customer',
       },
       {
         name: 'cash-send-reminders',
         type: 'boolean',
         nestedPath: 'payment_method_options.cash.notification_preferences.send_reminders',
-        description: 'Store the payment reminders preference (true or false)',
+        description: 'Store the payment reminders preference',
       },
     ],
     listFlags: [],
@@ -1795,7 +1804,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'entity-id',
         type: 'string',
-        required: true,
+        pathParam: true,
         description: 'Entity ID to retrieve the onboarding from',
       },
     ],
@@ -1803,7 +1812,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'entity-id',
         type: 'string',
-        required: true,
+        pathParam: true,
         description: 'Entity ID to list onboardings for',
       },
     ],
@@ -1875,6 +1884,7 @@ export const resources: ResourceDef[] = [
       },
       {
         name: 'delete_document',
+        confirmPhrase: "delete a document from {resource} '{id}'",
         sdkMethod: 'deleteDocument',
         description: 'Delete a document from a slot',
         extraArgs: [
@@ -1938,6 +1948,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'payment_intents',
     displayName: 'payment intent',
+    description: 'Manage payment intents (API v2)',
     cliCommand: 'payment_intents',
     sdkMethod: 'paymentIntents',
     sdkNamespace: 'v2',
@@ -1948,7 +1959,7 @@ export const resources: ResourceDef[] = [
         name: 'amount',
         type: 'integer',
         required: true,
-        description: 'Amount to charge in smallest currency unit',
+        description: 'Amount to charge in the smallest currency unit',
       },
       {
         name: 'currency',
@@ -1972,12 +1983,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
     actions: [
@@ -2000,14 +2011,14 @@ export const resources: ResourceDef[] = [
         idempotencyKey: true,
         sdkMethod: 'checkEligibility',
         description: 'Check whether a payment can be made',
-        kind: 'read',
         idArg: false,
+        successMessage: 'Payment eligibility checked',
         flags: [
           {
             name: 'amount',
             type: 'integer',
             required: true,
-            description: 'Amount to pay in smallest currency unit',
+            description: 'Amount to pay in the smallest currency unit',
           },
           {
             name: 'currency',
@@ -2019,25 +2030,25 @@ export const resources: ResourceDef[] = [
             name: 'sender-account-institution-id',
             type: 'string',
             required: true,
-            description: 'Institution of the account the customer pays from',
+            description: 'Sender bank institution ID (e.g., cl_banco_estado)',
             nestedPath: 'sender_account.institution_id',
           },
           {
             name: 'sender-account-holder-id',
             type: 'string',
-            description: 'RUT of the sender account holder',
+            description: 'Sender account holder tax ID (e.g., RUT in Chile)',
             nestedPath: 'sender_account.holder_id',
           },
           {
             name: 'recipient-account-holder-id',
             type: 'string',
-            description: 'RUT of the recipient account holder',
+            description: 'Recipient account holder tax ID (e.g., RUT in Chile)',
             nestedPath: 'recipient_account.holder_id',
           },
           {
             name: 'recipient-account-institution-id',
             type: 'string',
-            description: 'Institution of the recipient account',
+            description: 'Recipient bank institution ID (e.g., cl_banco_estado)',
             nestedPath: 'recipient_account.institution_id',
           },
           {
@@ -2049,7 +2060,7 @@ export const resources: ResourceDef[] = [
           {
             name: 'recipient-account-type',
             type: 'string',
-            description: 'Recipient account type (e.g., checking_account)',
+            description: 'Recipient account type (e.g., checking_account, sight_account)',
             nestedPath: 'recipient_account.type',
           },
         ],
@@ -2111,14 +2122,14 @@ export const resources: ResourceDef[] = [
         name: 'mx-direct-debit-interval',
         type: 'string',
         required: true,
-        description: 'How often the mandate authorizes a charge (week, month, year)',
+        description: 'Period of the maximum debit (week, month, year)',
         nestedPath: 'mx_direct_debit.interval',
       },
       {
         name: 'mx-direct-debit-max-amount',
         type: 'integer',
         required: true,
-        description: 'Maximum amount for each debit in centavos',
+        description: 'Maximum debit per interval in the smallest currency unit',
         nestedPath: 'mx_direct_debit.max_amount',
       },
       {
@@ -2243,6 +2254,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'subscriptions',
     displayName: 'subscription',
+    description: 'Manage subscriptions (Billing API)',
     cliCommand: 'subscriptions',
     sdkMethod: 'subscriptions',
     sdkNamespace: 'v2',
@@ -2263,39 +2275,39 @@ export const resources: ResourceDef[] = [
       {
         name: 'payment-method',
         type: 'string',
-        description: 'Payment method ID (required with charge_automatically)',
+        description: 'ID of the payment method to charge (required with charge_automatically)',
       },
       {
         name: 'trial-end',
         type: 'string',
-        description: 'When the trial ends (ISO 8601 datetime in UTC)',
+        description: 'When the trial ends (ISO 8601 datetime, UTC)',
       },
       {
         name: 'billing-cycle-anchor',
         type: 'string',
-        description: 'First invoice and start of each billing period (ISO 8601 datetime in UTC)',
+        description: 'First invoice and start of each billing period (ISO 8601 datetime, UTC)',
       },
       {
         name: 'cancel-at',
         type: 'string',
-        description: 'Scheduled cancellation (ISO 8601 datetime in UTC)',
+        description: 'Scheduled cancellation (ISO 8601 datetime, UTC)',
       },
       {
         name: 'business-profile-tax-id',
         type: 'string',
-        description: 'Business tax ID',
+        description: 'Business tax ID (e.g., RUT in Chile)',
         nestedPath: 'business_profile.tax_id',
       },
       {
         name: 'business-profile-name',
         type: 'string',
-        description: 'Business name',
+        description: 'Business name shown to the payer',
         nestedPath: 'business_profile.name',
       },
       {
         name: 'business-profile-category',
         type: 'string',
-        description: 'Business merchant category code (MCC)',
+        description: 'Business activity code (e.g., MCC; 6 characters in Chile)',
         nestedPath: 'business_profile.category',
       },
       {
@@ -2309,12 +2321,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'trial-end',
         type: 'string',
-        description: 'When the trial ends (ISO 8601 datetime in UTC)',
+        description: 'When the trial ends (ISO 8601 datetime, UTC)',
       },
       {
         name: 'payment-method',
         type: 'string',
-        description: 'Payment method ID to charge from now on',
+        description: 'ID of the payment method to charge from now on',
       },
       {
         name: 'collection-method',
@@ -2324,7 +2336,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'cancel-at',
         type: 'string',
-        description: 'Scheduled cancellation (ISO 8601 datetime in UTC)',
+        description: 'Scheduled cancellation (ISO 8601 datetime, UTC)',
       },
     ],
     actions: [
@@ -2338,6 +2350,7 @@ export const resources: ResourceDef[] = [
       },
       {
         name: 'detach_payment_method',
+        confirmPhrase: "detach the payment method from {resource} '{id}'",
         sdkMethod: 'detachPaymentMethod',
         description: 'Detach the payment method from a subscription',
         confirm: true,
@@ -2348,6 +2361,7 @@ export const resources: ResourceDef[] = [
   {
     name: 'invoices',
     displayName: 'invoice',
+    description: 'Manage invoices (Billing API)',
     cliCommand: 'invoices',
     sdkMethod: 'invoices',
     sdkNamespace: 'v2',
@@ -2364,7 +2378,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'collection-method',
         type: 'string',
-        description: 'How the invoice is collected (charge_automatically, send_invoice)',
+        description: 'How invoices are collected (charge_automatically, send_invoice)',
       },
       {
         name: 'default-payment-method',
@@ -2374,19 +2388,19 @@ export const resources: ResourceDef[] = [
       {
         name: 'business-profile-tax-id',
         type: 'string',
-        description: 'Business tax ID',
+        description: 'Business tax ID (e.g., RUT in Chile)',
         nestedPath: 'business_profile.tax_id',
       },
       {
         name: 'business-profile-name',
         type: 'string',
-        description: 'Business name',
+        description: 'Business name shown to the payer',
         nestedPath: 'business_profile.name',
       },
       {
         name: 'business-profile-category',
         type: 'string',
-        description: 'Business merchant category code (MCC)',
+        description: 'Business activity code (e.g., MCC; 6 characters in Chile)',
         nestedPath: 'business_profile.category',
       },
       {
@@ -2420,7 +2434,7 @@ export const resources: ResourceDef[] = [
           {
             name: 'payment-method',
             type: 'string',
-            description: "Payment method to charge (defaults to the invoice's)",
+            description: "ID of the payment method to charge (defaults to the invoice's)",
           },
           {
             name: 'external-payment',
@@ -2441,6 +2455,7 @@ export const resources: ResourceDef[] = [
       },
       {
         name: 'mark_uncollectible',
+        confirmPhrase: "mark {resource} '{id}' as uncollectible",
         idempotencyKey: true,
         sdkMethod: 'markUncollectible',
         description: 'Mark an invoice as uncollectible',
@@ -2457,6 +2472,7 @@ export const resources: ResourceDef[] = [
       },
       {
         name: 'remove_lines',
+        confirmPhrase: "remove lines from {resource} '{id}'",
         idempotencyKey: true,
         sdkMethod: 'removeLines',
         description: 'Remove line items from a draft invoice',
@@ -2485,7 +2501,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'account-id',
         type: 'string',
-        required: true,
+        pathParam: true,
         description: 'Account ID to list statements for',
       },
       {
@@ -2530,23 +2546,23 @@ export const resources: ResourceDef[] = [
       {
         name: 'holder-id',
         type: 'string',
-        description: 'Account holder tax ID (RUT, required in Chile)',
+        description: 'Account holder tax ID (e.g., RUT in Chile; required in Chile)',
       },
       {
         name: 'holder-type',
         type: 'string',
-        description: 'Account holder type (person, company, required in Chile)',
+        description: 'Account holder type (person, company; required in Chile)',
       },
       {
         name: 'institution-id',
         type: 'string',
-        description: 'Destination bank institution ID (required in Chile)',
+        description: 'Destination bank institution ID (e.g., cl_banco_estado; required in Chile)',
       },
       {
         name: 'account-type',
         type: 'string',
         description:
-          'Destination account type (checking_account, sight_account, savings_account, required in Chile)',
+          'Destination account type (checking_account, sight_account, savings_account; required in Chile)',
       },
       { name: 'alias', type: 'string', description: 'Label for the recipient' },
       { name: 'email', type: 'string', description: 'Contact email' },
@@ -2576,13 +2592,13 @@ export const resources: ResourceDef[] = [
       {
         name: 'holder-type',
         type: 'string',
-        description: 'Account holder type (person, company)',
+        description: 'Account holder type (person, company; required in Chile)',
       },
       {
         name: 'account-type',
         type: 'string',
         description:
-          'Destination account type (checking_account, sight_account, savings_account, Chile only)',
+          'Destination account type (checking_account, sight_account, savings_account; required in Chile)',
       },
       {
         name: 'email',
@@ -2609,12 +2625,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
     needsJws: true,
@@ -2629,7 +2645,7 @@ export const resources: ResourceDef[] = [
         name: 'currency',
         type: 'string',
         required: true,
-        description: 'Currency of every transfer in the batch (CLP, MXN)',
+        description: 'Currency code of every transfer in the batch (CLP, MXN)',
       },
     ],
   },
@@ -2779,12 +2795,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'since',
         type: 'string',
-        description: 'Show results created at or after this date (ISO 8601)',
+        description: 'Show results created on or after this date (ISO 8601)',
       },
       {
         name: 'until',
         type: 'string',
-        description: 'Show results created at or before this date (ISO 8601)',
+        description: 'Show results created on or before this date (ISO 8601)',
       },
     ],
   },
@@ -2810,7 +2826,7 @@ export const resources: ResourceDef[] = [
         name: 'subscription-id',
         type: 'string',
         pathParam: true,
-        description: 'Subscription ID the item belongs to',
+        description: 'ID of the subscription the item belongs to',
       },
       {
         name: 'quantity',
@@ -2829,7 +2845,7 @@ export const resources: ResourceDef[] = [
         name: 'price-data-unit-amount',
         type: 'integer',
         required: true,
-        description: 'Amount per unit in smallest currency unit',
+        description: 'Amount per unit in the smallest currency unit',
         nestedPath: 'price_data.unit_amount',
       },
       {
@@ -2882,7 +2898,7 @@ export const resources: ResourceDef[] = [
         name: 'subscription-id',
         type: 'string',
         pathParam: true,
-        description: 'Subscription ID the item belongs to',
+        description: 'ID of the subscription the item belongs to',
       },
       {
         name: 'quantity',
@@ -2898,7 +2914,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'price-data-unit-amount',
         type: 'integer',
-        description: 'Amount per unit in smallest currency unit',
+        description: 'Amount per unit in the smallest currency unit',
         nestedPath: 'price_data.unit_amount',
       },
       {
@@ -2949,7 +2965,7 @@ export const resources: ResourceDef[] = [
         name: 'subscription-id',
         type: 'string',
         pathParam: true,
-        description: 'Subscription ID the item belongs to',
+        description: 'ID of the subscription the item belongs to',
       },
     ],
   },
@@ -2971,43 +2987,44 @@ export const resources: ResourceDef[] = [
       {
         name: 'amount',
         type: 'integer',
-        description: 'New amount in smallest currency unit',
+        description: 'Amount in the smallest currency unit',
       },
       {
         name: 'currency',
         type: 'string',
-        description: 'New currency (CLP, MXN)',
+        description: 'Currency code (CLP, MXN)',
       },
       {
         name: 'quantity',
         type: 'integer',
-        description: 'New number of units',
+        description: 'Number of units',
       },
       {
         name: 'name',
         type: 'string',
-        description: 'New display name',
+        description: 'Display name of the line',
       },
       {
         name: 'description',
         type: 'string',
-        description: 'New description (up to 200 characters)',
+        description: 'Description of the line (up to 200 characters)',
       },
       {
         name: 'period-start',
         type: 'string',
-        description: 'New start of the billing period (ISO 8601)',
+        description: 'Start of the billing period (ISO 8601)',
       },
       {
         name: 'period-end',
         type: 'string',
-        description: 'New end of the billing period (ISO 8601)',
+        description: 'End of the billing period (ISO 8601)',
       },
     ],
   },
   {
     name: 'simulate',
     displayName: 'simulation',
+    description: 'Simulate events in test mode',
     cliCommand: 'simulate',
     sdkMethod: 'simulate',
     sdkNamespace: 'v2',
@@ -3020,6 +3037,7 @@ export const resources: ResourceDef[] = [
         sdkMethod: 'receiveTransfer',
         description: 'Simulate an inbound transfer to an account number (test mode)',
         idArg: false,
+        successMessage: "Inbound transfer '{id}' simulated",
         flags: [
           {
             name: 'account-number-id',
@@ -3031,7 +3049,7 @@ export const resources: ResourceDef[] = [
             name: 'amount',
             type: 'integer',
             required: true,
-            description: 'Amount in smallest currency unit',
+            description: 'Amount in the smallest currency unit',
           },
           {
             name: 'currency',
@@ -3042,12 +3060,12 @@ export const resources: ResourceDef[] = [
           {
             name: 'comment',
             type: 'string',
-            description: 'Comment for the transfer (up to 40 characters)',
+            description: 'Comment shown to the recipient (up to 40 characters)',
           },
           {
             name: 'reference-id',
             type: 'string',
-            description: 'Numeric reference (Mexico, up to 7 digits)',
+            description: 'Numeric reference shown to the recipient (up to 7 digits; Mexico only)',
           },
           {
             name: 'counterparty-account-number',
@@ -3057,26 +3075,25 @@ export const resources: ResourceDef[] = [
           {
             name: 'counterparty-account-type',
             type: 'string',
-            description: 'Sender account type (Chile)',
+            description: 'Sender account type (checking_account, sight_account; Chile only)',
           },
           {
             name: 'counterparty-institution-id',
             type: 'string',
-            description: 'Sender institution ID (Chile)',
+            description: 'Sender bank institution ID (e.g., cl_banco_estado; Chile only)',
           },
           {
             name: 'counterparty-holder-id',
             type: 'string',
-            description: 'Sender tax ID',
+            description: 'Sender account holder tax ID (e.g., RUT in Chile)',
           },
           {
             name: 'counterparty-holder-name',
             type: 'string',
-            description: 'Sender name',
+            description: 'Sender account holder name',
           },
         ],
         fromJson: true,
-        successMessage: 'Inbound transfer simulated',
       },
     ],
   },

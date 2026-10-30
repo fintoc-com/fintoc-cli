@@ -33,7 +33,12 @@ export type FileDef = {
   description?: string
 }
 
-export type ArgDef = { name: string; description?: string }
+export type ArgDef = {
+  name: string
+  description?: string
+  // Sends the value in the request body under this key instead of as an SDK argument
+  bodyField?: string
+}
 
 export type ActionDef = {
   name: string
@@ -50,6 +55,8 @@ export type ActionDef = {
   // Pass the `file` field as a positional SDK argument (after extraArgs) instead of inside the body
   fileAsArg?: boolean
   confirm?: boolean
+  // Confirmation phrase with {resource} and {id} placeholders. Defaults to "<action> {resource} '{id}'"
+  confirmPhrase?: string
   // Only for POST actions: the SDK sends it as the Idempotency-Key header
   idempotencyKey?: boolean
   needsJws?: boolean
@@ -62,6 +69,8 @@ export type ResourceDef = {
   name: string
   displayName: string
   pluralDisplayName?: string
+  // Defaults to "Manage <plural>"
+  description?: string
   cliCommand: string
   sdkMethod: string
   sdkNamespace: 'v1' | 'v2'

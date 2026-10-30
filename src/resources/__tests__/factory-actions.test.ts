@@ -145,7 +145,7 @@ describe('factory: update, actions and files', () => {
         description: 'new',
         options: { max_amount: 10 },
       })
-      expect(success).toHaveBeenCalledWith("widget 'w_1' updated")
+      expect(success).toHaveBeenCalledWith("Widget 'w_1' updated")
       expect(printDetail).toHaveBeenCalledWith({ id: 'w_1', description: 'new' })
     })
 
@@ -188,14 +188,15 @@ describe('factory: update, actions and files', () => {
 
     test('requires path params even with --from-json', async () => {
       vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ description: 'json' }))
+      const exitSpy = mockProcessExit()
 
-      await rejectsWith(
+      await expect(
         run(resource, ['widgets', 'update', 'w_1', '--from-json', 'body.json']),
-        'commander.missingMandatoryOptionValue',
-        "required option '--parent-id <string>' not specified",
-      )
+      ).rejects.toThrow('process.exit')
 
       expect(mockManager.update).not.toHaveBeenCalled()
+      expect(error).toHaveBeenCalledWith('Missing required flag: --parent-id')
+      exitSpy.mockRestore()
     })
 
     test('outputs JSON when --json flag is set', async () => {
@@ -297,7 +298,7 @@ describe('factory: update, actions and files', () => {
 
       expect(mockManager.cancel).toHaveBeenCalledWith('w_1')
       expect(confirm).not.toHaveBeenCalled()
-      expect(success).toHaveBeenCalledWith("widget 'w_1' canceled")
+      expect(success).toHaveBeenCalledWith("Widget 'w_1' canceled")
       expect(printDetail).toHaveBeenCalledWith({ id: 'w_1', status: 'canceled' })
     })
 
@@ -707,7 +708,7 @@ describe('factory: update, actions and files', () => {
 
       expect(cmd.description()).toBe('Manage entities')
       expect(cmd.commands.map((c) => c.description())).toEqual([
-        'Get an entity by id',
+        'Get an entity by ID',
         'Update an entity',
       ])
     })

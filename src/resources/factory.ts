@@ -50,6 +50,11 @@ const toSnakeCase = (str: string) => str.replace(/-/g, '_')
 
 const toKebabCase = (str: string) => str.replace(/_/g, '-')
 
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+
+const fillTemplate = (template: string, resource: ResourceDef, id?: string) =>
+  template.replace('{resource}', resource.displayName).replace(/ ?'\{id\}'/, id ? ` '${id}'` : '')
+
 const withArticle = (noun: string) => `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`
 
 const pluralName = (resource: ResourceDef) =>
@@ -163,9 +168,6 @@ const addFlags = (cmd: Command, flags: FlagDef[]) => {
     if (parser) {
       option.argParser(parser as (value: string, previous: unknown) => unknown)
     }
-    if (flag.pathParam) {
-      option.makeOptionMandatory()
-    }
     if (flag.deprecated) {
       option.hideHelp()
     }
@@ -175,7 +177,7 @@ const addFlags = (cmd: Command, flags: FlagDef[]) => {
 
 const addLimitOption = (cmd: Command) =>
   cmd.addOption(
-    new Option('--limit <number>', 'Max results to show')
+    new Option('--limit <integer>', 'Max results to show')
       .default(DEFAULT_LIST_LIMIT)
       .argParser(parsePositiveInteger),
   )
@@ -354,16 +356,11 @@ const serialize = (obj: unknown): Record<string, unknown> => {
   return {}
 }
 
-const confirmOrAbort = async (
-  rootOpts: RootOpts,
-  yes: boolean | undefined,
-  verb: string,
-  target: string,
-) => {
+const confirmOrAbort = async (rootOpts: RootOpts, yes: boolean | undefined, phrase: string) => {
   if (yes) {
     return true
   }
-  const action = `${verb} ${target}${isLiveMode(rootOpts) ? ' in LIVE mode' : ''}`
+  const action = `${phrase}${isLiveMode(rootOpts) ? ' in LIVE mode' : ''}`
   if (!process.stdin.isTTY) {
     throw new UsageError(`Confirmation required to ${action}. Use --yes to skip.`, {
       code: 'confirmation_required',
@@ -432,12 +429,15 @@ const buildBody = (actionCmd: Command, flags: FlagDef[], files: Record<string, U
   return body
 }
 
+const argDescription = (resource: ResourceDef) =>
+  resource.getArg?.description ?? `ID of the ${resource.displayName}`
+
 const verbDescription = (resource: ResourceDef, verb: Verb) => {
   const argName = (resource.getArg?.name ?? 'id').replace(/_/g, ' ')
   return {
     create: `Create a new ${resource.displayName}`,
-    get: `Get ${withArticle(resource.displayName)} by ${argName}`,
-    list: `List ${resource.name.replace(/_/g, ' ')}`,
+    get: `Get ${withArticle(resource.displayName)} by ${argName === 'id' ? 'ID' : argName}`,
+    list: `List ${pluralName(resource)}`,
     update: `Update ${withArticle(resource.displayName)}`,
     delete: `Delete ${withArticle(resource.displayName)}`,
   }[verb]
@@ -489,7 +489,9 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
       if (rootOpts.json) {
         printJson(data)
       } else {
-        success(`${resource.displayName} created`)
+        success(
+          `${capitalize(resource.displayName)}${data.id ? ` '${String(data.id)}'` : ''} created`,
+        )
         hint('')
         printDetail(data)
       }
@@ -502,7 +504,7 @@ const registerGet = (parent: Command, resource: ResourceDef) => {
   const argName = resource.getArg?.name ?? 'id'
   const flags = resource.getFlags ?? []
   const cmd = parent.command('get').description(verbDescription(resource, 'get'))
-  cmd.argument(`<${argName}>`, resource.getArg?.description)
+  cmd.argument(`<${argName}>`, argDescription(resource))
   addFlags(cmd, flags)
 
   cmd.action(async (identifier: string, _opts: unknown, actionCmd: Command) => {
@@ -550,7 +552,7 @@ const registerUpdate = (parent: Command, resource: ResourceDef) => {
   const cmd = parent
     .command('update')
     .description(verbDescription(resource, 'update'))
-    .argument(`<${argName}>`, resource.getArg?.description)
+    .argument(`<${argName}>`, argDescription(resource))
   addFlags(cmd, flags)
   cmd.option('--from-json <path>', FROM_JSON_DESCRIPTION)
 
@@ -583,7 +585,7 @@ const registerUpdate = (parent: Command, resource: ResourceDef) => {
       if (rootOpts.json) {
         printJson(data)
       } else {
-        success(`${resource.displayName} '${identifier}' updated`)
+        success(`${capitalize(resource.displayName)} '${identifier}' updated`)
         hint('')
         printDetail(data)
       }
@@ -594,15 +596,20 @@ const registerUpdate = (parent: Command, resource: ResourceDef) => {
 const registerDelete = (parent: Command, resource: ResourceDef) => {
   const cliPath = resourceCliPath(resource)
   const flags = resource.deleteFlags ?? []
-  const cmd = parent.command('delete <id>').description(verbDescription(resource, 'delete'))
+  const argName = resource.getArg?.name ?? 'id'
+  const cmd = parent
+    .command('delete')
+    .description(verbDescription(resource, 'delete'))
+    .argument(`<${argName}>`, argDescription(resource))
   addFlags(cmd, flags)
   cmd.option('--yes', 'Skip confirmation prompt')
 
   cmd.action(async (id: string, opts: { yes?: boolean }, actionCmd: Command) => {
     const context = { cliPath, verb: 'delete', id, availableVerbs: resource.verbs }
     await runCommand(actionCmd, context, async (rootOpts) => {
-      validateRequired(actionCmd, flags, cliPath, 'delete', { args: ['id'] })
-      if (!(await confirmOrAbort(rootOpts, opts.yes, 'delete', `'${id}'`))) {
+      validateRequired(actionCmd, flags, cliPath, 'delete', { args: [argName] })
+      const phrase = fillTemplate("delete {resource} '{id}'", resource, id)
+      if (!(await confirmOrAbort(rootOpts, opts.yes, phrase))) {
         return
       }
 
@@ -616,7 +623,7 @@ const registerDelete = (parent: Command, resource: ResourceDef) => {
       if (rootOpts.json) {
         printJson({ id, deleted: true })
       } else {
-        success(`${resource.displayName} '${id}' deleted`)
+        success(`${capitalize(resource.displayName)} '${id}' deleted`)
       }
     })
   })
@@ -626,7 +633,7 @@ const actionPositional = (resource: ResourceDef, action: ActionDef) => {
   const idArg =
     action.idArg === false
       ? undefined
-      : (action.idArg ?? { name: 'id', description: `ID of the ${resource.displayName}` })
+      : (action.idArg ?? { name: 'id', description: argDescription(resource) })
   return { idArg, positional: [...(idArg ? [idArg] : []), ...(action.extraArgs ?? [])] }
 }
 
@@ -677,15 +684,20 @@ const registerAction = (parent: Command, resource: ResourceDef, action: ActionDe
       const uploads = collectFiles(localOpts.file, files, cliPath, action.name)
 
       if (action.confirm) {
-        const target = id ? `${resource.displayName} '${id}'` : resource.displayName
-        const verb = action.name.replace(/_/g, ' ')
-        if (!(await confirmOrAbort(rootOpts, localOpts.yes, verb, target))) {
+        const template =
+          action.confirmPhrase ?? `${action.name.replace(/_/g, ' ')} {resource} '{id}'`
+        if (
+          !(await confirmOrAbort(rootOpts, localOpts.yes, fillTemplate(template, resource, id)))
+        ) {
           return
         }
       }
 
       const { file: fileArg, ...bodyFiles } = uploads
-      const sdkArgs: unknown[] = [...values]
+      const sdkArgs: unknown[] = values.filter((_, i) => !positional[i].bodyField)
+      const bodyArgs = Object.fromEntries(
+        positional.flatMap((arg, i) => (arg.bodyField ? [[arg.bodyField, values[i]]] : [])),
+      )
       if (action.fileAsArg) {
         sdkArgs.push(fileArg)
       }
@@ -693,9 +705,11 @@ const registerAction = (parent: Command, resource: ResourceDef, action: ActionDe
         flags.length > 0 ||
         !!action.fromJson ||
         !!localOpts.idempotencyKey ||
+        Object.keys(bodyArgs).length > 0 ||
         (!action.fileAsArg && files.length > 0)
       if (takesBody) {
-        sdkArgs.push(buildBody(actionCmd, flags, action.fileAsArg ? bodyFiles : uploads))
+        const body = buildBody(actionCmd, flags, action.fileAsArg ? bodyFiles : uploads)
+        sdkArgs.push({ ...body, ...bodyArgs })
       }
 
       const client = resolveClient(rootOpts, {
@@ -725,10 +739,8 @@ const registerAction = (parent: Command, resource: ResourceDef, action: ActionDe
         return
       }
       if (kind === 'write') {
-        const message = (action.successMessage ?? `{resource} '{id}': ${action.name} done`)
-          .replace('{resource}', resource.displayName)
-          .replace(/ ?'\{id\}'/, id ? ` '${id}'` : '')
-        success(message)
+        const template = action.successMessage ?? `{resource} '{id}': ${action.name} done`
+        success(capitalize(fillTemplate(template, resource, id ?? (data.id as string | undefined))))
         hint('')
       }
       printDetail(data)
@@ -752,7 +764,7 @@ export const registerResourceCommands = (program: Command, resourceDefs: Resourc
 
     const resourceCmd = program
       .command(resource.cliCommand)
-      .description(`Manage ${pluralName(resource)}`)
+      .description(resource.description ?? `Manage ${pluralName(resource)}`)
     if (toKebabCase(resource.cliCommand) !== resource.cliCommand) {
       resourceCmd.alias(toKebabCase(resource.cliCommand))
     }
