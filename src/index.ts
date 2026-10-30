@@ -1,5 +1,6 @@
 import type { Help, Option } from 'commander'
 import { Command, CommanderError } from 'commander'
+import { commandsCommand } from './commands/commands.js'
 import { configCommand } from './commands/config.js'
 import { doctorCommand } from './commands/doctor.js'
 import { loginCommand } from './commands/login.js'
@@ -17,7 +18,7 @@ declare const __CLI_VERSION__: string
 const versionString = `fintoc/${__CLI_VERSION__} ${process.platform} node-${process.version}`
 
 const AUTH_COMMANDS = new Set(['login', 'logout', 'config'])
-const UTILITY_COMMANDS = new Set(['doctor', 'open', 'trigger', 'webhooks'])
+const UTILITY_COMMANDS = new Set(['commands', 'doctor', 'open', 'trigger', 'webhooks'])
 
 type HelpEntry = { name: () => string; description: () => string }
 
@@ -112,6 +113,7 @@ doctorCommand(program)
 openCommand(program)
 triggerCommand(program)
 webhooksCommand(program)
+commandsCommand(program)
 registerResourceCommands(program, v1Resources)
 
 const v2Cmd = program.command('v2').description('API v2 resources')

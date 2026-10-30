@@ -207,3 +207,10 @@ describe('missing command', () => {
     expect(JSON.parse(stderr).error.message).toContain('fintoc v2 transfers --help')
   })
 })
+
+describe('commands', () => {
+  test('lists every resource command as JSON', () => {
+    const commands = JSON.parse(run(['--json', 'commands']).stdout) as { command: string }[]
+    expect(commands.map((c) => c.command)).toContain('fintoc v2 transfers create')
+  })
+})
