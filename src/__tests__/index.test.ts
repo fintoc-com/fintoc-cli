@@ -178,3 +178,32 @@ describe('error formatting', () => {
     })
   })
 })
+
+describe('json errors', () => {
+  test.each([
+    [['charges', 'create', '--amount', '1.5'], 'invalid_value', 'amount'],
+    [['charges', 'list', '--bogus'], 'unknown_option', 'bogus'],
+    [
+      ['v2', 'subscription_items', 'update', 'si_1', '--quantity', '2'],
+      'missing_flag',
+      'subscription-id',
+    ],
+  ])('%j emits a JSON usage error on stderr', (args, code, param) => {
+    const { stdout, stderr, exitCode } = run(['--json', ...args], true)
+
+    expect(exitCode).toBe(1)
+    expect(stdout).toBe('')
+    expect(JSON.parse(stderr).error).toMatchObject({ type: 'usage_error', code, param })
+  })
+})
+
+describe('missing command', () => {
+  test('is a JSON error with --json instead of help text', () => {
+    const { stdout, stderr, exitCode } = run(['--json', 'v2', 'transfers'], true)
+
+    expect(exitCode).toBe(1)
+    expect(stdout).toBe('')
+    expect(JSON.parse(stderr).error).toMatchObject({ code: 'missing_command' })
+    expect(JSON.parse(stderr).error.message).toContain('fintoc v2 transfers --help')
+  })
+})

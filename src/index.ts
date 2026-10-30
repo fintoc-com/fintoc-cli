@@ -49,6 +49,35 @@ const formatOptions = (lines: string[], title: string, options: Option[], helper
   }
 }
 
+const wantsJson = process.argv.includes('--json')
+
+// Same codes as the UsageErrors thrown by the resource factory, so agents see one vocabulary
+const COMMANDER_ERROR_CODES: Record<string, string> = {
+  'commander.invalidArgument': 'invalid_value',
+  'commander.missingMandatoryOptionValue': 'missing_flag',
+  'commander.optionMissingArgument': 'missing_value',
+  'commander.missingArgument': 'missing_argument',
+  'commander.unknownOption': 'unknown_option',
+  'commander.unknownCommand': 'unknown_command',
+  'commander.missingCommand': 'missing_command',
+  'commander.excessArguments': 'too_many_arguments',
+}
+
+const commanderErrorJson = (err: CommanderError) => {
+  const message = err.message
+    .replace(/^error:\s*/i, '')
+    .replace(/\s*\n\s*/g, ' ')
+    .trim()
+  return {
+    error: {
+      type: 'usage_error',
+      code: COMMANDER_ERROR_CODES[err.code] ?? 'invalid_usage',
+      param: message.match(/'--([\w-]+)/)?.[1],
+      message,
+    },
+  }
+}
+
 const program = new Command()
 
 program
@@ -62,6 +91,9 @@ program
   .showSuggestionAfterError(true)
   .configureOutput({
     writeErr: (str: string) => {
+      if (wantsJson) {
+        return
+      }
       const match = str.match(/^error:\s*(.*)/is)
       const message = match ? match[1].trim() : str.trim()
       if (message) {
@@ -144,6 +176,9 @@ try {
   program.parse()
 } catch (err) {
   if (err instanceof CommanderError) {
+    if (wantsJson && err.exitCode !== 0) {
+      process.stderr.write(`${JSON.stringify(commanderErrorJson(err))}\n`)
+    }
     process.exit(err.exitCode)
   }
   throw err
