@@ -79,10 +79,9 @@ export const triggerCommand = (program: Command) => {
 
   cmd.action(async (eventType: string, opts: TriggerOpts, actionCmd: Command) => {
     const rootOpts = actionCmd.parent!.opts<RootOpts>()
-    const base = opts.fromJson ? readJsonBody(opts.fromJson) : {}
-    const overrides = deepMerge(base, opts.override)
-
     try {
+      const base = opts.fromJson ? readJsonBody(opts.fromJson) : {}
+      const overrides = deepMerge(base, opts.override)
       const auth = resolveAuth(rootOpts)
       const client = createClient(auth.secretKey)
       const args: Parameters<typeof client.events.trigger>[0] = { type: eventType }
