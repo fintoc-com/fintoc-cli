@@ -14,7 +14,7 @@ type RootOpts = {
 }
 
 type TriggerOpts = {
-  override: Record<string, unknown>
+  override?: Record<string, unknown>
   fromJson?: string
 }
 
@@ -26,7 +26,10 @@ const tryJsonParse = (value: string): unknown => {
   }
 }
 
-const collectOverride = (value: string, acc: Record<string, unknown>): Record<string, unknown> => {
+const collectOverride = (
+  value: string,
+  acc: Record<string, unknown> = {},
+): Record<string, unknown> => {
   const eqIndex = value.indexOf('=')
   if (eqIndex === -1) {
     throw new InvalidArgumentError(
@@ -36,7 +39,7 @@ const collectOverride = (value: string, acc: Record<string, unknown>): Record<st
   const key = value.slice(0, eqIndex)
   if (key.length === 0 || key.split('.').some((segment) => segment.length === 0)) {
     throw new InvalidArgumentError(
-      `Invalid override key in '${value}'. Keys must be non-empty (use dot-notation, e.g. metadata.order_id).`,
+      `Invalid override key in '${value}'. Keys must be non-empty (use dot-notation, e.g., metadata.order_id).`,
     )
   }
   const rawValue = value.slice(eqIndex + 1)
@@ -64,12 +67,11 @@ export const triggerCommand = (program: Command) => {
   const cmd = program
     .command('trigger')
     .description('Trigger a test event')
-    .argument('<event-type>', 'Event type (e.g. payment_intent.succeeded)')
+    .argument('<event-type>', 'Event type (e.g., payment_intent.succeeded)')
     .option(
       '--override <key=value>',
       'Override a field in the event payload (dot-notation, repeatable)',
       collectOverride,
-      {} as Record<string, unknown>,
     )
     .option(
       '--from-json <path>',
@@ -81,7 +83,7 @@ export const triggerCommand = (program: Command) => {
     const rootOpts = actionCmd.parent!.opts<RootOpts>()
     try {
       const base = opts.fromJson ? readJsonBody(opts.fromJson) : {}
-      const overrides = deepMerge(base, opts.override)
+      const overrides = deepMerge(base, opts.override ?? {})
       const auth = resolveAuth(rootOpts)
       const client = createClient(auth.secretKey)
       const args: Parameters<typeof client.events.trigger>[0] = { type: eventType }

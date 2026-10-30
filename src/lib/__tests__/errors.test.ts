@@ -89,7 +89,7 @@ describe('handleError', () => {
 
       expect(() => handleError(err)).toThrow('process.exit')
 
-      expect(error).toHaveBeenCalledWith('JWS private key required for transfer operations')
+      expect(error).toHaveBeenCalledWith('JWS private key required to sign this request')
       expect(hint).toHaveBeenCalledWith('  More info:  https://docs.fintoc.com/docs/transfers')
     })
   })
@@ -309,7 +309,7 @@ describe('handleError', () => {
 
       expect(() => handleError(err)).toThrow('process.exit')
 
-      expect(error).toHaveBeenCalledWith('JWS private key required for transfer operations')
+      expect(error).toHaveBeenCalledWith('JWS private key required to sign this request')
     })
   })
 

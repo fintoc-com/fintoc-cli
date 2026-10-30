@@ -173,7 +173,7 @@ describe('login command', () => {
       expect(confirm).toHaveBeenCalled()
       expect(startBrowserLogin).not.toHaveBeenCalled()
       expect(writeConfig).not.toHaveBeenCalled()
-      expect(hint).toHaveBeenCalledWith('Login aborted.')
+      expect(hint).toHaveBeenCalledWith('Aborted.')
     })
   })
 
@@ -190,7 +190,9 @@ describe('login command', () => {
       const program = createProgram()
       await program.parseAsync(['login'], { from: 'user' })
 
-      expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ default: true }))
+      expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ default: false }), {
+        output: process.stderr,
+      })
       expect(startBrowserLogin).toHaveBeenCalled()
       expect(success).toHaveBeenCalledWith('Authenticated as Globex (test mode)')
     })
@@ -280,7 +282,7 @@ describe('login command', () => {
       await program.parseAsync(['login'], { from: 'user' })
 
       expect(password).toHaveBeenCalled()
-      expect(hint).toHaveBeenCalledWith('Login aborted.')
+      expect(hint).toHaveBeenCalledWith('Aborted.')
       expect(writeConfig).not.toHaveBeenCalled()
     })
   })
@@ -442,7 +444,7 @@ describe('login command', () => {
       await expect(program.parseAsync(['login'], { from: 'user' })).rejects.toThrow('process.exit')
 
       expect(startBrowserLogin).not.toHaveBeenCalled()
-      expect(error).toHaveBeenCalledWith(expect.stringContaining('Non-interactive terminal'))
+      expect(error).toHaveBeenCalledWith('Browser login needs an interactive terminal')
 
       exitSpy.mockRestore()
     })
@@ -486,8 +488,9 @@ describe('login command', () => {
       ).rejects.toThrow('process.exit')
 
       expect(whoami).not.toHaveBeenCalled()
-      expect(error).toHaveBeenCalledWith(expect.stringContaining('Non-interactive terminal'))
-      expect(hint).toHaveBeenCalledWith(expect.stringContaining('Re-run with --yes to override.'))
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining('Confirmation required to replace the existing session'),
+      )
 
       exitSpy.mockRestore()
     })

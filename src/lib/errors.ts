@@ -4,6 +4,7 @@ import {
   DOCS_LINKS_URL,
   DOCS_TRANSFERS_URL,
   IP_ALLOWLIST_ERROR_CODES,
+  JWS_COMMANDS,
 } from './constants.js'
 import { error, hint } from './output.js'
 
@@ -182,10 +183,11 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     }
 
     if (fields.code === 'missing_jws_signature_header') {
-      error('JWS private key required for transfer operations')
+      error('JWS private key required to sign this request')
       printNextSteps([
         'Pass:       --jws-private-key <path>',
         'Or set in:  ~/.fintoc/config.toml (jws_private_key = "<path>")',
+        `Needed for: ${JWS_COMMANDS}`,
         `More info:  ${DOCS_TRANSFERS_URL}`,
       ])
       return process.exit(1)

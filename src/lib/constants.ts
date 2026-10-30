@@ -6,6 +6,8 @@ export const IP_ALLOWLIST_ERROR_CODES = new Set([
   'missing_allowed_cidr_block',
 ])
 export const DEFAULT_LIST_LIMIT = 10
+export const JWS_COMMANDS =
+  'v2 transfers create and return, v2 transfer_batches create and v2 account_verifications create'
 export const NPM_CHECK_TIMEOUT_MS = 10_000
 export const CONFIG_FILE_PERMISSIONS = 0o600
 export const CONFIG_DIR_PERMISSIONS = 0o700

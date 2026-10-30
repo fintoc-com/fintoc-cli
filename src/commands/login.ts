@@ -10,11 +10,11 @@ import { whoami } from '../lib/auth.js'
 import { BrowserLoginError, startBrowserLogin } from '../lib/browser-login.js'
 import { CONFIG_PATH, readConfig, writeConfig } from '../lib/config.js'
 import { BROWSER_LOGIN_TIMEOUT_MS } from '../lib/constants.js'
-import { handleError } from '../lib/errors.js'
-import { error, hint, info, success, warn } from '../lib/output.js'
+import { handleError, UsageError } from '../lib/errors.js'
+import { error, hint, info, printJson, success, warn } from '../lib/output.js'
 
 type LoginOpts = { mode: FintocMode; yes?: boolean }
-type RootOpts = { apiKey?: string }
+type RootOpts = { apiKey?: string; json?: boolean }
 
 const modeFromSecret = (secret: string): FintocMode | null => {
   if (secret.startsWith('sk_live_')) {
@@ -29,7 +29,11 @@ const modeFromSecret = (secret: string): FintocMode | null => {
 const isPromptCancelled = (err: unknown): boolean =>
   err instanceof Error && err.name === 'ExitPromptError'
 
-const persistAndAnnounce = (existingConfig: FintocConfig, outcome: BrowserLoginResult) => {
+const persistAndAnnounce = (
+  existingConfig: FintocConfig,
+  outcome: BrowserLoginResult,
+  json?: boolean,
+) => {
   const next: FintocConfig = {
     ...existingConfig,
     secret_key: outcome.secret,
@@ -40,8 +44,18 @@ const persistAndAnnounce = (existingConfig: FintocConfig, outcome: BrowserLoginR
   try {
     writeConfig(next)
   } catch {
-    error(`Authentication succeeded but could not write to ${CONFIG_PATH}`)
-    process.exit(1)
+    throw new Error(`Authentication succeeded but could not write to ${CONFIG_PATH}`)
+  }
+
+  if (json) {
+    printJson({
+      authenticated: true,
+      organization: outcome.organizationName,
+      mode: outcome.mode,
+      key_name: outcome.keyName ?? null,
+      config_path: CONFIG_PATH,
+    })
+    return
   }
 
   success(`Authenticated as ${outcome.organizationName} (${outcome.mode} mode)`)
@@ -58,17 +72,15 @@ const persistAndAnnounce = (existingConfig: FintocConfig, outcome: BrowserLoginR
   }
 }
 
-const saveSecret = async (existingConfig: FintocConfig, secretKey: string) => {
+const saveSecret = async (existingConfig: FintocConfig, secretKey: string, json?: boolean) => {
   if (!modeFromSecret(secretKey)) {
-    error(`Invalid key format. Expected 'sk_test_...' or 'sk_live_...'.`)
-    process.exit(1)
+    throw new UsageError(`Invalid key format: expected 'sk_test_...' or 'sk_live_...'`, {
+      code: 'invalid_value',
+      param: 'api-key',
+    })
   }
-  try {
-    const { organizationName, mode } = await whoami(secretKey)
-    persistAndAnnounce(existingConfig, { secret: secretKey, organizationName, mode })
-  } catch (err) {
-    handleError(err)
-  }
+  const { organizationName, mode } = await whoami(secretKey)
+  persistAndAnnounce(existingConfig, { secret: secretKey, organizationName, mode }, json)
 }
 
 type ConfirmReloginOpts = { config: FintocConfig; skipPrompt: boolean }
@@ -81,19 +93,20 @@ const confirmRelogin = async ({ config, skipPrompt }: ConfirmReloginOpts): Promi
   const mode = modeFromSecret(config.secret_key) ?? 'test'
   const keySuffix = config.key_name ? ` (key '${config.key_name}')` : ''
 
+  const phrase = `replace the existing session (${mode} mode${keySuffix})`
   if (!process.stdin.isTTY) {
-    error(`Non-interactive terminal detected. Cannot prompt to override existing session.`)
-    hint(`\n  Existing session: ${mode} mode${keySuffix}.`)
-    hint(`  Re-run with --yes to override.`)
-    process.exit(1)
+    throw new UsageError(`Confirmation required to ${phrase}. Use --yes to skip.`, {
+      code: 'confirmation_required',
+      param: 'yes',
+    })
   }
 
-  const proceed = await confirm({
-    message: `Already authenticated in ${mode} mode${keySuffix}. Continue?`,
-    default: true,
-  })
+  const proceed = await confirm(
+    { message: `Are you sure you want to ${phrase}?`, default: false },
+    { output: process.stderr },
+  )
   if (!proceed) {
-    hint('Login aborted.')
+    hint('Aborted.')
   }
   return proceed
 }
@@ -106,7 +119,7 @@ const promptPaste = (signal: AbortSignal) =>
       validate: (v) =>
         modeFromSecret(v.trim()) !== null || `Expected 'sk_test_...' or 'sk_live_...'`,
     },
-    { signal },
+    { signal, output: process.stderr },
   ).then((s) => s.trim())
 
 const handleBrowserError = (err: BrowserLoginError, mode: FintocMode): never => {
@@ -179,14 +192,17 @@ export const loginCommand = (program: Command) => {
     .option('-y, --yes', 'Skip confirmation when overriding an existing session')
     .configureHelp({ showGlobalOptions: true })
     .action(async (opts: LoginOpts, actionCmd: Command) => {
+      const { apiKey, json } = actionCmd.optsWithGlobals<RootOpts>()
       try {
-        const { apiKey } = actionCmd.optsWithGlobals<RootOpts>()
-
         if (!process.stdin.isTTY && !apiKey) {
-          error('Non-interactive terminal detected.')
-          hint('\n  Pass the key via flag:  fintoc login --api-key sk_...')
-          hint('  Or set env:             export FINTOC_API_KEY=sk_...')
-          process.exit(1)
+          throw new UsageError('Browser login needs an interactive terminal', {
+            code: 'missing_input',
+            param: 'api-key',
+            hints: [
+              'Pass the key via flag:  fintoc login --api-key sk_...',
+              'Or set env:             export FINTOC_API_KEY=sk_...',
+            ],
+          })
         }
 
         const existingConfig = readConfig()
@@ -195,16 +211,16 @@ export const loginCommand = (program: Command) => {
         }
 
         if (apiKey) {
-          await saveSecret(existingConfig, apiKey)
+          await saveSecret(existingConfig, apiKey, json)
           return
         }
         await runBrowserFlow(existingConfig, opts.mode)
       } catch (err) {
         if (isPromptCancelled(err)) {
-          hint('Login aborted.')
+          hint('Aborted.')
           return
         }
-        handleError(err)
+        handleError(err, { json })
       }
     })
 }

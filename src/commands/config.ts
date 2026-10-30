@@ -3,7 +3,8 @@ import type { AuthSource } from '../lib/auth.js'
 import type { FintocConfig } from '../types.js'
 import { maskKey, resolveAuth, whoami } from '../lib/auth.js'
 import { CONFIG_PATH, readConfig, writeConfig } from '../lib/config.js'
-import { error, hint, log, printJson, success, warn } from '../lib/output.js'
+import { handleError, UsageError } from '../lib/errors.js'
+import { hint, log, printJson, success, warn } from '../lib/output.js'
 
 const ALLOWED_KEYS: readonly string[] = [
   'secret_key',
@@ -14,7 +15,10 @@ const ALLOWED_KEYS: readonly string[] = [
 const isConfigKey = (key: string): key is keyof FintocConfig => ALLOWED_KEYS.includes(key)
 
 export const configCommand = (program: Command) => {
-  const configCmd = program.command('config').description('Show or update CLI configuration')
+  const configCmd = program
+    .command('config')
+    .description('Show or update CLI configuration')
+    .helpCommand(false)
   configCmd.configureHelp({ showGlobalOptions: true })
 
   configCmd
@@ -100,30 +104,44 @@ export const configCommand = (program: Command) => {
 
   configCmd
     .command('set <key> <value>')
-    .description('Set a config value (allowed keys: secret_key, jws_private_key, color)')
-    .action((key: string, value: string) => {
-      if (!isConfigKey(key)) {
-        error(`Unknown config key: '${key}'`)
-        hint('')
-        hint(`  Allowed keys: ${ALLOWED_KEYS.join(', ')}`)
-        hint(`  Example: fintoc config set jws_private_key /path/to/key.pem`)
-        process.exit(1)
-      }
-
-      const config = readConfig()
-
-      if (key === 'color') {
-        if (value !== 'true' && value !== 'false') {
-          error(`Invalid value for 'color': must be 'true' or 'false'`)
-          process.exit(1)
+    .description('Set a config value (secret_key, jws_private_key, color)')
+    .action((key: string, value: string, _opts: unknown, cmd: Command) => {
+      const { json } = cmd.optsWithGlobals<{ json?: boolean }>()
+      try {
+        if (!isConfigKey(key)) {
+          throw new UsageError(`Unknown config key '${key}'`, {
+            code: 'invalid_value',
+            param: 'key',
+            hints: [
+              `Allowed keys: ${ALLOWED_KEYS.join(', ')}`,
+              'Example: fintoc config set jws_private_key /path/to/key.pem',
+            ],
+          })
         }
-        config[key] = value === 'true'
-      } else {
-        config[key] = value
+
+        const config = readConfig()
+
+        if (key === 'color') {
+          if (value !== 'true' && value !== 'false') {
+            throw new UsageError(`Invalid value '${value}' for 'color': expected true or false`, {
+              code: 'invalid_value',
+              param: 'value',
+            })
+          }
+          config[key] = value === 'true'
+        } else {
+          config[key] = value
+        }
+
+        writeConfig(config)
+      } catch (err) {
+        handleError(err, { json })
       }
 
-      writeConfig(config)
-
+      if (json) {
+        printJson({ updated: key, config_path: CONFIG_PATH })
+        return
+      }
       success(`Config updated: ${key}`)
       hint(`  Saved to ${CONFIG_PATH}`)
     })

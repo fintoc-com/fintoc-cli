@@ -289,7 +289,7 @@ describe('config set command', () => {
       ).rejects.toThrow('exit 1')
 
       expect(error).toHaveBeenCalledWith(
-        expect.stringContaining("Unknown config key: 'unknown_key'"),
+        expect.stringContaining("Unknown config key 'unknown_key'"),
       )
       expect(writeConfig).not.toHaveBeenCalled()
 
