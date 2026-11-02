@@ -68,40 +68,72 @@ fintoc logout                                        # Remove stored credentials
 
 ### Auth
 
-| Command              | Description                    |
-| -------------------- | ------------------------------ |
-| `fintoc login`       | Authenticate with your API key |
-| `fintoc logout`      | Remove stored credentials      |
-| `fintoc config show` | Show active configuration      |
+| Command                           | Description                           |
+| --------------------------------- | ------------------------------------- |
+| `fintoc login`                    | Authenticate with your Fintoc API key |
+| `fintoc logout`                   | Remove stored credentials             |
+| `fintoc config show`              | Show current configuration            |
+| `fintoc config set <key> <value>` | Set a config value                    |
 
 ### Resources
 
-Resources follow the pattern `fintoc <resource> <action> [flags]`.
+Resources follow the pattern `fintoc [v2] <resource> <action> [args] [flags]`. Actions that act on a single object take its ID as the first argument.
 
-| Resource                   | Actions                         |
-| -------------------------- | ------------------------------- |
-| `payment_intents`          | get, list                       |
-| `charges`                  | create, get, list               |
-| `webhook_endpoints`        | create, get, list, delete, test |
-| `checkout_sessions`        | create, get, expire             |
-| `subscriptions`            | get, list                       |
-| `links`                    | get, list, delete               |
-| `api_keys`                 | list                            |
-| `organizations`            | create                          |
-| `v2 transfers`             | create, get, list               |
-| `v2 accounts`              | get, list                       |
-| `v2 account_verifications` | create, get, list               |
-| `v2 account_numbers`       | create, get, list, delete       |
-| `v2 movements`             | get, list                       |
+| Resource                   | Actions                                                                                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payment_intents`          | create, get, list, expire                                                                                                                    |
+| `webhook_endpoints`        | create, get, list, update, delete, test                                                                                                      |
+| `charges`                  | create, get, list, update, cancel                                                                                                            |
+| `subscriptions`            | get, list                                                                                                                                    |
+| `links`                    | get, list, update, delete, exchange                                                                                                          |
+| `checkout_sessions`        | create, get, expire                                                                                                                          |
+| `organizations` | create |
+| `api_keys`                 | list                                                                                                                                         |
+| `refunds`                  | create, get, list, cancel, voucher_url                                                                                                       |
+| `subscription_intents`     | create, get, list                                                                                                                            |
+| `payment_links`            | create, get, list, cancel                                                                                                                    |
+| `disputes`                 | get, list, submit_for_review, create_document                                                                                                |
+| `accounts`                 | get, list                                                                                                                                    |
+| `movements`                | get, list                                                                                                                                    |
+| `invoices`                 | get, list                                                                                                                                    |
+| `tax_returns`              | get, list                                                                                                                                    |
+| `refresh_intents`          | create, get, list                                                                                                                            |
+| `payouts`                  | get, list, resources                                                                                                                         |
+| `institutions`             | list                                                                                                                                         |
+| `link_intents`             | create                                                                                                                                       |
+| `tax_statements`           | get, list                                                                                                                                    |
+| `v2 transfers`             | create, get, list, receipt, return                                                                                                           |
+| `v2 accounts`              | create, get, list, update                                                                                                                    |
+| `v2 account_verifications` | create, get, list                                                                                                                            |
+| `v2 account_numbers`       | create, get, list, update, delete                                                                                                            |
+| `v2 movements`             | get, list                                                                                                                                    |
+| `v2 checkout_sessions`     | create, get, list, expire                                                                                                                    |
+| `v2 customers`             | create, get, list                                                                                                                            |
+| `v2 entities`              | create, get, list, settlement_account                                                                                                        |
+| `v2 onboardings`           | create, get, list, submit, upload_document, add_document, delete_document, upload_shareholder_document, upload_legal_representative_document |
+| `v2 payment_intents`       | create, get, list, cancel, voucher_url, check_eligibility                                                                                    |
+| `v2 payment_methods`       | create, get, list, cancel, mandate_document                                                                                                  |
+| `v2 products`              | create, get, list, update                                                                                                                    |
+| `v2 subscriptions`         | create, get, list, update, cancel, detach_payment_method                                                                                     |
+| `v2 invoices`              | create, get, list, update, finalize, pay, void, mark_uncollectible, add_lines, remove_lines                                                  |
+| `v2 account_statements`    | list                                                                                                                                         |
+| `v2 recipients`            | create, get, list, update, delete                                                                                                            |
+| `v2 transfer_batches`      | create, get, list                                                                                                                            |
+| `v2 events`                | get, list                                                                                                                                    |
+| `v2 setup_intents`         | get                                                                                                                                          |
+| `v2 subscription_items`    | create, update, delete                                                                                                                       |
+| `v2 invoice_lines`         | update                                                                                                                                       |
+| `v2 simulate`              | receive_transfer                                                                                                                             |
 
 ### Utilities
 
-| Command                  | Description                               |
-| ------------------------ | ----------------------------------------- |
-| `fintoc doctor`          | Check CLI setup and connectivity          |
-| `fintoc open dashboard`  | Open the Fintoc dashboard in your browser |
-| `fintoc webhooks listen` | Listen for webhook events in real time    |
-| `fintoc trigger`         | Trigger a test event                      |
+| Command                  | Description                              |
+| ------------------------ | ---------------------------------------- |
+| `fintoc doctor`          | Check CLI setup and connectivity         |
+| `fintoc open dashboard`  | Open the Fintoc dashboard                |
+| `fintoc webhooks listen` | Listen for webhook events in real time   |
+| `fintoc trigger`         | Trigger a test event                     |
+| `fintoc commands`        | List all commands (`--json` for details) |
 
 ## Usage examples
 
@@ -145,6 +177,57 @@ fintoc webhook_endpoints delete we_test_abc123
 fintoc webhook_endpoints delete we_test_abc123 --yes   # Skip confirmation (CI-friendly)
 ```
 
+### Update
+
+```bash
+fintoc v2 products update prod_test_abc123 --name "Plan Pro"
+fintoc v2 invoices update in_test_abc123 --metadata order_id=123 --metadata channel=web
+```
+
+`--metadata` and the other `key=value` flags are repeatable and build an object, one key per flag.
+
+### Arrays of objects
+
+Arrays of objects (subscription `items`, invoice `lines`, batch `transfers`), free-form objects, and explicit `null` values go in `--from-json`. When one of those arrays is required, the command help says so and the CLI checks it is in the body before calling the API. Scalar fields and arrays of strings also have flags:
+
+```bash
+# items.json: { "items": [{ "price_data": { ... }, "quantity": 1 }] }
+fintoc v2 subscriptions create --customer cus_test_abc123 --from-json items.json
+```
+
+### Resource actions
+
+Actions such as `cancel`, `pay`, `void` or `voucher_url` follow the same pattern: the ID of the object goes first as a positional argument. Actions on an existing object that move money or can't be undone (`cancel`, `expire`, `pay`, `void`, `finalize`, `return`, ...) ask for confirmation, like `delete`; use `--yes` (or `-y`) to skip it:
+
+```bash
+fintoc refunds cancel re_test_abc123 --yes
+fintoc v2 invoices pay in_test_abc123 --payment-method pm_test_abc123 --yes
+fintoc v2 payment_intents voucher_url pi_test_abc123
+fintoc payouts resources po_test_abc123 --resource-type payment_intent
+```
+
+### Upload files
+
+Multipart operations take one `--file <field>=<path>` per file. Run the command with `--help` to see its fields:
+
+```bash
+fintoc v2 onboardings upload_document onb_test_abc123 proof_of_address \
+  --entity-id ent_test_abc123 --file file=./proof.pdf
+```
+
+### Scripting and AI agents
+
+- `fintoc --json commands` lists every command with its arguments, flags (type, API parameter and whether it goes in the path, query or body), required body fields that only `--from-json` can set (`jsonFields`), options and aliases. `optionDetails` adds the invocation syntax, argument requirements, descriptions, choices and defaults of local and inherited options, including `--api-key` and `--json`.
+- With `--json`, results go to stdout and errors go to stderr as `{"error": {...}}`, and interactive prompts go to stderr (`webhooks listen` also streams status lines there). Usage errors include `message`, optional `param`, `type: "usage_error"` and a stable `code` such as `missing_flag`, `missing_argument`, `missing_field`, `invalid_value`, `unknown_option`, `unknown_command`; the last two add a `suggestion` when there is a close match. Local authentication and network errors use `type: "auth_error"` (`code`: `missing_api_key`, `empty_api_key`) and `type: "connectivity_error"` (`code`: `connection_failed`).
+- Without a TTY the CLI never prompts: commands that need confirmation fail until you pass `--yes`. When the API key is live, the confirmation says so.
+- `list` returns up to `--limit` results (10 by default) without fetching another item to check for more. Without `--json` it warns on stderr when the limit is reached; with `--json` stdout stays a plain array and stderr stays clean, so pass `--all` to follow every page when you need the complete result. Paginated v1 endpoints accept `--page` and `--per-page`; paginated v2 endpoints accept `--starting-after`, `--ending-before`, and `--page-size` (the API `limit`). These set the initial API page; the SDK follows subsequent pages until the CLI limit is reached.
+- API errors preserve the published JSON contract: `param` is omitted, and SDK errors with nested parameters such as `recipient_account.type` keep the combined header in `type` and the complete SDK error text in `message`. Human-readable errors still show the API message alone.
+- JSON mode preserves interactive confirmations and browser login when stdin is a TTY. For scripts, pass `--yes` to skip confirmation and use `login --api-key`; without a TTY, confirmed operations fail with `usage_error` code `confirmation_required` until you pass `--yes`.
+- Published commands that had no result on stdout keep that contract, including with `--json`: `webhook_endpoints delete`, `links delete`, `v2 account_numbers delete`, `checkout_sessions expire`, `login`, `logout`, `doctor`, `config set` and `open dashboard`. Their success messages remain on stderr. New resource commands return JSON results with `--json`.
+- Help commands and resource groups without a subcommand keep their published text output and exit code 0, including with `--json`. Use `commands --json` for structured command discovery.
+- `create` and actions that send a POST (`pay`, `cancel`, `return`, ...) accept `--idempotency-key`, so a retried request does not run twice.
+- Resources and actions also answer to kebab-case (`payment-intents`, `submit-for-review`). Boolean flags work bare (`--active`) or with a value (`--active false`), and list flags take comma-separated values. Repeating a list flag replaces its earlier values; `key=value` flags still accumulate entries.
+
 ### Trigger test events
 
 Fire a test event against your account — useful for exercising webhook handlers without producing real activity. Combine `--override` (dot-notation, repeatable) and `--from-json` to shape the payload; flags take precedence over JSON, and arrays are replaced wholesale (same semantics as `create --from-json`).
@@ -166,9 +249,9 @@ fintoc webhooks listen --events payment.succeeded,payment.failed
 fintoc webhooks listen --forward-to http://localhost:3000/webhooks
 ```
 
-### V2 transfers (JWS required)
+### Commands that need a JWS key
 
-Transfers require a JWS private key for `create`:
+`v2 transfers create`, `v2 transfers return`, `v2 transfer_batches create` and `v2 account_verifications create` are signed with a JWS private key:
 
 ```bash
 fintoc v2 transfers create --amount 10000 --currency CLP \
