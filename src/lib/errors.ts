@@ -4,6 +4,7 @@ import {
   DOCS_LINKS_URL,
   DOCS_TRANSFERS_URL,
   IP_ALLOWLIST_ERROR_CODES,
+  JWS_COMMANDS,
 } from './constants.js'
 import { error, hint } from './output.js'
 
@@ -49,7 +50,7 @@ export const parseFintocError = (err: unknown): FintocErrorFields | undefined =>
     const lines = err.message.split('\n')
     const firstLine = lines[0] ?? ''
 
-    const match = firstLine.match(/^(\w+)(?::\s*(\w+))?(?:\s*\((\w+)\))?$/)
+    const match = firstLine.match(/^(\w+)(?::\s*(\w+))?(?:\s*\(([\w.[\]]+)\))?$/)
     if (!match) {
       return { type: firstLine }
     }
@@ -78,8 +79,42 @@ export const parseFintocError = (err: unknown): FintocErrorFields | undefined =>
   return undefined
 }
 
+export class UsageError extends Error {
+  readonly code: string
+  readonly param?: string
+  readonly hints: string[]
+
+  constructor(
+    message: string,
+    {
+      code = 'invalid_usage',
+      param,
+      hints = [],
+    }: { code?: string; param?: string; hints?: string[] } = {},
+  ) {
+    super(message)
+    this.name = 'UsageError'
+    this.code = code
+    this.param = param
+    this.hints = hints
+  }
+}
+
+export class AuthError extends Error {
+  constructor(
+    message: string,
+    readonly code: string,
+  ) {
+    super(message)
+    this.name = 'AuthError'
+  }
+}
+
 const isNoAuthError = (err: unknown): boolean =>
   err instanceof Error && err.message.includes('No API key found')
+
+const isPromptClosed = (err: unknown): boolean =>
+  err instanceof Error && err.name === 'ExitPromptError'
 
 const isConnectivityError = (err: unknown): boolean => {
   if (!(err instanceof Error)) {
@@ -94,15 +129,47 @@ const printNextSteps = (steps: string[]) => {
   steps.forEach((step) => hint(`  ${step}`))
 }
 
-const exitJsonError = (fields: { type: string; code?: string; message: string }): never => {
+const exitJsonError = (fields: {
+  type: string
+  code?: string
+  param?: string
+  message: string
+}): never => {
   console.error(JSON.stringify({ error: fields }))
   return process.exit(1)
 }
 
 export const handleError = (err: unknown, context?: ErrorContext): never => {
+  if (isPromptClosed(err)) {
+    return handleError(
+      new UsageError('Aborted: the prompt was closed before an answer', { code: 'aborted' }),
+      context,
+    )
+  }
+
+  if (err instanceof UsageError) {
+    if (context?.json) {
+      return exitJsonError({
+        type: 'usage_error',
+        code: err.code,
+        param: err.param,
+        message: err.message,
+      })
+    }
+    error(err.message)
+    if (err.hints.length > 0) {
+      printNextSteps(err.hints)
+    }
+    return process.exit(1)
+  }
+
   if (isNoAuthError(err)) {
     if (context?.json) {
-      return exitJsonError({ type: 'auth_error', message: 'No API key found' })
+      return exitJsonError({
+        type: 'auth_error',
+        code: 'missing_api_key',
+        message: 'No API key found',
+      })
     }
     error('No API key found. To authenticate:')
     printNextSteps([
@@ -115,10 +182,19 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     return process.exit(1)
   }
 
+  if (err instanceof AuthError) {
+    if (context?.json) {
+      return exitJsonError({ type: 'auth_error', code: err.code, message: err.message })
+    }
+    error(err.message)
+    return process.exit(1)
+  }
+
   if (isConnectivityError(err)) {
     if (context?.json) {
       return exitJsonError({
         type: 'connectivity_error',
+        code: 'connection_failed',
         message: `Could not connect to ${API_HOST}`,
       })
     }
@@ -134,15 +210,17 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       return exitJsonError({
         type: fields.type,
         code: fields.code,
+        param: fields.param,
         message: fields.message ?? (err as Error).message,
       })
     }
 
     if (fields.code === 'missing_jws_signature_header') {
-      error('JWS private key required for transfer operations')
+      error('JWS private key required to sign this request')
       printNextSteps([
         'Pass:       --jws-private-key <path>',
         'Or set in:  ~/.fintoc/config.toml (jws_private_key = "<path>")',
+        `Needed for: ${JWS_COMMANDS}`,
         `More info:  ${DOCS_TRANSFERS_URL}`,
       ])
       return process.exit(1)
@@ -186,6 +264,12 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     }
 
     error(fields.message ?? (err as Error).message)
+    if (fields.code === 'unrecognized_request' && context?.cliPath) {
+      printNextSteps([
+        "This endpoint may need a newer API version than your organization's.",
+        `Check the requirements: fintoc ${context.cliPath} --help`,
+      ])
+    }
     return process.exit(1)
   }
 
