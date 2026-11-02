@@ -110,7 +110,7 @@ export class AuthError extends Error {
   }
 }
 
-const isNoAuthError = (err: unknown): boolean =>
+export const isNoAuthError = (err: unknown): boolean =>
   err instanceof Error && err.message.includes('No API key found')
 
 const isPromptClosed = (err: unknown): boolean =>

@@ -55,7 +55,6 @@ export const webhooksCommand = (program: Command) => {
     )
     .action(async (opts: ListenOpts, actionCmd: Command) => {
       const rootOpts = actionCmd.parent!.parent!.opts<RootOpts>()
-      const auth = resolveAuth(rootOpts)
 
       const shutdown = () => {
         process.exit(0)
@@ -66,6 +65,7 @@ export const webhooksCommand = (program: Command) => {
 
       let caughtError: unknown
       try {
+        const auth = resolveAuth(rootOpts)
         const session = await createCliSession({
           secretKey: auth.secretKey,
           streamType: 'webhook_event',

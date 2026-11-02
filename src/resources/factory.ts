@@ -179,11 +179,16 @@ const addFlags = (cmd: Command, flags: FlagDef[]) => {
 }
 
 const addLimitOption = (cmd: Command) =>
-  cmd.addOption(
-    new Option('--limit <integer>', 'Max results to show')
-      .default(DEFAULT_LIST_LIMIT)
-      .argParser(parsePositiveInteger),
-  )
+  cmd
+    .addOption(
+      new Option('--limit <integer>', 'Max results to show')
+        .default(DEFAULT_LIST_LIMIT)
+        .argParser(parsePositiveInteger),
+    )
+    .addOption(new Option('--all', 'Show every result, following all pages (ignores --limit)'))
+
+const listLimit = (opts: { limit?: number; all?: boolean }) =>
+  opts.all ? Number.POSITIVE_INFINITY : opts.limit!
 
 const parseFileValue = (files: FileDef[]) => {
   const allowed = files.map((f) => f.field)
@@ -380,7 +385,7 @@ const confirmOrAbort = async (rootOpts: RootOpts, yes: boolean | undefined, phra
     return true
   }
   const action = `${phrase}${isLiveMode(rootOpts) ? ' in LIVE mode' : ''}`
-  if (rootOpts.json || !process.stdin.isTTY) {
+  if (!process.stdin.isTTY) {
     throw new UsageError(`Confirmation required to ${action}. Use --yes to skip.`, {
       code: 'confirmation_required',
       param: 'yes',
@@ -426,7 +431,7 @@ const printList = (
   }
   printTable({ columns, rows: items })
   if (hasMore) {
-    hint(`More results may be available. Use --limit to show more than ${items.length}.`)
+    hint(`More results may be available. Use --limit to show more than ${items.length}, or --all.`)
   }
 }
 
@@ -446,10 +451,33 @@ const buildBody = (actionCmd: Command, flags: FlagDef[], files: Record<string, U
 const argDescription = (resource: ResourceDef) =>
   resource.getArg?.description ?? `ID of the ${resource.displayName}`
 
+const jsonFieldsNote = (fields: string[] = []) =>
+  fields.length > 0 ? ` (pass ${fields.map((f) => `\`${f}\``).join(', ')} in --from-json)` : ''
+
+const validateJsonFields = (
+  body: Record<string, unknown>,
+  fields: string[] = [],
+  fullCliPath: string,
+  verb: string,
+  args: string[] = [],
+) => {
+  const missing = fields.filter((field) => body[field] === undefined || body[field] === null)
+  if (missing.length > 0) {
+    throw new UsageError(
+      `Missing required ${missing.length === 1 ? 'field' : 'fields'} in --from-json: ${missing.join(', ')}`,
+      {
+        code: 'missing_field',
+        param: missing[0],
+        hints: usageHints(fullCliPath, verb, [...args.map((a) => `<${a}>`), '--from-json <path>']),
+      },
+    )
+  }
+}
+
 const verbDescription = (resource: ResourceDef, verb: Verb) => {
   const argName = (resource.getArg?.name ?? 'id').replace(/_/g, ' ')
   return {
-    create: `Create a new ${resource.displayName}`,
+    create: `Create a new ${resource.displayName}${jsonFieldsNote(resource.requiredJsonFields)}`,
     get: `Get ${withArticle(resource.displayName)} by ${argName === 'id' ? 'ID' : argName}`,
     list: `List ${pluralName(resource)}`,
     update: `Update ${withArticle(resource.displayName)}`,
@@ -492,6 +520,7 @@ const registerCreate = (parent: Command, resource: ResourceDef) => {
       })
       const files = collectFiles(localOpts.file, resource.createFiles ?? [], cliPath, 'create')
       const body = buildBody(actionCmd, flags, files)
+      validateJsonFields(body, resource.requiredJsonFields, cliPath, 'create')
 
       const client = resolveClient(rootOpts, {
         needsJws: resource.needsJws,
@@ -550,12 +579,15 @@ const registerList = (parent: Command, resource: ResourceDef) => {
     const context = { cliPath, verb: 'list', availableVerbs: resource.verbs }
     await runCommand(actionCmd, context, async (rootOpts) => {
       validateRequired(actionCmd, flags, cliPath, 'list')
-      const { limit } = actionCmd.opts<{ limit: number }>()
       const filters = collectSetOptions(actionCmd, flags)
       const manager = getManager(resolveClient(rootOpts), resource)
 
       const generator = (await manager.list!({ ...filters, lazy: true })) as AsyncIterable<unknown>
-      printList(rootOpts, await collectList(generator, limit), resource.priorityColumns)
+      printList(
+        rootOpts,
+        await collectList(generator, listLimit(actionCmd.opts())),
+        resource.priorityColumns,
+      )
     })
   })
 }
@@ -661,7 +693,9 @@ const registerAction = (parent: Command, resource: ResourceDef, action: ActionDe
   const files = action.files ?? []
   const cliPath = resourceCliPath(resource)
 
-  const cmd = parent.command(action.name).description(action.description)
+  const cmd = parent
+    .command(action.name)
+    .description(action.description + jsonFieldsNote(action.requiredJsonFields))
   if (toKebabCase(action.name) !== action.name) {
     cmd.alias(toKebabCase(action.name))
   }
@@ -693,7 +727,7 @@ const registerAction = (parent: Command, resource: ResourceDef, action: ActionDe
     const context = { cliPath, verb: action.name, id, availableVerbs: resource.verbs }
 
     await runCommand(actionCmd, context, async (rootOpts) => {
-      const localOpts = actionCmd.opts<BodyOpts & { limit?: number }>()
+      const localOpts = actionCmd.opts<BodyOpts & { limit?: number; all?: boolean }>()
       positional.forEach((arg, i) => {
         if (!arg.bodyField) {
           assertPathSegment(arg.name, values[i])
@@ -731,6 +765,13 @@ const registerAction = (parent: Command, resource: ResourceDef, action: ActionDe
         (!action.fileAsArg && files.length > 0)
       if (takesBody) {
         const body = buildBody(actionCmd, flags, action.fileAsArg ? bodyFiles : uploads)
+        validateJsonFields(
+          body,
+          action.requiredJsonFields,
+          cliPath,
+          action.name,
+          positional.map((a) => a.name),
+        )
         sdkArgs.push({ ...body, ...bodyArgs })
       }
 
@@ -749,7 +790,7 @@ const registerAction = (parent: Command, resource: ResourceDef, action: ActionDe
         const columns = action.priorityColumns ?? resource.priorityColumns
         printList(
           rootOpts,
-          await collectList(result as AsyncIterable<unknown>, localOpts.limit!),
+          await collectList(result as AsyncIterable<unknown>, listLimit(localOpts)),
           columns,
         )
         return
@@ -821,6 +862,7 @@ export type CommandSchema = {
   args: ArgDef[]
   flags: FlagSchema[]
   files: FileDef[]
+  jsonFields: { name: string; required: boolean; in: 'body' }[]
   options: string[]
   confirm: boolean
 }
@@ -835,6 +877,9 @@ const flagSchemas = (flags: FlagDef[], location: 'query' | 'body'): FlagSchema[]
     ...(f.description ? { description: f.description } : {}),
     ...(f.deprecated ? { deprecated: f.deprecated } : {}),
   }))
+
+const jsonFieldSchemas = (fields: string[] = []) =>
+  fields.map((name) => ({ name, required: true, in: 'body' as const }))
 
 const commandNames = (resource: ResourceDef, name: string) => {
   const command = `fintoc ${resourceCliPath(resource)} ${name}`
@@ -858,7 +903,7 @@ const verbSchema = (resource: ResourceDef, verb: Verb): CommandSchema => {
       ...(resource.needsJws ? ['--jws-private-key'] : []),
     ],
     get: [],
-    list: ['--limit'],
+    list: ['--limit', '--all'],
     update: ['--from-json'],
     delete: ['--yes'],
   }[verb]
@@ -877,6 +922,7 @@ const verbSchema = (resource: ResourceDef, verb: Verb): CommandSchema => {
           ],
     flags: flagSchemas(flags ?? [], verb === 'create' || verb === 'update' ? 'body' : 'query'),
     files: verb === 'create' ? (resource.createFiles ?? []) : [],
+    jsonFields: jsonFieldSchemas(verb === 'create' ? resource.requiredJsonFields : []),
     options,
     confirm: verb === 'delete',
   }
@@ -886,13 +932,14 @@ const actionSchema = (resource: ResourceDef, action: ActionDef): CommandSchema =
   const kind = action.kind ?? 'write'
   return {
     ...commandNames(resource, action.name),
-    description: action.description,
+    description: action.description + jsonFieldsNote(action.requiredJsonFields),
     kind,
     args: actionPositional(resource, action).positional,
     flags: flagSchemas(action.flags ?? [], kind === 'write' ? 'body' : 'query'),
     files: action.files ?? [],
+    jsonFields: jsonFieldSchemas(action.requiredJsonFields),
     options: [
-      ...(kind === 'list' ? ['--limit'] : []),
+      ...(kind === 'list' ? ['--limit', '--all'] : []),
       ...(action.fromJson ? ['--from-json'] : []),
       ...(action.idempotencyKey ? ['--idempotency-key'] : []),
       ...(action.needsJws ? ['--jws-private-key'] : []),

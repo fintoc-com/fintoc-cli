@@ -291,6 +291,14 @@ describe('resource registry', () => {
       ])
     })
 
+    test('required arrays of objects are declared as JSON fields', () => {
+      expect(find('subscriptions', 'v2').requiredJsonFields).toEqual(['items'])
+      expect(find('invoices', 'v2').requiredJsonFields).toEqual(['lines'])
+      expect(find('transfer_batches', 'v2').requiredJsonFields).toEqual(['transfers'])
+      const addLines = find('invoices', 'v2').actions!.find((a) => a.name === 'add_lines')!
+      expect(addLines.requiredJsonFields).toEqual(['lines'])
+    })
+
     test('webhook_endpoints requires url and enabled-events', () => {
       const webhooks = find('webhook_endpoints', 'v1')
       const requiredFlags = webhooks.createFlags!.filter((f) => f.required || f.pathParam)

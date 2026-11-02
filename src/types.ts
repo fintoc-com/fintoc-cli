@@ -53,6 +53,7 @@ export type ActionDef = {
   extraArgs?: ArgDef[]
   flags?: FlagDef[]
   fromJson?: boolean
+  requiredJsonFields?: string[]
   files?: FileDef[]
   // Pass the `file` field as a positional SDK argument (after extraArgs) instead of inside the body
   fileAsArg?: boolean
@@ -82,6 +83,7 @@ export type ResourceDef = {
   priorityColumns: string[]
   createFlags?: FlagDef[]
   createFiles?: FileDef[]
+  requiredJsonFields?: string[]
   listFlags?: FlagDef[]
   getFlags?: FlagDef[]
   updateFlags?: FlagDef[]

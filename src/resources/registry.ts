@@ -2481,6 +2481,7 @@ export const resources: ResourceDef[] = [
     sdkNamespace: 'v2',
     verbs: ['create', 'get', 'list', 'update'],
     priorityColumns: ['id', 'customer', 'status', 'collection_method', 'created_at'],
+    requiredJsonFields: ['items'],
     createFlags: [
       {
         name: 'customer',
@@ -2592,6 +2593,7 @@ export const resources: ResourceDef[] = [
       ...CURSOR_FLAGS,
       { name: 'subscription', type: 'string', description: 'Filter by subscription ID' },
     ],
+    requiredJsonFields: ['lines'],
     createFlags: [
       {
         name: 'customer',
@@ -2690,8 +2692,9 @@ export const resources: ResourceDef[] = [
         name: 'add_lines',
         idempotencyKey: true,
         sdkMethod: 'addLines',
-        description: 'Add line items to a draft invoice (pass `lines` in --from-json)',
+        description: 'Add line items to a draft invoice',
         fromJson: true,
+        requiredJsonFields: ['lines'],
         successMessage: "Lines added to {resource} '{id}'",
       },
       {
@@ -2861,6 +2864,7 @@ export const resources: ResourceDef[] = [
       },
     ],
     needsJws: true,
+    requiredJsonFields: ['transfers'],
     createFlags: [
       {
         name: 'description',

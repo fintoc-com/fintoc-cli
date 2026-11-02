@@ -178,3 +178,110 @@ describe('error formatting', () => {
     })
   })
 })
+
+describe('json errors', () => {
+  test.each([
+    [['charges', 'create', '--amount', '1.5'], 'invalid_value', 'amount'],
+    [['charges', 'list', '--bogus'], 'unknown_option', 'bogus'],
+    [
+      ['v2', 'subscription_items', 'update', 'si_1', '--quantity', '2'],
+      'missing_flag',
+      'subscription-id',
+    ],
+    [['payment_intents', 'get'], 'missing_argument', 'id'],
+  ])('%j emits a JSON usage error on stderr', (args, code, param) => {
+    const { stdout, stderr, exitCode } = run(['--json', ...args], true)
+
+    expect(exitCode).toBe(1)
+    expect(stdout).toBe('')
+    expect(JSON.parse(stderr).error).toMatchObject({ type: 'usage_error', code, param })
+  })
+
+  test('a mistyped command suggests the closest match', () => {
+    const { stderr } = run(['--json', 'v2', 'tranfers'], true)
+
+    expect(JSON.parse(stderr).error).toMatchObject({
+      code: 'unknown_command',
+      message: "Unknown command 'tranfers' (Did you mean transfers?)",
+      suggestion: 'transfers',
+    })
+  })
+})
+
+describe('published help commands', () => {
+  test.each([
+    ['--json', 'v2', 'transfers'],
+    ['config', 'help'],
+    ['config', 'help', 'set'],
+  ])('%j keeps help output and exit 0', (...args) => {
+    const { stdout, stderr, exitCode } = run(args)
+    expect(exitCode).toBe(0)
+    expect(stderr).toBe('')
+    expect(stdout).toContain('Usage:')
+  })
+})
+
+describe('commands', () => {
+  test('describes option arguments, choices and inherited options for agents', () => {
+    const commands = JSON.parse(run(['commands', '--json']).stdout) as {
+      command: string
+      optionDetails: object[]
+    }[]
+    const options = (command: string) =>
+      commands.find((entry) => entry.command === command)!.optionDetails
+
+    expect(options('fintoc login')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: '--mode',
+          argument: 'required',
+          choices: ['test', 'live'],
+          default: 'test',
+        }),
+        expect.objectContaining({
+          name: '--api-key',
+          flags: '--api-key <key>',
+          argument: 'required',
+        }),
+        expect.objectContaining({ name: '--yes', argument: 'none' }),
+      ]),
+    )
+    expect(options('fintoc trigger')).toContainEqual(
+      expect.objectContaining({
+        name: '--override',
+        flags: '--override <key=value>',
+        argument: 'required',
+        description: 'Override a field in the event payload (dot-notation, repeatable)',
+      }),
+    )
+    expect(options('fintoc v2 transfers create')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: '--amount',
+          flags: '--amount <integer>',
+          argument: 'required',
+        }),
+        expect.objectContaining({ name: '--api-key', argument: 'required' }),
+        expect.objectContaining({ name: '--json', argument: 'none' }),
+      ]),
+    )
+  })
+
+  test('lists every resource command as JSON', () => {
+    const commands = JSON.parse(run(['--json', 'commands']).stdout) as {
+      command: string
+      kind: string
+      options: string[]
+    }[]
+    const names = commands.map((c) => c.command)
+    expect(names).toContain('fintoc v2 transfers create')
+    expect(names).toEqual(
+      expect.arrayContaining(['fintoc login', 'fintoc config set', 'fintoc doctor']),
+    )
+    expect(names).not.toContain('fintoc config')
+    expect(commands.find((c) => c.command === 'fintoc trigger')).toMatchObject({
+      kind: 'utility',
+      options: ['--override', '--from-json'],
+    })
+  })
+})

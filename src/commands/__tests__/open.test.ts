@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { openInBrowser } from '../../lib/browser.js'
-import { hint, success } from '../../lib/output.js'
+import { hint, printJson, success } from '../../lib/output.js'
 import { openCommand } from '../open.js'
 
 vi.mock('../../lib/browser.js', () => ({
@@ -10,12 +10,13 @@ vi.mock('../../lib/browser.js', () => ({
 
 vi.mock('../../lib/output.js', () => ({
   success: vi.fn(),
+  printJson: vi.fn(),
   hint: vi.fn(),
 }))
 
 const createProgram = () => {
   const program = new Command()
-  program.exitOverride()
+  program.exitOverride().option('--json', 'Output as JSON')
   openCommand(program)
   return program
 }
@@ -40,13 +41,21 @@ describe('open command', () => {
   })
 
   describe('open dashboard', () => {
-    test('opens the dashboard URL in the browser', async () => {
-      const program = createProgram()
-      await program.parseAsync(['open', 'dashboard'], { from: 'user' })
+    test.each([false, true])(
+      'opens the dashboard and keeps stdout empty (json=%s)',
+      async (json) => {
+        const program = createProgram()
+        await program.parseAsync(['open', 'dashboard', ...(json ? ['--json'] : [])], {
+          from: 'user',
+        })
 
-      expect(openInBrowser).toHaveBeenCalledWith('https://dashboard.fintoc.com/')
-      expect(success).toHaveBeenCalledWith(expect.stringContaining('https://dashboard.fintoc.com/'))
-    })
+        expect(printJson).not.toHaveBeenCalled()
+        expect(openInBrowser).toHaveBeenCalledWith('https://dashboard.fintoc.com/')
+        expect(success).toHaveBeenCalledWith(
+          expect.stringContaining('https://dashboard.fintoc.com/'),
+        )
+      },
+    )
 
     test('falls back to printing the URL when the browser fails to open', async () => {
       vi.mocked(openInBrowser).mockRejectedValue(new Error('spawn open ENOENT'))

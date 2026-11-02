@@ -747,6 +747,20 @@ describe('factory', () => {
         const call = vi.mocked(printTable).mock.calls[0][0]
         expect(call.rows).toHaveLength(10)
       })
+
+      test('--all follows every page and ignores --limit', async () => {
+        const items = Array.from({ length: 25 }, (_, i) => ({
+          serialize: () => ({ id: `pi_${i}` }),
+        }))
+        mockManager.list.mockResolvedValue(asyncGenerator(items))
+
+        const program = createProgram()
+        await program.parseAsync(['--json', 'payment_intents', 'list', '--limit', '5', '--all'], {
+          from: 'user',
+        })
+
+        expect(printJson).toHaveBeenCalledWith(items.map((item) => item.serialize()))
+      })
     })
 
     describe('when --json flag is set', () => {

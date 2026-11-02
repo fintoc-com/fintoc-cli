@@ -342,6 +342,74 @@ describe('factory: update, actions and files', () => {
     })
   })
 
+  describe('required JSON fields', () => {
+    const resource: ResourceDef = {
+      ...baseResource,
+      verbs: ['create'],
+      requiredJsonFields: ['items'],
+      createFlags: [{ name: 'customer', type: 'string', required: true }],
+      actions: [
+        {
+          name: 'add_lines',
+          sdkMethod: 'removeLines',
+          description: 'Add lines',
+          fromJson: true,
+          requiredJsonFields: ['lines'],
+        },
+      ],
+    }
+
+    test('are named in the help and in commands --json', () => {
+      const cmd = createProgram(resource).commands.find((c) => c.name() === 'widgets')!
+      expect(cmd.commands.map((c) => c.description())).toEqual([
+        'Create a new widget (pass `items` in --from-json)',
+        'Add lines (pass `lines` in --from-json)',
+      ])
+      expect(describeCommands([resource]).map((c) => c.jsonFields)).toEqual([
+        [{ name: 'items', required: true, in: 'body' }],
+        [{ name: 'lines', required: true, in: 'body' }],
+      ])
+    })
+
+    test('exit before calling the API when the body lacks them', async () => {
+      const exitSpy = mockProcessExit()
+
+      await expect(run(resource, ['widgets', 'add_lines', 'w_1'])).rejects.toThrow('process.exit')
+
+      expect(mockManager.removeLines).not.toHaveBeenCalled()
+      expect(error).toHaveBeenCalledWith('Missing required field in --from-json: lines')
+      expect(hint).toHaveBeenCalledWith(
+        expect.stringContaining('Usage: fintoc widgets add_lines <id> --from-json <path>'),
+      )
+      exitSpy.mockRestore()
+    })
+
+    test('treat null as missing', async () => {
+      const exitSpy = mockProcessExit()
+      vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ lines: null }))
+
+      await expect(
+        run(resource, ['widgets', 'add_lines', 'w_1', '--from-json', 'body.json']),
+      ).rejects.toThrow('process.exit')
+
+      expect(mockManager.removeLines).not.toHaveBeenCalled()
+      expect(error).toHaveBeenCalledWith('Missing required field in --from-json: lines')
+      exitSpy.mockRestore()
+    })
+
+    test('are checked on the merged body', async () => {
+      vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ items: [{ price: 'p_1' }] }))
+      mockManager.create.mockResolvedValue(result({ id: 'w_1' }))
+
+      await run(resource, ['widgets', 'create', '--customer', 'c_1', '--from-json', 'body.json'])
+
+      expect(mockManager.create).toHaveBeenCalledWith({
+        customer: 'c_1',
+        items: [{ price: 'p_1' }],
+      })
+    })
+  })
+
   describe('update command', () => {
     const resource: ResourceDef = {
       ...baseResource,
@@ -634,6 +702,29 @@ describe('factory: update, actions and files', () => {
         columns: ['id', 'amount'],
         rows: [{ id: 'a' }, { id: 'b' }],
       })
+    })
+
+    test('list actions show every result with --all without sending it', async () => {
+      mockManager.listResources.mockResolvedValue(
+        asyncGenerator([{ id: 'a' }, { id: 'b' }, { id: 'c' }]),
+      )
+
+      await run(resource, [
+        '--json',
+        'widgets',
+        'resources',
+        'w_1',
+        '--resource-type',
+        'payment_intent',
+        '--limit',
+        '2',
+        '--all',
+      ])
+
+      expect(mockManager.listResources).toHaveBeenCalledWith('w_1', {
+        resource_type: 'payment_intent',
+      })
+      expect(printJson).toHaveBeenCalledWith([{ id: 'a' }, { id: 'b' }, { id: 'c' }])
     })
 
     test('actions without id pass only the body', async () => {
@@ -1109,8 +1200,19 @@ describe('factory: update, actions and files', () => {
         expect.objectContaining({ rows: [{ id: 'a' }, { id: 'b' }] }),
       )
       expect(hint).toHaveBeenCalledWith(
-        'More results may be available. Use --limit to show more than 2.',
+        'More results may be available. Use --limit to show more than 2, or --all.',
       )
+    })
+
+    test('list --all does not warn about more results', async () => {
+      mockManager.list.mockResolvedValue(asyncGenerator([{ id: 'a' }, { id: 'b' }, { id: 'c' }]))
+
+      await run(resource, ['payment_widgets', 'list', '--limit', '2', '--all'])
+
+      expect(printTable).toHaveBeenCalledWith(
+        expect.objectContaining({ rows: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] }),
+      )
+      expect(hint).not.toHaveBeenCalled()
     })
 
     test('list keeps stderr clean with --json', async () => {
@@ -1220,7 +1322,7 @@ describe('factory: update, actions and files', () => {
         },
       ])
       expect(commands[0].options).toEqual(['--from-json', '--idempotency-key'])
-      expect(commands[1].options).toEqual(['--limit'])
+      expect(commands[1].options).toEqual(['--limit', '--all'])
       expect(commands[3]).toMatchObject({
         kind: 'write',
         confirm: true,
