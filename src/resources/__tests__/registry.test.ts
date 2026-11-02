@@ -66,7 +66,7 @@ describe('resource registry', () => {
         for (const flag of resource.getFlags ?? []) {
           expect(validTypes.has(flag.type)).toBe(true)
         }
-        for (const flag of resource.testFlags ?? []) {
+        for (const flag of resource.actions?.flatMap((a) => a.flags ?? []) ?? []) {
           expect(validTypes.has(flag.type)).toBe(true)
         }
       }
@@ -167,10 +167,13 @@ describe('resource registry', () => {
       expect(eventsFlag.type).toBe('string[]')
     })
 
-    test('webhook_endpoints supports test verb with required type flag', () => {
+    test('webhook_endpoints supports test action with required type flag', () => {
       const webhooks = resources.find((r) => r.name === 'webhook_endpoints')!
-      expect(webhooks.verbs).toContain('test')
-      const requiredTestFlags = webhooks.testFlags!.filter((f) => f.required).map((f) => f.name)
+      expect(webhooks.actions?.map((a) => a.name)).toContain('test')
+      const requiredTestFlags = webhooks
+        .actions!.find((a) => a.name === 'test')!
+        .flags!.filter((f) => f.required)
+        .map((f) => f.name)
       expect(requiredTestFlags).toEqual(['type'])
     })
 

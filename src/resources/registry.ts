@@ -137,7 +137,7 @@ export const resources: ResourceDef[] = [
     cliCommand: 'webhook_endpoints',
     sdkMethod: 'webhookEndpoints',
     sdkNamespace: 'v1',
-    verbs: ['create', 'get', 'list', 'delete', 'test'],
+    verbs: ['create', 'get', 'list', 'delete'],
     priorityColumns: ['id', 'name', 'url', 'status', 'created_at'],
     createFlags: [
       {
@@ -155,12 +155,20 @@ export const resources: ResourceDef[] = [
       { name: 'description', type: 'string', description: 'Description of the webhook endpoint' },
     ],
     listFlags: [],
-    testFlags: [
+    actions: [
       {
-        name: 'type',
-        type: 'string',
-        required: true,
-        description: 'Event type to test (e.g., payment_intent.succeeded)',
+        name: 'test',
+        sdkMethod: 'test',
+        description: 'Send a test event to a webhook endpoint',
+        successMessage: "Test event sent to {resource} '{id}'",
+        flags: [
+          {
+            name: 'type',
+            type: 'string',
+            required: true,
+            description: 'Event type to test (e.g., payment_intent.succeeded)',
+          },
+        ],
       },
     ],
   },
@@ -269,7 +277,16 @@ export const resources: ResourceDef[] = [
     cliCommand: 'checkout_sessions',
     sdkMethod: 'checkoutSessions',
     sdkNamespace: 'v1',
-    verbs: ['create', 'get', 'expire'],
+    verbs: ['create', 'get'],
+    actions: [
+      {
+        name: 'expire',
+        sdkMethod: 'expire',
+        description: 'Expire a checkout session',
+        confirm: true,
+        successMessage: "{resource} '{id}' expired",
+      },
+    ],
     priorityColumns: ['id', 'amount', 'currency', 'status', 'created_at'],
     createFlags: [
       {
