@@ -8,6 +8,7 @@ import { createClient, resolveAuth } from '../../lib/auth.js'
 import { readConfig } from '../../lib/config.js'
 import { error, hint, printDetail, printJson, printTable, success, warn } from '../../lib/output.js'
 import { describeCommands, registerResourceCommands } from '../factory.js'
+import { resources } from '../registry.js'
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>()
@@ -150,6 +151,194 @@ describe('factory: update, actions and files', () => {
 
       expect(JSON.parse(stderr.mock.calls[0][0]).error.code).toBe('invalid_value')
       expect(createClient).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('public API parameter mappings', () => {
+    const resource = (name: string, namespace: 'v1' | 'v2'): ResourceDef => ({
+      ...resources.find((r) => r.name === name && r.sdkNamespace === namespace)!,
+      sdkNamespace: 'v1',
+      sdkMethod: 'widgets',
+    })
+
+    test('payment links reject the unsupported single-use flag before creating a link', async () => {
+      await rejectsWith(
+        run(resource('payment_links', 'v1'), [
+          'payment_links',
+          'create',
+          '--amount',
+          '1000',
+          '--currency',
+          'CLP',
+          '--max-completed-sessions',
+          '1',
+        ]),
+        'commander.unknownOption',
+        '--max-completed-sessions',
+      )
+
+      expect(mockManager.create).not.toHaveBeenCalled()
+    })
+
+    test('repeated published list flags keep only the last value', async () => {
+      mockManager.create.mockResolvedValue(result({ id: 'we_1' }))
+
+      await run(resource('webhook_endpoints', 'v1'), [
+        'webhook_endpoints',
+        'create',
+        '--url',
+        'https://example.com',
+        '--enabled-events',
+        'payment_intent.succeeded',
+        '--enabled-events',
+        'charge.succeeded,charge.failed',
+      ])
+
+      expect(mockManager.create).toHaveBeenCalledWith({
+        url: 'https://example.com',
+        enabled_events: ['charge.succeeded', 'charge.failed'],
+      })
+    })
+
+    test.each([
+      ['webhook_endpoints', 'v1'],
+      ['links', 'v1'],
+      ['account_numbers', 'v2'],
+    ] as const)('%s delete preserves empty stdout with --json', async (name, namespace) => {
+      mockManager.delete.mockResolvedValue('obj_1')
+
+      await run(resource(name, namespace), [name, 'delete', 'obj_1', '--yes', '--json'])
+
+      expect(mockManager.delete).toHaveBeenCalledWith('obj_1')
+      expect(printJson).not.toHaveBeenCalled()
+      expect(printDetail).not.toHaveBeenCalled()
+      expect(success).toHaveBeenCalledWith(expect.stringContaining("'obj_1' deleted"))
+    })
+
+    test.each([false, true])(
+      'v1 checkout expiry preserves empty stdout (json=%s)',
+      async (json) => {
+        mockManager.expire.mockResolvedValue(result({ id: 'cs_1', status: 'expired' }))
+
+        await run(resource('checkout_sessions', 'v1'), [
+          'checkout_sessions',
+          'expire',
+          'cs_1',
+          '--yes',
+          ...(json ? ['--json'] : []),
+        ])
+
+        expect(mockManager.expire).toHaveBeenCalledWith('cs_1')
+        expect(printJson).not.toHaveBeenCalled()
+        expect(printDetail).not.toHaveBeenCalled()
+        expect(success).toHaveBeenCalledWith("Checkout session 'cs_1' expired")
+      },
+    )
+
+    test('new checkout expiry still returns its JSON result', async () => {
+      mockManager.expire.mockResolvedValue(result({ id: 'cs_2', status: 'expired' }))
+
+      await run(resource('checkout_sessions', 'v2'), [
+        'checkout_sessions',
+        'expire',
+        'cs_2',
+        '--yes',
+        '--json',
+      ])
+
+      expect(printJson).toHaveBeenCalledWith({ id: 'cs_2', status: 'expired' })
+    })
+
+    test('cursor and page size options reach the SDK without changing the output limit', async () => {
+      mockManager.list.mockResolvedValue(asyncGenerator([{ id: 'a' }, { id: 'b' }]))
+      await run(resource('accounts', 'v2'), [
+        'accounts',
+        'list',
+        '--starting-after',
+        'acc_1',
+        '--page-size',
+        '30',
+        '--limit',
+        '1',
+        '--json',
+      ])
+      expect(mockManager.list).toHaveBeenCalledWith({
+        starting_after: 'acc_1',
+        limit: 30,
+        lazy: true,
+      })
+      expect(printJson).toHaveBeenCalledWith([{ id: 'a' }])
+    })
+
+    test('v1 page and per-page are sent as query parameters', async () => {
+      mockManager.list.mockResolvedValue(asyncGenerator([]))
+      await run(resource('payment_intents', 'v1'), [
+        'payment_intents',
+        'list',
+        '--page',
+        '2',
+        '--per-page',
+        '20',
+      ])
+      expect(mockManager.list).toHaveBeenCalledWith({ page: 2, per_page: 20, lazy: true })
+    })
+
+    test('checkout restrictions and channels keep their nested API paths', async () => {
+      mockManager.create.mockResolvedValue(result({ id: 'cs_1' }))
+      await run(resource('checkout_sessions', 'v2'), [
+        'checkout_sessions',
+        'create',
+        '--currency',
+        'CLP',
+        '--cash-channels',
+        'email,phone',
+        '--bank-transfer-sender-account-holder-id-value',
+        '11.111.111-1',
+        '--bank-transfer-sender-account-holder-id-editable',
+        'false',
+        '--pac-sender-account-types',
+        'checking_account',
+      ])
+      expect(mockManager.create).toHaveBeenCalledWith({
+        currency: 'CLP',
+        payment_method_options: {
+          cash: { notification_preferences: { channels: ['email', 'phone'] } },
+          bank_transfer: {
+            sender_account: { holder_id: { value: '11.111.111-1', editable: false } },
+          },
+          pac: { sender_account: { types: ['checking_account'] } },
+        },
+      })
+    })
+
+    test('onboarding flags merge with complex answers from JSON', async () => {
+      vi.mocked(readFileSync).mockReturnValue(
+        JSON.stringify({ data: { shareholders: [{ name: 'Jane' }] } }),
+      )
+      mockManager.create.mockResolvedValue(result({ id: 'onb_1' }))
+      await run(resource('onboardings', 'v2'), [
+        'onboardings',
+        'create',
+        '--entity-id',
+        'ent_1',
+        '--type',
+        'account_holder',
+        '--plaft-uaf-obligated',
+        'false',
+        '--transactional-profile-equity-origins',
+        'retained_earnings',
+        '--from-json',
+        '/tmp/body.json',
+      ])
+      expect(mockManager.create).toHaveBeenCalledWith({
+        entity_id: 'ent_1',
+        type: 'account_holder',
+        data: {
+          shareholders: [{ name: 'Jane' }],
+          plaft: { uaf_obligated: false },
+          transactional_profile: { equity_origins: ['retained_earnings'] },
+        },
+      })
     })
   })
 

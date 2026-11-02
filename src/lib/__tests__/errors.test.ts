@@ -311,6 +311,24 @@ describe('handleError', () => {
     })
   })
 
+  describe('single-file document slot', () => {
+    test('points to upload_document', () => {
+      const err = createFintocError('InvalidRequestError', {
+        type: 'invalid_request_error',
+        code: 'single_file_document_slot',
+        param: 'slot_key',
+        message: 'This slot accepts a single file. Use PUT to replace it.',
+      })
+
+      expect(() => handleError(err)).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith('This slot accepts a single file. Use PUT to replace it.')
+      expect(hint).toHaveBeenCalledWith(
+        '  Use: fintoc v2 onboardings upload_document <id> <slot_key> --entity-id <entity_id> --file <path>',
+      )
+    })
+  })
+
   describe('AxiosError with structured response', () => {
     test('extracts message from response.data.error', () => {
       const err = new Error('Request failed with status code 400')

@@ -236,6 +236,14 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
       return process.exit(1)
     }
 
+    if (fields.code === 'single_file_document_slot') {
+      error(fields.message ?? 'This document slot accepts a single file')
+      printNextSteps([
+        'Use: fintoc v2 onboardings upload_document <id> <slot_key> --entity-id <entity_id> --file <path>',
+      ])
+      return process.exit(1)
+    }
+
     if (fields.code === 'missing_resource') {
       const fallback = context?.id ? `'${context.id}' not found` : 'Resource not found'
       error(`Error (404): ${fields.message?.trim() || fallback}`)
