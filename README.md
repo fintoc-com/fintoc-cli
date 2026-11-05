@@ -87,6 +87,7 @@ Resources follow the pattern `fintoc <resource> <action> [flags]`.
 | `subscriptions`            | get, list                       |
 | `links`                    | get, list, delete               |
 | `api_keys`                 | list                            |
+| `organizations`            | create                          |
 | `v2 transfers`             | create, get, list               |
 | `v2 accounts`              | get, list                       |
 | `v2 account_verifications` | create, get, list               |

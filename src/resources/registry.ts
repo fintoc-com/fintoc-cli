@@ -442,6 +442,42 @@ export const resources: ResourceDef[] = [
     priorityColumns: ['token', 'mode', 'is_public', 'created_at'],
     listFlags: [],
   },
+  {
+    name: 'organizations',
+    displayName: 'organization',
+    cliCommand: 'organizations',
+    sdkMethod: 'organizations',
+    sdkNamespace: 'v1',
+    verbs: ['create'],
+    needsJws: true,
+    priorityColumns: ['id', 'tax_id', 'name', 'external_reference'],
+    createFlags: [
+      {
+        name: 'tax-id',
+        type: 'string',
+        required: true,
+        description: 'Company tax ID (e.g., RUT in Chile)',
+      },
+      {
+        name: 'name',
+        type: 'string',
+        required: true,
+        description: 'Company legal name',
+      },
+      {
+        name: 'founder-email',
+        type: 'string',
+        required: true,
+        description: 'Email of the founder who receives the activation link',
+      },
+      {
+        name: 'external-reference',
+        type: 'string',
+        description: 'Your own reference for the organization',
+      },
+    ],
+    listFlags: [],
+  },
 ]
 
 export const v1Resources = resources.filter((r) => r.sdkNamespace === 'v1')
