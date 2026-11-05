@@ -62,6 +62,13 @@ const parseFlagValue = (value: string, flag: FlagDef) => {
   if (flag.type === 'string[]') {
     return value.split(',').map((s) => s.trim())
   }
+  if (flag.type === 'json') {
+    try {
+      return JSON.parse(value) as unknown
+    } catch {
+      throw new TypeError(`Invalid value '${value}' for flag --${flag.name}: expected JSON`)
+    }
+  }
   return value
 }
 

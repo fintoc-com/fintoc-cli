@@ -3,8 +3,8 @@ import { resources, v1Resources, v2Resources } from '../registry.js'
 
 describe('resource registry', () => {
   describe('schema validation', () => {
-    test('contains all 12 resources', () => {
-      expect(resources).toHaveLength(12)
+    test('contains all 13 resources', () => {
+      expect(resources).toHaveLength(13)
 
       const names = resources.map((r) => r.name)
       expect(names).toEqual([
@@ -20,6 +20,7 @@ describe('resource registry', () => {
         'account_numbers',
         'movements',
         'api_keys',
+        'organizations',
       ])
     })
 
@@ -54,7 +55,7 @@ describe('resource registry', () => {
     })
 
     test('all flag types are valid', () => {
-      const validTypes = new Set(['string', 'integer', 'boolean', 'string[]'])
+      const validTypes = new Set(['string', 'integer', 'boolean', 'string[]', 'json'])
       for (const resource of resources) {
         for (const flag of resource.createFlags ?? []) {
           expect(validTypes.has(flag.type)).toBe(true)
@@ -97,7 +98,7 @@ describe('resource registry', () => {
 
     test('v1Resources contains only v1 namespace resources', () => {
       expect(v1Resources.every((r) => r.sdkNamespace === 'v1')).toBe(true)
-      expect(v1Resources).toHaveLength(7)
+      expect(v1Resources).toHaveLength(8)
     })
 
     test('v2Resources contains only v2 namespace resources', () => {
@@ -200,6 +201,18 @@ describe('resource registry', () => {
     test('movements uses nested sdkMethod path', () => {
       const movements = resources.find((r) => r.name === 'movements')!
       expect(movements.sdkMethod).toBe('accounts.movements')
+    })
+
+    test('organizations requires tax-id, name, founder-email and products and needs JWS', () => {
+      const organizations = resources.find((r) => r.name === 'organizations')!
+      expect(organizations.needsJws).toBe(true)
+      const requiredFlags = organizations.createFlags!.filter((f) => f.required)
+      expect(requiredFlags.map((f) => f.name)).toEqual([
+        'tax-id',
+        'name',
+        'founder-email',
+        'products',
+      ])
     })
   })
 })
