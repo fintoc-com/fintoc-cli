@@ -471,9 +471,20 @@ export const resources: ResourceDef[] = [
         description: 'Email of the founder who receives the activation link',
       },
       {
+        name: 'products',
+        type: 'json',
+        required: true,
+        description: `Products of interest with optional company data, as JSON (e.g., '{"business_accounts":{}}')`,
+      },
+      {
         name: 'external-reference',
         type: 'string',
         description: 'Your own reference for the organization',
+      },
+      {
+        name: 'metadata',
+        type: 'json',
+        description: `Key-value pairs as JSON (e.g., '{"request_id":"abc"}')`,
       },
     ],
     listFlags: [],

@@ -55,7 +55,7 @@ describe('resource registry', () => {
     })
 
     test('all flag types are valid', () => {
-      const validTypes = new Set(['string', 'integer', 'boolean', 'string[]'])
+      const validTypes = new Set(['string', 'integer', 'boolean', 'string[]', 'json'])
       for (const resource of resources) {
         for (const flag of resource.createFlags ?? []) {
           expect(validTypes.has(flag.type)).toBe(true)
@@ -203,11 +203,16 @@ describe('resource registry', () => {
       expect(movements.sdkMethod).toBe('accounts.movements')
     })
 
-    test('organizations requires tax-id, name and founder-email and needs JWS', () => {
+    test('organizations requires tax-id, name, founder-email and products and needs JWS', () => {
       const organizations = resources.find((r) => r.name === 'organizations')!
       expect(organizations.needsJws).toBe(true)
       const requiredFlags = organizations.createFlags!.filter((f) => f.required)
-      expect(requiredFlags.map((f) => f.name)).toEqual(['tax-id', 'name', 'founder-email'])
+      expect(requiredFlags.map((f) => f.name)).toEqual([
+        'tax-id',
+        'name',
+        'founder-email',
+        'products',
+      ])
     })
   })
 })

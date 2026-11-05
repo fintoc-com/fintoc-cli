@@ -316,6 +316,41 @@ describe('factory', () => {
       })
     })
 
+    describe('when a flag has json type', () => {
+      const jsonResource: ResourceDef = {
+        ...testResource,
+        createFlags: [{ name: 'products', type: 'json', description: 'Products' }],
+      }
+
+      test('parses the value as JSON', async () => {
+        mockManager.create.mockResolvedValue({ serialize: () => ({ id: 'org_123' }) })
+
+        const program = createProgram(jsonResource)
+        await program.parseAsync(
+          ['payment_intents', 'create', '--products', '{"business_accounts":{}}'],
+          { from: 'user' },
+        )
+
+        expect(mockManager.create).toHaveBeenCalledWith({ products: { business_accounts: {} } })
+      })
+
+      test('exits with error when value is not valid JSON', async () => {
+        const exitSpy = mockProcessExit()
+        const program = createProgram(jsonResource)
+        await expect(
+          program.parseAsync(['payment_intents', 'create', '--products', '{bad'], {
+            from: 'user',
+          }),
+        ).rejects.toThrow('process.exit')
+
+        expect(error).toHaveBeenCalledWith(
+          expect.stringContaining("Invalid value '{bad' for flag --products: expected JSON"),
+        )
+        expect(mockManager.create).not.toHaveBeenCalled()
+        exitSpy.mockRestore()
+      })
+    })
+
     describe('when required flags are missing', () => {
       let exitSpy: ReturnType<typeof vi.spyOn>
 
