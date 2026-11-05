@@ -26,7 +26,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
           cache: npm
 
@@ -45,9 +45,7 @@ jobs:
           app-id: ${{ vars.FIN_RELEASES_APP_ID }}
           app-private-key: ${{ secrets.FIN_RELEASES_PRIVATE_KEY }}
 
-      - run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --access public
 
       - uses: fintoc-com/release-action/finalize@main
         with:
