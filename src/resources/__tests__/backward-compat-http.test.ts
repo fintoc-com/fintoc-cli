@@ -114,6 +114,33 @@ describe('published CLI HTTP and output contract', () => {
     },
   )
 
+  test('sends the single-use payment link limit to the API', () => {
+    const result = run(
+      [
+        'payment_links',
+        'create',
+        '--amount',
+        '100',
+        '--currency',
+        'CLP',
+        '--max-completed-sessions',
+        '1',
+      ],
+      { id: 'pl_fixture', max_completed_sessions: 1 },
+    )
+
+    expect(result.status, result.stderr).toBe(0)
+    expect(result.requests).toEqual([
+      {
+        method: 'post',
+        path: '/v1/payment_links',
+        params: {},
+        body: { amount: 100, currency: 'CLP', max_completed_sessions: 1 },
+      },
+    ])
+    expect(JSON.parse(result.stdout)).toEqual({ id: 'pl_fixture', max_completed_sessions: 1 })
+  })
+
   test.each([
     ['id', { type: 'invalid_request_error', code: 'invalid_parameter', message: 'Invalid type' }],
     [

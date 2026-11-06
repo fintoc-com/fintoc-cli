@@ -1167,6 +1167,11 @@ export const resources: ResourceDef[] = [
         description: 'Seconds after which the payment link expires',
       },
       {
+        name: 'max-completed-sessions',
+        type: 'integer',
+        description: 'Maximum successful payments (1 for a single-use link; reusable if omitted)',
+      },
+      {
         name: 'checkout-description',
         type: 'string',
         description: 'Text shown next to the buy button on the payment page',

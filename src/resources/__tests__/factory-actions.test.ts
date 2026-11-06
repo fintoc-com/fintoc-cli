@@ -161,25 +161,6 @@ describe('factory: update, actions and files', () => {
       sdkMethod: 'widgets',
     })
 
-    test('payment links reject the unsupported single-use flag before creating a link', async () => {
-      await rejectsWith(
-        run(resource('payment_links', 'v1'), [
-          'payment_links',
-          'create',
-          '--amount',
-          '1000',
-          '--currency',
-          'CLP',
-          '--max-completed-sessions',
-          '1',
-        ]),
-        'commander.unknownOption',
-        '--max-completed-sessions',
-      )
-
-      expect(mockManager.create).not.toHaveBeenCalled()
-    })
-
     test('repeated published list flags keep only the last value', async () => {
       mockManager.create.mockResolvedValue(result({ id: 'we_1' }))
 

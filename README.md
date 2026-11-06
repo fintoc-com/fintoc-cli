@@ -157,6 +157,8 @@ fintoc payment_intents get pi_test_abc123
 fintoc charges create --amount 5000 --currency CLP --subscription-id sub_test_abc123
 ```
 
+To create a single-use payment link, pass `payment_links create --amount 5000 --currency CLP --max-completed-sessions 1`. Omit the limit for a reusable link.
+
 ### Create with JSON
 
 ```bash
