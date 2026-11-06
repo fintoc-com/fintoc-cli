@@ -4,6 +4,13 @@
 Agregar un pequeño resumen que de contexto y explique porque es importante el cambio
 que se está proponiendo.
 
+## Release notes
+<!--
+Si este PR debe publicar una versión, agrega el label release:patch, release:minor o
+release:major y escribe aquí, en inglés, lo que verán quienes usan la CLI.
+Si queda vacío, se usan las notas autogeneradas de GitHub. Los PRs sin label no publican.
+-->
+
 ## Que hay de nuevo?
 ¿Qué?
 
@@ -29,3 +36,4 @@ Ej.
 - Se decidió separar x funcionalidad en dos endpoints
 - ¿Les parece bien este nombre para y?
 - Se decidió no incluir el refactor de x en este PR
+
