@@ -27,11 +27,13 @@ const commandArgs = (command: string, surface: CommandSurface) => [
     `--${name}`,
     flag.type === 'integer'
       ? '7'
-      : flag.type === 'string[]'
-        ? 'first,second'
-        : flag.type === 'boolean'
-          ? 'true'
-          : `test_${name.replace(/-/g, '_')}`,
+      : flag.type === 'json'
+        ? '{"fixture":"value"}'
+        : flag.type === 'string[]'
+          ? 'first,second'
+          : flag.type === 'boolean'
+            ? 'true'
+            : `test_${name.replace(/-/g, '_')}`,
   ]),
   ...(surface.confirm ? ['--yes'] : []),
 ]
@@ -111,6 +113,31 @@ describe('published CLI HTTP and output contract', () => {
       expect(result.requests).toEqual([contract.commands[command].request])
     },
   )
+
+  test.each([
+    ['id', { type: 'invalid_request_error', code: 'invalid_parameter', message: 'Invalid type' }],
+    [
+      'recipient_account.type',
+      {
+        type: 'invalid_request_error: invalid_parameter (recipient_account.type)',
+        message: 'invalid_request_error: invalid_parameter (recipient_account.type)\nInvalid type',
+      },
+    ],
+  ])('preserves the published API error JSON for parameter %s', (param, expected) => {
+    const response = {
+      error: {
+        type: 'invalid_request_error',
+        code: 'invalid_parameter',
+        param,
+        message: 'Invalid type',
+      },
+    }
+    const result = run(['payment_intents', 'get', 'pi_fixture'], response, true)
+
+    expect(result.status).toBe(1)
+    expect(result.stdout).toBe('')
+    expect(JSON.parse(result.stderr)).toEqual({ error: expected })
+  })
 
   test('preserves stdin bodies, flag precedence and replacement of repeated lists', () => {
     const result = run(

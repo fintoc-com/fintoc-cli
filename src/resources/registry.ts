@@ -993,7 +993,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'metadata',
         type: 'json',
-        description: `Key-value pairs as JSON (e.g., '{"request_id":"abc"}')`,
+        description: 'Metadata to attach',
       },
     ],
     listFlags: [],

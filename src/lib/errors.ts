@@ -45,12 +45,18 @@ const FINTOC_ERROR_CLASSES = new Set([
 const isFintocError = (err: unknown): err is Error =>
   err instanceof Error && FINTOC_ERROR_CLASSES.has(err.constructor.name)
 
-export const parseFintocError = (err: unknown): FintocErrorFields | undefined => {
+export const parseFintocError = (
+  err: unknown,
+  legacyJson = false,
+): FintocErrorFields | undefined => {
   if (isFintocError(err)) {
     const lines = err.message.split('\n')
     const firstLine = lines[0] ?? ''
 
-    const match = firstLine.match(/^(\w+)(?::\s*(\w+))?(?:\s*\(([\w.[\]]+)\))?$/)
+    const pattern = legacyJson
+      ? /^(\w+)(?::\s*(\w+))?(?:\s*\((\w+)\))?$/
+      : /^(\w+)(?::\s*(\w+))?(?:\s*\(([\w.[\]]+)\))?$/
+    const match = firstLine.match(pattern)
     if (!match) {
       return { type: firstLine }
     }
@@ -203,14 +209,13 @@ export const handleError = (err: unknown, context?: ErrorContext): never => {
     return process.exit(1)
   }
 
-  const fields = parseFintocError(err)
+  const fields = parseFintocError(err, !!context?.json)
 
   if (fields) {
     if (context?.json) {
       return exitJsonError({
         type: fields.type,
         code: fields.code,
-        param: fields.param,
         message: fields.message ?? (err as Error).message,
       })
     }

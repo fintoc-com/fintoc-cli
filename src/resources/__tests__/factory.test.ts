@@ -332,20 +332,15 @@ describe('factory', () => {
         expect(mockManager.create).toHaveBeenCalledWith({ products: { business_accounts: {} } })
       })
 
-      test('exits with error when value is not valid JSON', async () => {
-        const exitSpy = mockProcessExit()
+      test('rejects invalid JSON before calling the API', async () => {
         const program = createProgram(jsonResource)
         await expect(
           program.parseAsync(['payment_intents', 'create', '--products', '{bad'], {
             from: 'user',
           }),
-        ).rejects.toThrow('process.exit')
+        ).rejects.toThrow('Expected JSON.')
 
-        expect(error).toHaveBeenCalledWith(
-          expect.stringContaining("Invalid value '{bad' for flag --products: expected JSON"),
-        )
         expect(mockManager.create).not.toHaveBeenCalled()
-        exitSpy.mockRestore()
       })
     })
 

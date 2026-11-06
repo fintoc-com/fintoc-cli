@@ -475,14 +475,13 @@ describe('handleError', () => {
         error: {
           type: 'invalid_request_error',
           code: 'missing_resource',
-          param: 'id',
           message: 'No such payment_intent: pi_invalid',
         },
       })
     })
 
     test.each(['tax_id.type', 'counterparty.account_number', 'items[0].price'])(
-      'emits JSON for FintocError with nested param %s',
+      'preserves the published JSON for FintocError with nested param %s',
       (param) => {
         const err = createFintocError('InvalidRequestError', {
           type: 'invalid_request_error',
@@ -495,10 +494,8 @@ describe('handleError', () => {
 
         expect(JSON.parse(stderrSpy.mock.calls[0][0] as string)).toEqual({
           error: {
-            type: 'invalid_request_error',
-            code: 'invalid_enum',
-            param,
-            message: 'Invalid value',
+            type: `invalid_request_error: invalid_enum (${param})`,
+            message: `invalid_request_error: invalid_enum (${param})\nInvalid value`,
           },
         })
       },

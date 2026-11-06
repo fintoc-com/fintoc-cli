@@ -125,6 +125,8 @@ Resources follow the pattern `fintoc [v2] <resource> <action> [args] [flags]`. A
 | `v2 invoice_lines`         | update                                                                                                                                       |
 | `v2 simulate`              | receive_transfer                                                                                                                             |
 
+`organizations create` preserves the published `--products <json>` and `--metadata <json>` flags. Updating organizations requires a future SDK release; fintoc 1.31.0 only supports creation.
+
 ### Utilities
 
 | Command                  | Description                              |

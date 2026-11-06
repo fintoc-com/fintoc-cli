@@ -364,6 +364,29 @@
         "params": {}
       },
       "output": "list"
+    },
+    "organizations create": {
+      "request": {
+        "method": "post",
+        "path": "/v1/organizations",
+        "params": {},
+        "body": {
+          "tax_id": "test_tax_id",
+          "name": "test_name",
+          "founder_email": "test_founder_email",
+          "products": {
+            "fixture": "value"
+          },
+          "external_reference": "test_external_reference",
+          "metadata": {
+            "fixture": "value"
+          }
+        }
+      },
+      "output": "object"
     }
+  },
+  "additionalSources": {
+    "organizations create": "b18e04779347045b0083815ffccaeba4868175cb"
   }
 }

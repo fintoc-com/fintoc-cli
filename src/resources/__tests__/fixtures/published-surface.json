@@ -485,6 +485,43 @@
         "--limit"
       ],
       "confirm": false
+    },
+    "organizations create": {
+      "args": [],
+      "flags": {
+        "tax-id": {
+          "type": "string",
+          "required": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "founder-email": {
+          "type": "string",
+          "required": true
+        },
+        "products": {
+          "type": "json",
+          "required": true
+        },
+        "external-reference": {
+          "type": "string",
+          "required": false
+        },
+        "metadata": {
+          "type": "json",
+          "required": false
+        }
+      },
+      "options": [
+        "--from-json",
+        "--jws-private-key"
+      ],
+      "confirm": false
     }
+  },
+  "additionalSources": {
+    "organizations create": "b18e04779347045b0083815ffccaeba4868175cb"
   }
 }
