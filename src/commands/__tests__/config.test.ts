@@ -247,16 +247,21 @@ describe('config set command', () => {
       expect(success).toHaveBeenCalledWith('Config updated: jws_private_key')
     })
 
-    test('sets secret_key in config', async () => {
+    test.each([false, true])('sets secret_key and keeps stdout empty (json=%s)', async (json) => {
       vi.mocked(readConfig).mockReturnValue({})
 
       const program = createProgram()
-      await program.parseAsync(['config', 'set', 'secret_key', 'sk_test_newkey'], {
-        from: 'user',
-      })
+      await program.parseAsync(
+        ['config', 'set', 'secret_key', 'sk_test_newkey', ...(json ? ['--json'] : [])],
+        {
+          from: 'user',
+        },
+      )
 
       expect(writeConfig).toHaveBeenCalledWith({ secret_key: 'sk_test_newkey' })
       expect(success).toHaveBeenCalledWith('Config updated: secret_key')
+      expect(printJson).not.toHaveBeenCalled()
+      expect(log).not.toHaveBeenCalled()
     })
 
     test('preserves existing config values when setting a new key', async () => {
@@ -289,7 +294,7 @@ describe('config set command', () => {
       ).rejects.toThrow('exit 1')
 
       expect(error).toHaveBeenCalledWith(
-        expect.stringContaining("Unknown config key: 'unknown_key'"),
+        expect.stringContaining("Unknown config key 'unknown_key'"),
       )
       expect(writeConfig).not.toHaveBeenCalled()
 

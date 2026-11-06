@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { handleError } from '../errors.js'
+import { AuthError, handleError, UsageError } from '../errors.js'
 import { error, hint } from '../output.js'
 
 vi.mock('../output.js', () => ({
@@ -30,6 +30,12 @@ const createFintocError = (
 const createNetworkError = (code: string) => {
   const err = new Error(`connect ${code}`)
   ;(err as unknown as Record<string, string>).code = code
+  return err
+}
+
+const createPromptClosedError = () => {
+  const err = new Error('User force closed the prompt with 0 null')
+  err.name = 'ExitPromptError'
   return err
 }
 
@@ -64,6 +70,23 @@ describe('handleError', () => {
     })
   })
 
+  describe('empty API key', () => {
+    test('prints the message without the login steps', () => {
+      const err = new AuthError(
+        'API key is empty. Provide a valid key with --api-key or remove the flag.',
+        'empty_api_key',
+      )
+
+      expect(() => handleError(err)).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith(
+        'API key is empty. Provide a valid key with --api-key or remove the flag.',
+      )
+      expect(hint).not.toHaveBeenCalled()
+      expect(exitSpy).toHaveBeenCalledWith(1)
+    })
+  })
+
   describe('connectivity errors', () => {
     test.each(['ECONNREFUSED', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', 'ERR_NETWORK'])(
       'formats %s as connectivity error',
@@ -89,7 +112,7 @@ describe('handleError', () => {
 
       expect(() => handleError(err)).toThrow('process.exit')
 
-      expect(error).toHaveBeenCalledWith('JWS private key required for transfer operations')
+      expect(error).toHaveBeenCalledWith('JWS private key required to sign this request')
       expect(hint).toHaveBeenCalledWith('  More info:  https://docs.fintoc.com/docs/transfers')
     })
   })
@@ -249,6 +272,61 @@ describe('handleError', () => {
 
       expect(error).toHaveBeenCalledWith('This value must be a positive integer.')
     })
+
+    test('shows only the API message when the param is nested', () => {
+      const err = createFintocError('InvalidRequestError', {
+        type: 'invalid_request_error',
+        code: 'invalid_enum',
+        param: 'tax_id.type',
+        message: 'Invalid tax_id.type: bogus',
+      })
+
+      expect(() => handleError(err)).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith('Invalid tax_id.type: bogus')
+    })
+
+    test('points to the resource help when the API does not recognize the route', () => {
+      const err = createFintocError('InvalidRequestError', {
+        type: 'invalid_request_error',
+        code: 'unrecognized_request',
+        message: 'Unrecognized request: GET /v2/payment_intents.',
+      })
+
+      expect(() => handleError(err, { cliPath: 'v2 payment_intents' })).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith('Unrecognized request: GET /v2/payment_intents.')
+      expect(hint).toHaveBeenCalledWith(
+        '  Check the requirements: fintoc v2 payment_intents --help',
+      )
+    })
+  })
+
+  describe('closed prompt', () => {
+    test('reports an abort instead of the prompt internals', () => {
+      expect(() => handleError(createPromptClosedError())).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith('Aborted: the prompt was closed before an answer')
+      expect(exitSpy).toHaveBeenCalledWith(1)
+    })
+  })
+
+  describe('single-file document slot', () => {
+    test('points to upload_document', () => {
+      const err = createFintocError('InvalidRequestError', {
+        type: 'invalid_request_error',
+        code: 'single_file_document_slot',
+        param: 'slot_key',
+        message: 'This slot accepts a single file. Use PUT to replace it.',
+      })
+
+      expect(() => handleError(err)).toThrow('process.exit')
+
+      expect(error).toHaveBeenCalledWith('This slot accepts a single file. Use PUT to replace it.')
+      expect(hint).toHaveBeenCalledWith(
+        '  Use: fintoc v2 onboardings upload_document <id> <slot_key> --entity-id <entity_id> --file <path>',
+      )
+    })
   })
 
   describe('AxiosError with structured response', () => {
@@ -309,7 +387,7 @@ describe('handleError', () => {
 
       expect(() => handleError(err)).toThrow('process.exit')
 
-      expect(error).toHaveBeenCalledWith('JWS private key required for transfer operations')
+      expect(error).toHaveBeenCalledWith('JWS private key required to sign this request')
     })
   })
 
@@ -363,7 +441,7 @@ describe('handleError', () => {
 
       const output = JSON.parse(stderrSpy.mock.calls[0][0] as string)
       expect(output).toEqual({
-        error: { type: 'auth_error', message: 'No API key found' },
+        error: { type: 'auth_error', code: 'missing_api_key', message: 'No API key found' },
       })
     })
 
@@ -374,7 +452,11 @@ describe('handleError', () => {
 
       const output = JSON.parse(stderrSpy.mock.calls[0][0] as string)
       expect(output).toEqual({
-        error: { type: 'connectivity_error', message: 'Could not connect to api.fintoc.com' },
+        error: {
+          type: 'connectivity_error',
+          code: 'connection_failed',
+          message: 'Could not connect to api.fintoc.com',
+        },
       })
     })
 
@@ -394,6 +476,76 @@ describe('handleError', () => {
           type: 'invalid_request_error',
           code: 'missing_resource',
           message: 'No such payment_intent: pi_invalid',
+        },
+      })
+    })
+
+    test.each(['tax_id.type', 'counterparty.account_number', 'items[0].price'])(
+      'preserves the published JSON for FintocError with nested param %s',
+      (param) => {
+        const err = createFintocError('InvalidRequestError', {
+          type: 'invalid_request_error',
+          code: 'invalid_enum',
+          param,
+          message: 'Invalid value',
+        })
+
+        expect(() => handleError(err, { json: true })).toThrow('process.exit')
+
+        expect(JSON.parse(stderrSpy.mock.calls[0][0] as string)).toEqual({
+          error: {
+            type: `invalid_request_error: invalid_enum (${param})`,
+            message: `invalid_request_error: invalid_enum (${param})\nInvalid value`,
+          },
+        })
+      },
+    )
+
+    test('emits JSON auth_error for an empty API key', () => {
+      const err = new AuthError(
+        'FINTOC_API_KEY is set but empty. Provide a valid key or unset the variable.',
+        'empty_api_key',
+      )
+
+      expect(() => handleError(err, { json: true })).toThrow('process.exit')
+
+      expect(JSON.parse(stderrSpy.mock.calls[0][0] as string)).toEqual({
+        error: {
+          type: 'auth_error',
+          code: 'empty_api_key',
+          message: 'FINTOC_API_KEY is set but empty. Provide a valid key or unset the variable.',
+        },
+      })
+      expect(exitSpy).toHaveBeenCalledWith(1)
+    })
+
+    test('emits JSON for usage errors with code and param', () => {
+      const err = new UsageError('Missing required flag: --amount', {
+        code: 'missing_flag',
+        param: 'amount',
+        hints: ['Usage: fintoc charges create --amount <integer>'],
+      })
+
+      expect(() => handleError(err, { json: true })).toThrow('process.exit')
+
+      expect(JSON.parse(stderrSpy.mock.calls[0][0] as string)).toEqual({
+        error: {
+          type: 'usage_error',
+          code: 'missing_flag',
+          param: 'amount',
+          message: 'Missing required flag: --amount',
+        },
+      })
+    })
+
+    test('emits JSON usage_error aborted when the prompt is closed', () => {
+      expect(() => handleError(createPromptClosedError(), { json: true })).toThrow('process.exit')
+
+      expect(JSON.parse(stderrSpy.mock.calls[0][0] as string)).toEqual({
+        error: {
+          type: 'usage_error',
+          code: 'aborted',
+          message: 'Aborted: the prompt was closed before an answer',
         },
       })
     })

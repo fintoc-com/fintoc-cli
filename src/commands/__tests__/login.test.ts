@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { whoami } from '../../lib/auth.js'
 import { BrowserLoginError, startBrowserLogin } from '../../lib/browser-login.js'
 import { readConfig, writeConfig } from '../../lib/config.js'
-import { error, hint, success, warn } from '../../lib/output.js'
+import { error, hint, printJson, success, warn } from '../../lib/output.js'
 import { loginCommand } from '../login.js'
 
 vi.mock('../../lib/auth.js', () => ({
@@ -35,6 +35,7 @@ vi.mock('../../lib/output.js', () => ({
   success: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
+  printJson: vi.fn(),
 }))
 
 vi.mock('@inquirer/prompts', () => ({
@@ -63,7 +64,9 @@ const mockBrowserRejects = (err: unknown) =>
 const createProgram = () => {
   const program = new Command()
   program.exitOverride()
-  program.option('--api-key <key>', 'Override API key for this command')
+  program
+    .option('--api-key <key>', 'Override API key for this command')
+    .option('--json', 'Output as JSON')
   loginCommand(program)
   return program
 }
@@ -74,12 +77,123 @@ describe('login command', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.stdin.isTTY = true
-    // Default: the inline paste prompt hangs so the callback wins the race.
     vi.mocked(password).mockImplementation(() => never<string>())
   })
 
   afterEach(() => {
     process.stdin.isTTY = originalIsTTY
+  })
+
+  describe('JSON mode', () => {
+    test('rejects browser login without a TTY', async () => {
+      process.stdin.isTTY = false
+      const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('exit')
+      })
+      const stderr = vi.spyOn(console, 'error').mockImplementation(() => {})
+      await expect(
+        createProgram().parseAsync(['login', '--json'], { from: 'user' }),
+      ).rejects.toThrow('exit')
+      expect(JSON.parse(stderr.mock.calls[0][0]).error).toMatchObject({
+        code: 'missing_input',
+        param: 'api-key',
+      })
+      expect(startBrowserLogin).not.toHaveBeenCalled()
+      expect(password).not.toHaveBeenCalled()
+      exit.mockRestore()
+      stderr.mockRestore()
+    })
+
+    test('requires --yes to replace credentials without a TTY', async () => {
+      process.stdin.isTTY = false
+      vi.mocked(readConfig).mockReturnValueOnce({ secret_key: 'sk_test_old' })
+      const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('exit')
+      })
+      const stderr = vi.spyOn(console, 'error').mockImplementation(() => {})
+      await expect(
+        createProgram().parseAsync(['login', '--json', '--api-key', 'sk_test_new'], {
+          from: 'user',
+        }),
+      ).rejects.toThrow('exit')
+      expect(JSON.parse(stderr.mock.calls[0][0]).error.code).toBe('confirmation_required')
+      expect(confirm).not.toHaveBeenCalled()
+      expect(writeConfig).not.toHaveBeenCalled()
+      exit.mockRestore()
+      stderr.mockRestore()
+    })
+
+    test('confirms replacement on stderr in a TTY', async () => {
+      vi.mocked(readConfig).mockReturnValueOnce({ secret_key: 'sk_test_old' })
+      vi.mocked(confirm).mockResolvedValue(true)
+      vi.mocked(whoami).mockResolvedValue({
+        organizationName: 'Acme Corp',
+        mode: 'test',
+        apiVersion: '2026-01-01',
+      })
+
+      await createProgram().parseAsync(['login', '--json', '--api-key', 'sk_test_new'], {
+        from: 'user',
+      })
+
+      expect(confirm).toHaveBeenCalledWith(expect.any(Object), { output: process.stderr })
+      expect(writeConfig).toHaveBeenCalledWith({ secret_key: 'sk_test_new' })
+      expect(printJson).not.toHaveBeenCalled()
+      expect(success).toHaveBeenCalledWith('Authenticated as Acme Corp (test mode)')
+    })
+
+    test('allows browser login in a TTY and preserves empty stdout', async () => {
+      mockBrowserCallback({
+        secret: 'sk_test_browser',
+        organizationName: 'Acme Corp',
+        mode: 'test',
+      })
+
+      await createProgram().parseAsync(['login', '--json'], { from: 'user' })
+
+      expect(startBrowserLogin).toHaveBeenCalled()
+      expect(password).toHaveBeenCalledWith(expect.any(Object), {
+        signal: expect.any(AbortSignal),
+        output: process.stderr,
+      })
+      expect(writeConfig).toHaveBeenCalledWith({ secret_key: 'sk_test_browser' })
+      expect(printJson).not.toHaveBeenCalled()
+      expect(success).toHaveBeenCalledWith('Authenticated as Acme Corp (test mode)')
+    })
+
+    test('browser failures remain JSON errors', async () => {
+      mockBrowserRejects(new BrowserLoginError('denied', 'Authorization was denied in the browser'))
+      const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('exit')
+      })
+      const stderr = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      await expect(
+        createProgram().parseAsync(['login', '--json'], { from: 'user' }),
+      ).rejects.toThrow('exit')
+
+      expect(JSON.parse(stderr.mock.calls[0][0]).error.message).toBe(
+        'Authorization was denied in the browser',
+      )
+      expect(writeConfig).not.toHaveBeenCalled()
+      exit.mockRestore()
+      stderr.mockRestore()
+    })
+
+    test('preserves empty stdout when the key is supplied explicitly', async () => {
+      vi.mocked(whoami).mockResolvedValue({
+        organizationName: 'Acme Corp',
+        mode: 'test',
+        apiVersion: '2026-01-01',
+      })
+      await createProgram().parseAsync(['login', '--json', '--api-key', 'sk_test_new', '--yes'], {
+        from: 'user',
+      })
+      expect(printJson).not.toHaveBeenCalled()
+      expect(success).toHaveBeenCalledWith('Authenticated as Acme Corp (test mode)')
+      expect(hint).toHaveBeenCalledWith(expect.stringContaining('Key stored in'))
+      expect(confirm).not.toHaveBeenCalled()
+    })
   })
 
   describe('when called without flags', () => {
@@ -173,7 +287,7 @@ describe('login command', () => {
       expect(confirm).toHaveBeenCalled()
       expect(startBrowserLogin).not.toHaveBeenCalled()
       expect(writeConfig).not.toHaveBeenCalled()
-      expect(hint).toHaveBeenCalledWith('Login aborted.')
+      expect(hint).toHaveBeenCalledWith('Aborted.')
     })
   })
 
@@ -190,7 +304,9 @@ describe('login command', () => {
       const program = createProgram()
       await program.parseAsync(['login'], { from: 'user' })
 
-      expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ default: true }))
+      expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ default: true }), {
+        output: process.stderr,
+      })
       expect(startBrowserLogin).toHaveBeenCalled()
       expect(success).toHaveBeenCalledWith('Authenticated as Globex (test mode)')
     })
@@ -280,7 +396,7 @@ describe('login command', () => {
       await program.parseAsync(['login'], { from: 'user' })
 
       expect(password).toHaveBeenCalled()
-      expect(hint).toHaveBeenCalledWith('Login aborted.')
+      expect(hint).toHaveBeenCalledWith('Aborted.')
       expect(writeConfig).not.toHaveBeenCalled()
     })
   })
@@ -442,7 +558,7 @@ describe('login command', () => {
       await expect(program.parseAsync(['login'], { from: 'user' })).rejects.toThrow('process.exit')
 
       expect(startBrowserLogin).not.toHaveBeenCalled()
-      expect(error).toHaveBeenCalledWith(expect.stringContaining('Non-interactive terminal'))
+      expect(error).toHaveBeenCalledWith('Browser login needs an interactive terminal')
 
       exitSpy.mockRestore()
     })
@@ -486,8 +602,9 @@ describe('login command', () => {
       ).rejects.toThrow('process.exit')
 
       expect(whoami).not.toHaveBeenCalled()
-      expect(error).toHaveBeenCalledWith(expect.stringContaining('Non-interactive terminal'))
-      expect(hint).toHaveBeenCalledWith(expect.stringContaining('Re-run with --yes to override.'))
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining('Confirmation required to replace the existing session'),
+      )
 
       exitSpy.mockRestore()
     })

@@ -56,6 +56,29 @@ describe('addDefaultAction', () => {
     })
   })
 
+  describe('when the unknown subcommand looks like a known one', () => {
+    test('suggests the closest command', () => {
+      const cmd = new Command().name('test')
+      cmd.command('list').action(() => {})
+      cmd
+        .command('submit_for_review')
+        .alias('submit-for-review')
+        .action(() => {})
+      addDefaultAction(cmd)
+      const errorSpy = vi.spyOn(cmd, 'error').mockImplementation((msg) => {
+        throw new CommanderError(1, 'commander.unknownCommand', msg)
+      })
+
+      parseAndCatch(cmd, ['lsit'])
+      parseAndCatch(cmd, ['submit-for-reveiw'])
+
+      expect(errorSpy.mock.calls.map(([msg]) => msg)).toEqual([
+        "unknown command 'lsit'\n(Did you mean list?)",
+        "unknown command 'submit-for-reveiw'\n(Did you mean submit-for-review?)",
+      ])
+    })
+  })
+
   describe('when called with a valid subcommand', () => {
     test('executes the subcommand action', () => {
       const cmd = new Command().name('test')
