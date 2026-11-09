@@ -82,4 +82,4 @@ node dist/index.js [v2] <resource> <verb> --help
 
 Add or update the row in the Resources table in `README.md`, with v1 rows before v2 rows.
 
-Follow the repository's PR template and mention the SDK bump and anything left out. Keep CLI version bumps and releases separate from resource changes.
+Follow the repository's PR template and mention the SDK bump and anything left out. Do not bump the CLI version; add the release label and `## Release notes` described in `AGENTS.md`.

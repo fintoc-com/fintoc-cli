@@ -26,3 +26,18 @@
 - Prettier runs as ESLint rule (no separate .prettierrc)
 - No semicolons, single quotes, printWidth 100
 - `no-console: error` — use proper output utilities instead
+
+## Releases
+Merging a PR to `main` with a `release:patch`, `release:minor` or `release:major` label
+publishes a release, with notes from the PR's `## Release notes` section (see `RELEASE.md`).
+Do not bump the version in feature PRs.
+
+Pick one label by what CLI users get:
+
+- `release:minor`: new commands, verbs or flags.
+- `release:patch`: fixes to existing behavior, with no new public surface.
+- `release:major`: removes or changes a command or flag incompatibly. `backward-compat.test.ts` blocks these, so agree on it with the team first.
+- No label: changes CLI users don't get, such as tests, CI, docs or agent files.
+
+Write `## Release notes` in English for CLI users: one bullet per change, naming what changed
+(command, verb, flag or error), without internal details.
