@@ -1569,6 +1569,12 @@ export const resources: ResourceDef[] = [
         description: 'Account types the customer can subscribe with (checking_account)',
       },
       {
+        name: 'card-bins',
+        type: 'string[]',
+        nestedPath: 'payment_method_options.card.bins',
+        description: 'Card BINs the customer can pay with, 6 or 8 digits each (e.g., 45717360)',
+      },
+      {
         name: 'currency',
         type: 'string',
         required: true,
