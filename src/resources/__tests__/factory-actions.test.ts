@@ -279,6 +279,8 @@ describe('factory: update, actions and files', () => {
         'false',
         '--pac-sender-account-types',
         'checking_account',
+        '--card-bins',
+        '457173,45717360',
       ])
       expect(mockManager.create).toHaveBeenCalledWith({
         currency: 'CLP',
@@ -288,6 +290,7 @@ describe('factory: update, actions and files', () => {
             sender_account: { holder_id: { value: '11.111.111-1', editable: false } },
           },
           pac: { sender_account: { types: ['checking_account'] } },
+          card: { bins: ['457173', '45717360'] },
         },
       })
     })
