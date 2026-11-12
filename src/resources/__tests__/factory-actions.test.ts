@@ -309,6 +309,10 @@ describe('factory: update, actions and files', () => {
         'account_holder',
         '--plaft-uaf-obligated',
         'false',
+        '--plaft-cmf-regulated',
+        'true',
+        '--plaft-cmf-registration-number',
+        '123',
         '--transactional-profile-equity-origins',
         'retained_earnings',
         '--from-json',
@@ -319,7 +323,7 @@ describe('factory: update, actions and files', () => {
         type: 'account_holder',
         data: {
           shareholders: [{ name: 'Jane' }],
-          plaft: { uaf_obligated: false },
+          plaft: { uaf_obligated: false, cmf_regulated: true, cmf_registration_number: '123' },
           transactional_profile: { equity_origins: ['retained_earnings'] },
         },
       })
