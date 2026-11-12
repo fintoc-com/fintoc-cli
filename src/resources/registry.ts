@@ -1638,7 +1638,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'ui-mode',
         type: 'string',
-        description: 'UI mode for payment flow sessions (embedded)',
+        description: 'UI mode for payment flow sessions (embedded, fields)',
       },
       {
         name: 'business-profile-tax-id',
@@ -2020,6 +2020,18 @@ export const resources: ResourceDef[] = [
         type: 'boolean',
         nestedPath: 'data.plaft.uaf_obligated',
         description: 'Company must report to the Financial Analysis Unit (UAF)',
+      },
+      {
+        name: 'plaft-cmf-regulated',
+        type: 'boolean',
+        nestedPath: 'data.plaft.cmf_regulated',
+        description: 'Company is regulated by the Financial Market Commission (CMF)',
+      },
+      {
+        name: 'plaft-cmf-registration-number',
+        type: 'string',
+        nestedPath: 'data.plaft.cmf_registration_number',
+        description: 'Company registration number with the Financial Market Commission (CMF)',
       },
       {
         name: 'transactional-profile-business-relationship-purposes',
