@@ -1,0 +1,527 @@
+{
+  "source": "4eb0f859bdf046576fb94e2ec2e6c7919cb38ce1",
+  "commands": {
+    "payment_intents get": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "payment_intents list": {
+      "args": [],
+      "flags": {
+        "status": {
+          "type": "string",
+          "required": false
+        },
+        "since": {
+          "type": "string",
+          "required": false
+        },
+        "until": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "v2 transfers create": {
+      "args": [],
+      "flags": {
+        "amount": {
+          "type": "integer",
+          "required": true
+        },
+        "currency": {
+          "type": "string",
+          "required": true
+        },
+        "account-id": {
+          "type": "string",
+          "required": true
+        },
+        "counterparty-account-number": {
+          "type": "string",
+          "required": true
+        },
+        "counterparty-institution-id": {
+          "type": "string",
+          "required": true
+        },
+        "counterparty-holder-id": {
+          "type": "string",
+          "required": false
+        },
+        "counterparty-account-type": {
+          "type": "string",
+          "required": false
+        },
+        "comment": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--from-json",
+        "--jws-private-key"
+      ],
+      "confirm": false
+    },
+    "v2 transfers get": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "v2 transfers list": {
+      "args": [],
+      "flags": {
+        "status": {
+          "type": "string[]",
+          "required": false
+        },
+        "since": {
+          "type": "string",
+          "required": false
+        },
+        "until": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "v2 accounts get": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "v2 accounts list": {
+      "args": [],
+      "flags": {
+        "type": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "webhook_endpoints create": {
+      "args": [],
+      "flags": {
+        "url": {
+          "type": "string",
+          "required": true
+        },
+        "enabled-events": {
+          "type": "string[]",
+          "required": true
+        },
+        "description": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--from-json"
+      ],
+      "confirm": false
+    },
+    "webhook_endpoints get": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "webhook_endpoints list": {
+      "args": [],
+      "flags": {},
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "webhook_endpoints delete": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [
+        "--yes"
+      ],
+      "confirm": true
+    },
+    "webhook_endpoints test": {
+      "args": [
+        "id"
+      ],
+      "flags": {
+        "type": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "options": [],
+      "confirm": false
+    },
+    "charges create": {
+      "args": [],
+      "flags": {
+        "amount": {
+          "type": "integer",
+          "required": true
+        },
+        "currency": {
+          "type": "string",
+          "required": true
+        },
+        "subscription-id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "options": [
+        "--from-json"
+      ],
+      "confirm": false
+    },
+    "charges get": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "charges list": {
+      "args": [],
+      "flags": {
+        "status": {
+          "type": "string",
+          "required": false
+        },
+        "since": {
+          "type": "string",
+          "required": false
+        },
+        "until": {
+          "type": "string",
+          "required": false
+        },
+        "subscription-id": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "subscriptions get": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "subscriptions list": {
+      "args": [],
+      "flags": {
+        "since": {
+          "type": "string",
+          "required": false
+        },
+        "until": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "links get": {
+      "args": [
+        "link_token"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "links list": {
+      "args": [],
+      "flags": {
+        "status": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "links delete": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [
+        "--yes"
+      ],
+      "confirm": true
+    },
+    "checkout_sessions create": {
+      "args": [],
+      "flags": {
+        "amount": {
+          "type": "integer",
+          "required": true
+        },
+        "currency": {
+          "type": "string",
+          "required": true
+        },
+        "success-url": {
+          "type": "string",
+          "required": false
+        },
+        "cancel-url": {
+          "type": "string",
+          "required": false
+        },
+        "customer-email": {
+          "type": "string",
+          "required": false
+        },
+        "recipient-account-type": {
+          "type": "string",
+          "required": false
+        },
+        "recipient-account-number": {
+          "type": "string",
+          "required": false
+        },
+        "recipient-account-holder-id": {
+          "type": "string",
+          "required": false
+        },
+        "recipient-account-institution-id": {
+          "type": "string",
+          "required": false
+        },
+        "business-profile-tax-id": {
+          "type": "string",
+          "required": false
+        },
+        "business-profile-name": {
+          "type": "string",
+          "required": false
+        },
+        "business-profile-category": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--from-json"
+      ],
+      "confirm": false
+    },
+    "checkout_sessions get": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "checkout_sessions expire": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [
+        "--yes"
+      ],
+      "confirm": true
+    },
+    "v2 account_verifications create": {
+      "args": [],
+      "flags": {
+        "account-number": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "options": [
+        "--from-json",
+        "--jws-private-key"
+      ],
+      "confirm": false
+    },
+    "v2 account_verifications get": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "v2 account_verifications list": {
+      "args": [],
+      "flags": {},
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "v2 account_numbers create": {
+      "args": [],
+      "flags": {
+        "account-id": {
+          "type": "string",
+          "required": true
+        },
+        "description": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--from-json"
+      ],
+      "confirm": false
+    },
+    "v2 account_numbers get": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [],
+      "confirm": false
+    },
+    "v2 account_numbers list": {
+      "args": [],
+      "flags": {},
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "v2 account_numbers delete": {
+      "args": [
+        "id"
+      ],
+      "flags": {},
+      "options": [
+        "--yes"
+      ],
+      "confirm": true
+    },
+    "v2 movements get": {
+      "args": [
+        "id"
+      ],
+      "flags": {
+        "account-id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "options": [],
+      "confirm": false
+    },
+    "v2 movements list": {
+      "args": [],
+      "flags": {
+        "account-id": {
+          "type": "string",
+          "required": true
+        },
+        "since": {
+          "type": "string",
+          "required": false
+        },
+        "until": {
+          "type": "string",
+          "required": false
+        },
+        "resource-id": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "api_keys list": {
+      "args": [],
+      "flags": {},
+      "options": [
+        "--limit"
+      ],
+      "confirm": false
+    },
+    "organizations create": {
+      "args": [],
+      "flags": {
+        "tax-id": {
+          "type": "string",
+          "required": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "founder-email": {
+          "type": "string",
+          "required": true
+        },
+        "products": {
+          "type": "json",
+          "required": true
+        },
+        "external-reference": {
+          "type": "string",
+          "required": false
+        },
+        "metadata": {
+          "type": "json",
+          "required": false
+        }
+      },
+      "options": [
+        "--from-json",
+        "--jws-private-key"
+      ],
+      "confirm": false
+    }
+  },
+  "additionalSources": {
+    "organizations create": "b18e04779347045b0083815ffccaeba4868175cb"
+  }
+}

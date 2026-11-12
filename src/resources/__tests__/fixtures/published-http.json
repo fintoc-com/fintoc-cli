@@ -1,0 +1,392 @@
+{
+  "source": "4eb0f859bdf046576fb94e2ec2e6c7919cb38ce1",
+  "adjustments": [
+    "Omit the SDK internal body field path_.",
+    "Omit v2 accounts list type, which the API ignores."
+  ],
+  "response": {
+    "id": "obj_test_1",
+    "amount": 1500,
+    "currency": "CLP",
+    "metadata": {
+      "order_id": "order_1"
+    },
+    "status": "pending",
+    "created_at": "2026-01-01T00:00:00.000Z"
+  },
+  "commands": {
+    "payment_intents get": {
+      "request": {
+        "method": "get",
+        "path": "/v1/payment_intents/test_id",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "payment_intents list": {
+      "request": {
+        "method": "get",
+        "path": "/v1/payment_intents",
+        "params": {
+          "status": "test_status",
+          "since": "test_since",
+          "until": "test_until"
+        }
+      },
+      "output": "list"
+    },
+    "v2 transfers create": {
+      "request": {
+        "method": "post",
+        "path": "/v2/transfers",
+        "params": {},
+        "body": {
+          "amount": 7,
+          "currency": "test_currency",
+          "account_id": "test_account_id",
+          "counterparty": {
+            "account_number": "test_counterparty_account_number",
+            "institution_id": "test_counterparty_institution_id",
+            "holder_id": "test_counterparty_holder_id",
+            "account_type": "test_counterparty_account_type"
+          },
+          "comment": "test_comment"
+        }
+      },
+      "output": "object"
+    },
+    "v2 transfers get": {
+      "request": {
+        "method": "get",
+        "path": "/v2/transfers/test_id",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "v2 transfers list": {
+      "request": {
+        "method": "get",
+        "path": "/v2/transfers",
+        "params": {
+          "status": [
+            "first",
+            "second"
+          ],
+          "since": "test_since",
+          "until": "test_until"
+        }
+      },
+      "output": "list"
+    },
+    "v2 accounts get": {
+      "request": {
+        "method": "get",
+        "path": "/v2/accounts/test_id",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "v2 accounts list": {
+      "request": {
+        "method": "get",
+        "path": "/v2/accounts",
+        "params": {}
+      },
+      "output": "list"
+    },
+    "webhook_endpoints create": {
+      "request": {
+        "method": "post",
+        "path": "/v1/webhook_endpoints",
+        "params": {},
+        "body": {
+          "url": "test_url",
+          "enabled_events": [
+            "first",
+            "second"
+          ],
+          "description": "test_description"
+        }
+      },
+      "output": "object"
+    },
+    "webhook_endpoints get": {
+      "request": {
+        "method": "get",
+        "path": "/v1/webhook_endpoints/test_id",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "webhook_endpoints list": {
+      "request": {
+        "method": "get",
+        "path": "/v1/webhook_endpoints",
+        "params": {}
+      },
+      "output": "list"
+    },
+    "webhook_endpoints delete": {
+      "request": {
+        "method": "delete",
+        "path": "/v1/webhook_endpoints/test_id",
+        "params": {}
+      },
+      "output": "empty"
+    },
+    "webhook_endpoints test": {
+      "request": {
+        "method": "post",
+        "path": "/v1/webhook_endpoints/test_id/test",
+        "params": {},
+        "body": {
+          "type": "test_type"
+        }
+      },
+      "output": "object"
+    },
+    "charges create": {
+      "request": {
+        "method": "post",
+        "path": "/v1/charges",
+        "params": {},
+        "body": {
+          "amount": 7,
+          "currency": "test_currency",
+          "subscription_id": "test_subscription_id"
+        }
+      },
+      "output": "object"
+    },
+    "charges get": {
+      "request": {
+        "method": "get",
+        "path": "/v1/charges/test_id",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "charges list": {
+      "request": {
+        "method": "get",
+        "path": "/v1/charges",
+        "params": {
+          "status": "test_status",
+          "since": "test_since",
+          "until": "test_until",
+          "subscription_id": "test_subscription_id"
+        }
+      },
+      "output": "list"
+    },
+    "subscriptions get": {
+      "request": {
+        "method": "get",
+        "path": "/v1/subscriptions/test_id",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "subscriptions list": {
+      "request": {
+        "method": "get",
+        "path": "/v1/subscriptions",
+        "params": {
+          "since": "test_since",
+          "until": "test_until"
+        }
+      },
+      "output": "list"
+    },
+    "links get": {
+      "request": {
+        "method": "get",
+        "path": "/v1/links/test_link_token",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "links list": {
+      "request": {
+        "method": "get",
+        "path": "/v1/links",
+        "params": {
+          "status": "test_status"
+        }
+      },
+      "output": "list"
+    },
+    "links delete": {
+      "request": {
+        "method": "delete",
+        "path": "/v1/links/test_id",
+        "params": {}
+      },
+      "output": "empty"
+    },
+    "checkout_sessions create": {
+      "request": {
+        "method": "post",
+        "path": "/v1/checkout_sessions",
+        "params": {},
+        "body": {
+          "amount": 7,
+          "currency": "test_currency",
+          "success_url": "test_success_url",
+          "cancel_url": "test_cancel_url",
+          "customer_email": "test_customer_email",
+          "payment_method_options": {
+            "payment_intent": {
+              "recipient_account": {
+                "type": "test_recipient_account_type",
+                "number": "test_recipient_account_number",
+                "holder_id": "test_recipient_account_holder_id",
+                "institution_id": "test_recipient_account_institution_id"
+              }
+            }
+          },
+          "business_profile": {
+            "tax_id": "test_business_profile_tax_id",
+            "name": "test_business_profile_name",
+            "category": "test_business_profile_category"
+          }
+        }
+      },
+      "output": "object"
+    },
+    "checkout_sessions get": {
+      "request": {
+        "method": "get",
+        "path": "/v1/checkout_sessions/test_id",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "checkout_sessions expire": {
+      "request": {
+        "method": "post",
+        "path": "/v1/checkout_sessions/test_id/expire",
+        "params": {},
+        "body": {}
+      },
+      "output": "empty"
+    },
+    "v2 account_verifications create": {
+      "request": {
+        "method": "post",
+        "path": "/v2/account_verifications",
+        "params": {},
+        "body": {
+          "account_number": "test_account_number"
+        }
+      },
+      "output": "object"
+    },
+    "v2 account_verifications get": {
+      "request": {
+        "method": "get",
+        "path": "/v2/account_verifications/test_id",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "v2 account_verifications list": {
+      "request": {
+        "method": "get",
+        "path": "/v2/account_verifications",
+        "params": {}
+      },
+      "output": "list"
+    },
+    "v2 account_numbers create": {
+      "request": {
+        "method": "post",
+        "path": "/v2/account_numbers",
+        "params": {},
+        "body": {
+          "account_id": "test_account_id",
+          "description": "test_description"
+        }
+      },
+      "output": "object"
+    },
+    "v2 account_numbers get": {
+      "request": {
+        "method": "get",
+        "path": "/v2/account_numbers/test_id",
+        "params": {}
+      },
+      "output": "object"
+    },
+    "v2 account_numbers list": {
+      "request": {
+        "method": "get",
+        "path": "/v2/account_numbers",
+        "params": {}
+      },
+      "output": "list"
+    },
+    "v2 account_numbers delete": {
+      "request": {
+        "method": "delete",
+        "path": "/v2/account_numbers/test_id",
+        "params": {}
+      },
+      "output": "empty"
+    },
+    "v2 movements get": {
+      "request": {
+        "method": "get",
+        "path": "/v2/accounts/test_account_id/movements/test_id",
+        "params": {
+          "account_id": "test_account_id"
+        }
+      },
+      "output": "object"
+    },
+    "v2 movements list": {
+      "request": {
+        "method": "get",
+        "path": "/v2/accounts/test_account_id/movements",
+        "params": {
+          "account_id": "test_account_id",
+          "since": "test_since",
+          "until": "test_until",
+          "resource_id": "test_resource_id"
+        }
+      },
+      "output": "list"
+    },
+    "api_keys list": {
+      "request": {
+        "method": "get",
+        "path": "/v1/api_keys",
+        "params": {}
+      },
+      "output": "list"
+    },
+    "organizations create": {
+      "request": {
+        "method": "post",
+        "path": "/v1/organizations",
+        "params": {},
+        "body": {
+          "tax_id": "test_tax_id",
+          "name": "test_name",
+          "founder_email": "test_founder_email",
+          "products": {
+            "fixture": "value"
+          },
+          "external_reference": "test_external_reference",
+          "metadata": {
+            "fixture": "value"
+          }
+        }
+      },
+      "output": "object"
+    }
+  },
+  "additionalSources": {
+    "organizations create": "b18e04779347045b0083815ffccaeba4868175cb"
+  }
+}

@@ -2,6 +2,7 @@ import { Fintoc } from 'fintoc'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createClient, maskKey, resolveAuth } from '../auth.js'
 import { readConfig } from '../config.js'
+import { AuthError } from '../errors.js'
 
 vi.mock('fintoc', () => ({
   Fintoc: vi.fn(),
@@ -100,6 +101,10 @@ describe('resolveAuth', () => {
     vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
 
     expect(() => resolveAuth({ apiKey: '' })).toThrow('API key is empty')
+    expect(() => resolveAuth({ apiKey: '' })).toThrow(AuthError)
+    expect(() => resolveAuth({ apiKey: '' })).toThrow(
+      expect.objectContaining({ code: 'empty_api_key' }),
+    )
   })
 
   test('throws when --api-key is only whitespace', () => {
@@ -114,6 +119,8 @@ describe('resolveAuth', () => {
     vi.mocked(readConfig).mockReturnValue({ secret_key: 'sk_test_config' })
 
     expect(() => resolveAuth()).toThrow('FINTOC_API_KEY is set but empty')
+    expect(() => resolveAuth()).toThrow(AuthError)
+    expect(() => resolveAuth()).toThrow(expect.objectContaining({ code: 'empty_api_key' }))
   })
 
   test('throws when FINTOC_API_KEY is only whitespace', () => {

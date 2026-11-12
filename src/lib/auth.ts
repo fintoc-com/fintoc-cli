@@ -1,6 +1,7 @@
 import { Fintoc } from 'fintoc'
 import { readConfig } from './config.js'
 import { DASHBOARD_API_KEYS_URL } from './constants.js'
+import { AuthError } from './errors.js'
 import { getCliVersion } from './version.js'
 
 export type AuthSource = 'flag' | 'env' | 'config'
@@ -15,7 +16,10 @@ export type ResolvedAuth = {
 export const resolveAuth = (options?: { apiKey?: string }): ResolvedAuth => {
   if (options?.apiKey !== undefined) {
     if (!options.apiKey.trim()) {
-      throw new Error('API key is empty. Provide a valid key with --api-key or remove the flag.')
+      throw new AuthError(
+        'API key is empty. Provide a valid key with --api-key or remove the flag.',
+        'empty_api_key',
+      )
     }
     return { secretKey: options.apiKey, source: 'flag' }
   }
@@ -23,7 +27,10 @@ export const resolveAuth = (options?: { apiKey?: string }): ResolvedAuth => {
   const envKey = process.env.FINTOC_API_KEY
   if (envKey !== undefined) {
     if (!envKey.trim()) {
-      throw new Error('FINTOC_API_KEY is set but empty. Provide a valid key or unset the variable.')
+      throw new AuthError(
+        'FINTOC_API_KEY is set but empty. Provide a valid key or unset the variable.',
+        'empty_api_key',
+      )
     }
     return { secretKey: envKey, source: 'env' }
   }

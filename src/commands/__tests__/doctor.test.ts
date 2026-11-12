@@ -4,7 +4,7 @@ import { Command } from 'commander'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { resolveAuth, whoami } from '../../lib/auth.js'
 import { readConfig } from '../../lib/config.js'
-import { error, hint, info, success, warn } from '../../lib/output.js'
+import { error, hint, info, printJson, success, warn } from '../../lib/output.js'
 import { doctorCommand } from '../doctor.js'
 
 vi.mock('node:child_process', () => ({
@@ -31,6 +31,7 @@ vi.mock('../../lib/output.js', () => ({
   log: vi.fn(),
   hint: vi.fn(),
   success: vi.fn(),
+  printJson: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
   info: vi.fn(),
@@ -42,7 +43,7 @@ vi.mock('../../lib/version.js', () => ({
 
 const createProgram = () => {
   const program = new Command()
-  program.exitOverride()
+  program.exitOverride().option('--json', 'Output as JSON')
   doctorCommand(program)
   return program
 }
@@ -63,10 +64,11 @@ describe('doctor command', () => {
   })
 
   describe('when all checks pass', () => {
-    test('reports success for CLI version, config, API key, and connectivity', async () => {
+    test.each([false, true])('reports checks and keeps stdout empty (json=%s)', async (json) => {
       const program = createProgram()
-      await program.parseAsync(['doctor'], { from: 'user' })
+      await program.parseAsync(['doctor', ...(json ? ['--json'] : [])], { from: 'user' })
 
+      expect(printJson).not.toHaveBeenCalled()
       expect(success).toHaveBeenCalledWith(expect.stringContaining('CLI version'))
       expect(success).toHaveBeenCalledWith(expect.stringContaining('Config file'))
       expect(success).toHaveBeenCalledWith(expect.stringContaining('API key'))
@@ -255,6 +257,45 @@ describe('doctor command', () => {
 
         expect(error).toHaveBeenCalledWith(expect.stringContaining('not found'))
       })
+    })
+  })
+
+  describe('when the config file cannot be parsed', () => {
+    beforeEach(() => {
+      const parseError = new Error('Invalid TOML document: unexpected character\n\n1:  [[[bad')
+      vi.mocked(readConfig).mockImplementation(() => {
+        throw parseError
+      })
+      vi.mocked(resolveAuth).mockImplementation(() => {
+        throw parseError
+      })
+    })
+
+    test('reports the parse error on the API key check instead of a missing key', async () => {
+      const program = createProgram()
+      await program.parseAsync(['doctor'], { from: 'user' })
+
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'API key             could not read /mock-home/.fintoc/config.toml',
+        ),
+      )
+      expect(hint).not.toHaveBeenCalledWith(expect.stringContaining('Run `fintoc login`'))
+    })
+
+    test('reports every check and the parse error instead of crashing', async () => {
+      const program = createProgram()
+      await program.parseAsync(['doctor'], { from: 'user' })
+
+      expect(info).toHaveBeenCalledWith(expect.stringContaining('Connectivity'))
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'JWS private key     could not read /mock-home/.fintoc/config.toml',
+        ),
+      )
+      expect(hint).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid TOML document: unexpected character'),
+      )
     })
   })
 })

@@ -1,6 +1,6 @@
 {
   "name": "@fintoc/cli",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "description": "Fintoc CLI — manage your Fintoc resources from the terminal",
   "type": "module",
   "bin": {
@@ -34,7 +34,7 @@
     "@inquirer/prompts": "^8.4.2",
     "commander": "^14.0.3",
     "es-toolkit": "^1.46.1",
-    "fintoc": "^1.21.0",
+    "fintoc": "^1.31.0",
     "smol-toml": "^1.6.1",
     "ws": "^8.20.0",
     "zod": "^4.4.3"

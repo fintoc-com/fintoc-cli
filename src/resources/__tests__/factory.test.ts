@@ -1,5 +1,5 @@
 import type { ResourceDef } from '../../types.js'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { confirm } from '@inquirer/prompts'
 import { Command } from 'commander'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
@@ -9,7 +9,7 @@ import { registerResourceCommands } from '../factory.js'
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>()
-  return { ...actual, readFileSync: vi.fn() }
+  return { ...actual, existsSync: vi.fn(() => true), readFileSync: vi.fn() }
 })
 
 vi.mock('../../lib/auth.js', () => ({
@@ -73,7 +73,7 @@ const testResource: ResourceDef = {
 
 const createProgram = (resource: ResourceDef = testResource) => {
   const program = new Command()
-  program.exitOverride()
+  program.exitOverride().configureOutput({ writeErr: () => {} })
   program.option('--api-key <key>', 'Override API key').option('--json', 'Output as JSON')
   registerResourceCommands(program, [resource])
   return program
@@ -277,11 +277,10 @@ describe('factory', () => {
               from: 'user',
             },
           ),
-        ).rejects.toThrow('process.exit')
-
-        expect(error).toHaveBeenCalledWith(
-          expect.stringContaining("Invalid value 'abc' for flag --amount: expected an integer"),
-        )
+        ).rejects.toMatchObject({
+          code: 'commander.invalidArgument',
+          message: expect.stringContaining("argument 'abc' is invalid. Expected an integer."),
+        })
         expect(mockManager.create).not.toHaveBeenCalled()
       })
 
@@ -294,11 +293,10 @@ describe('factory', () => {
               from: 'user',
             },
           ),
-        ).rejects.toThrow('process.exit')
-
-        expect(error).toHaveBeenCalledWith(
-          expect.stringContaining("Invalid value '1.5' for flag --amount: expected an integer"),
-        )
+        ).rejects.toMatchObject({
+          code: 'commander.invalidArgument',
+          message: expect.stringContaining("argument '1.5' is invalid. Expected an integer."),
+        })
         expect(mockManager.create).not.toHaveBeenCalled()
       })
 
@@ -313,6 +311,36 @@ describe('factory', () => {
         )
 
         expect(mockManager.create).toHaveBeenCalledWith({ amount: 10000, currency: 'CLP' })
+      })
+    })
+
+    describe('when a flag has json type', () => {
+      const jsonResource: ResourceDef = {
+        ...testResource,
+        createFlags: [{ name: 'products', type: 'json', description: 'Products' }],
+      }
+
+      test('parses the value as JSON', async () => {
+        mockManager.create.mockResolvedValue({ serialize: () => ({ id: 'org_123' }) })
+
+        const program = createProgram(jsonResource)
+        await program.parseAsync(
+          ['payment_intents', 'create', '--products', '{"business_accounts":{}}'],
+          { from: 'user' },
+        )
+
+        expect(mockManager.create).toHaveBeenCalledWith({ products: { business_accounts: {} } })
+      })
+
+      test('rejects invalid JSON before calling the API', async () => {
+        const program = createProgram(jsonResource)
+        await expect(
+          program.parseAsync(['payment_intents', 'create', '--products', '{bad'], {
+            from: 'user',
+          }),
+        ).rejects.toThrow('Expected JSON.')
+
+        expect(mockManager.create).not.toHaveBeenCalled()
       })
     })
 
@@ -714,6 +742,20 @@ describe('factory', () => {
         const call = vi.mocked(printTable).mock.calls[0][0]
         expect(call.rows).toHaveLength(10)
       })
+
+      test('--all follows every page and ignores --limit', async () => {
+        const items = Array.from({ length: 25 }, (_, i) => ({
+          serialize: () => ({ id: `pi_${i}` }),
+        }))
+        mockManager.list.mockResolvedValue(asyncGenerator(items))
+
+        const program = createProgram()
+        await program.parseAsync(['--json', 'payment_intents', 'list', '--limit', '5', '--all'], {
+          from: 'user',
+        })
+
+        expect(printJson).toHaveBeenCalledWith(items.map((item) => item.serialize()))
+      })
     })
 
     describe('when --json flag is set', () => {
@@ -744,9 +786,10 @@ describe('factory', () => {
         const program = createProgram()
         await expect(
           program.parseAsync(['payment_intents', 'list', '--limit', value], { from: 'user' }),
-        ).rejects.toThrow('process.exit')
-
-        expect(error).toHaveBeenCalledWith('--limit must be a positive integer')
+        ).rejects.toMatchObject({
+          code: 'commander.invalidArgument',
+          message: expect.stringContaining(`argument '${value}' is invalid`),
+        })
         expect(mockManager.list).not.toHaveBeenCalled()
       })
     })
@@ -762,6 +805,15 @@ describe('factory', () => {
 
         expect(mockManager.delete).toHaveBeenCalledWith('pi_123')
         expect(success).toHaveBeenCalledWith(expect.stringContaining('pi_123'))
+      })
+
+      test('accepts -y as a short form', async () => {
+        mockManager.delete.mockResolvedValue('deleted')
+
+        const program = createProgram()
+        await program.parseAsync(['payment_intents', 'delete', 'pi_123', '-y'], { from: 'user' })
+
+        expect(mockManager.delete).toHaveBeenCalledWith('pi_123')
       })
     })
 
@@ -806,64 +858,6 @@ describe('factory', () => {
 
         Object.defineProperty(process.stdin, 'isTTY', { value: originalIsTTY, configurable: true })
       })
-    })
-  })
-
-  describe('test command', () => {
-    const testResourceWithTest: ResourceDef = {
-      name: 'webhook_endpoints',
-      displayName: 'webhook endpoint',
-      cliCommand: 'webhook_endpoints',
-      sdkMethod: 'paymentIntents',
-      sdkNamespace: 'v1',
-      verbs: ['test'],
-      priorityColumns: ['id'],
-      testFlags: [
-        { name: 'type', type: 'string', required: true, description: 'Event type to test' },
-      ],
-    }
-
-    test('calls SDK test with id and parsed flags', async () => {
-      const mockResult = { serialize: () => ({ id: 'we_123', status: 'ok' }) }
-      mockManager.test.mockResolvedValue(mockResult)
-
-      const program = createProgram(testResourceWithTest)
-      await program.parseAsync(
-        ['webhook_endpoints', 'test', 'we_123', '--type', 'payment_intent.succeeded'],
-        { from: 'user' },
-      )
-
-      expect(mockManager.test).toHaveBeenCalledWith('we_123', { type: 'payment_intent.succeeded' })
-      expect(success).toHaveBeenCalledWith(expect.stringContaining('we_123'))
-      expect(printDetail).toHaveBeenCalledWith({ id: 'we_123', status: 'ok' })
-    })
-
-    test('exits with error when required flag is missing', async () => {
-      const exitSpy = mockProcessExit()
-
-      const program = createProgram(testResourceWithTest)
-      await expect(
-        program.parseAsync(['webhook_endpoints', 'test', 'we_123'], { from: 'user' }),
-      ).rejects.toThrow('process.exit')
-
-      expect(mockManager.test).not.toHaveBeenCalled()
-      expect(error).toHaveBeenCalledWith(expect.stringContaining('--type'))
-
-      exitSpy.mockRestore()
-    })
-
-    test('outputs JSON when --json flag is set', async () => {
-      const mockResult = { serialize: () => ({ id: 'we_123', status: 'ok' }) }
-      mockManager.test.mockResolvedValue(mockResult)
-
-      const program = createProgram(testResourceWithTest)
-      await program.parseAsync(
-        ['--json', 'webhook_endpoints', 'test', 'we_123', '--type', 'payment_intent.succeeded'],
-        { from: 'user' },
-      )
-
-      expect(printJson).toHaveBeenCalledWith({ id: 'we_123', status: 'ok' })
-      expect(success).not.toHaveBeenCalled()
     })
   })
 
@@ -914,6 +908,32 @@ describe('factory', () => {
         )
 
         expect(createClient).toHaveBeenCalledWith('sk_test_123', '/path/to/key.pem')
+      })
+
+      test('exits with error when the key file does not exist', async () => {
+        vi.mocked(existsSync).mockReturnValueOnce(false)
+        const exitSpy = mockProcessExit()
+
+        const program = createProgram(jwsResource)
+        await expect(
+          program.parseAsync(
+            [
+              'transfers',
+              'create',
+              '--amount',
+              '10000',
+              '--currency',
+              'CLP',
+              '--jws-private-key',
+              '/missing.pem',
+            ],
+            { from: 'user' },
+          ),
+        ).rejects.toThrow('process.exit')
+
+        expect(error).toHaveBeenCalledWith("--jws-private-key: file '/missing.pem' not found")
+        expect(mockManager.create).not.toHaveBeenCalled()
+        exitSpy.mockRestore()
       })
     })
 
