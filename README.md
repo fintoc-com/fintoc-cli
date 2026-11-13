@@ -79,51 +79,54 @@ fintoc logout                                        # Remove stored credentials
 
 Resources follow the pattern `fintoc [v2] <resource> <action> [args] [flags]`. Actions that act on a single object take its ID as the first argument.
 
-| Resource                   | Actions                                                                                                                                      |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `payment_intents`          | create, get, list, expire                                                                                                                    |
-| `webhook_endpoints`        | create, get, list, update, delete, test                                                                                                      |
-| `charges`                  | create, get, list, update, cancel                                                                                                            |
-| `subscriptions`            | get, list                                                                                                                                    |
-| `links`                    | get, list, update, delete, exchange                                                                                                          |
-| `checkout_sessions`        | create, get, expire                                                                                                                          |
-| `organizations` | create |
-| `api_keys`                 | list                                                                                                                                         |
-| `refunds`                  | create, get, list, cancel, voucher_url                                                                                                       |
-| `subscription_intents`     | create, get, list                                                                                                                            |
-| `payment_links`            | create, get, list, cancel                                                                                                                    |
-| `disputes`                 | get, list, submit_for_review, create_document                                                                                                |
-| `accounts`                 | get, list                                                                                                                                    |
-| `movements`                | get, list                                                                                                                                    |
-| `invoices`                 | get, list                                                                                                                                    |
-| `tax_returns`              | get, list                                                                                                                                    |
-| `refresh_intents`          | create, get, list                                                                                                                            |
-| `payouts`                  | get, list, resources                                                                                                                         |
-| `institutions`             | list                                                                                                                                         |
-| `link_intents`             | create                                                                                                                                       |
-| `tax_statements`           | get, list                                                                                                                                    |
-| `v2 transfers`             | create, get, list, receipt, return                                                                                                           |
-| `v2 accounts`              | create, get, list, update                                                                                                                    |
-| `v2 account_verifications` | create, get, list                                                                                                                            |
-| `v2 account_numbers`       | create, get, list, update, delete                                                                                                            |
-| `v2 movements`             | get, list                                                                                                                                    |
-| `v2 checkout_sessions`     | create, get, list, expire                                                                                                                    |
-| `v2 customers`             | create, get, list                                                                                                                            |
-| `v2 entities`              | create, get, list, settlement_account                                                                                                        |
-| `v2 onboardings`           | create, get, list, submit, upload_document, add_document, delete_document, upload_shareholder_document, upload_legal_representative_document |
-| `v2 payment_intents`       | create, get, list, cancel, voucher_url, check_eligibility                                                                                    |
-| `v2 payment_methods`       | create, get, list, cancel, mandate_document                                                                                                  |
-| `v2 products`              | create, get, list, update                                                                                                                    |
-| `v2 subscriptions`         | create, get, list, update, cancel, detach_payment_method                                                                                     |
-| `v2 invoices`              | create, get, list, update, finalize, pay, void, mark_uncollectible, add_lines, remove_lines                                                  |
-| `v2 account_statements`    | list                                                                                                                                         |
-| `v2 recipients`            | create, get, list, update, delete                                                                                                            |
-| `v2 transfer_batches`      | create, get, list                                                                                                                            |
-| `v2 events`                | get, list                                                                                                                                    |
-| `v2 setup_intents`         | get                                                                                                                                          |
-| `v2 subscription_items`    | create, update, delete                                                                                                                       |
-| `v2 invoice_lines`         | update                                                                                                                                       |
-| `v2 simulate`              | receive_transfer                                                                                                                             |
+| Resource                       | Actions                                                                                                                                      |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payment_intents`              | create, get, list, expire                                                                                                                    |
+| `webhook_endpoints`            | create, get, list, update, delete, test                                                                                                      |
+| `charges`                      | create, get, list, update, cancel                                                                                                            |
+| `subscriptions`                | get, list                                                                                                                                    |
+| `links`                        | get, list, update, delete, exchange                                                                                                          |
+| `checkout_sessions`            | create, get, expire                                                                                                                          |
+| `organizations`                | create                                                                                                                                       |
+| `api_keys`                     | list                                                                                                                                         |
+| `refunds`                      | create, get, list, cancel, voucher_url                                                                                                       |
+| `subscription_intents`         | create, get, list                                                                                                                            |
+| `payment_links`                | create, get, list, cancel                                                                                                                    |
+| `disputes`                     | get, list, submit_for_review, create_document                                                                                                |
+| `accounts`                     | get, list                                                                                                                                    |
+| `movements`                    | get, list                                                                                                                                    |
+| `invoices`                     | get, list                                                                                                                                    |
+| `tax_returns`                  | get, list                                                                                                                                    |
+| `refresh_intents`              | create, get, list                                                                                                                            |
+| `payouts`                      | get, list, resources                                                                                                                         |
+| `institutions`                 | list                                                                                                                                         |
+| `link_intents`                 | create                                                                                                                                       |
+| `tax_statements`               | get, list                                                                                                                                    |
+| `v2 transfers`                 | create, get, list, receipt, return                                                                                                           |
+| `v2 accounts`                  | create, get, list, update, certificate                                                                                                       |
+| `v2 account_verifications`     | create, get, list                                                                                                                            |
+| `v2 account_numbers`           | create, get, list, update, delete, certificate                                                                                               |
+| `v2 movements`                 | get, list                                                                                                                                    |
+| `v2 checkout_sessions`         | create, get, list, expire, confirm                                                                                                           |
+| `v2 customers`                 | create, get, list                                                                                                                            |
+| `v2 entities`                  | create, get, list, settlement_account                                                                                                        |
+| `v2 onboardings`               | create, get, list, submit, upload_document, add_document, delete_document, upload_shareholder_document, upload_legal_representative_document |
+| `v2 payment_intents`           | create, get, list, cancel, voucher_url, check_eligibility                                                                                    |
+| `v2 payment_methods`           | create, get, list, cancel, mandate_document                                                                                                  |
+| `v2 products`                  | create, get, list, update                                                                                                                    |
+| `v2 subscriptions`             | create, get, list, update, cancel, detach_payment_method                                                                                     |
+| `v2 invoices`                  | create, get, list, update, finalize, pay, void, mark_uncollectible, add_lines, remove_lines                                                  |
+| `v2 account_statements`        | list                                                                                                                                         |
+| `v2 recipients`                | create, get, list, update, delete                                                                                                            |
+| `v2 transfer_batches`          | create, get, list                                                                                                                            |
+| `v2 events`                    | get, list                                                                                                                                    |
+| `v2 setup_intents`             | get                                                                                                                                          |
+| `v2 subscription_items`        | create, update, delete                                                                                                                       |
+| `v2 invoice_lines`             | update                                                                                                                                       |
+| `v2 simulate`                  | receive_transfer                                                                                                                             |
+| `v2 crossborder_beneficiaries` | create, get, list, delete                                                                                                                    |
+| `v2 crossborder_quotes`        | create, get                                                                                                                                  |
+| `v2 crossborder_transfers`     | create, get, list                                                                                                                            |
 
 `organizations create` preserves the published `--products <json>` and `--metadata <json>` flags. Updating organizations requires a future SDK release; fintoc 1.31.0 only supports creation.
 
