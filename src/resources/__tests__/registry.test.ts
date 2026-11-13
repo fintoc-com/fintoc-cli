@@ -6,8 +6,8 @@ const find = (name: string, namespace: 'v1' | 'v2') =>
 
 describe('resource registry', () => {
   describe('schema validation', () => {
-    test('contains all 43 resources', () => {
-      expect(resources).toHaveLength(43)
+    test('contains all 46 resources', () => {
+      expect(resources).toHaveLength(46)
 
       const names = resources.map((r) => r.name)
       expect(names).toEqual([
@@ -54,6 +54,9 @@ describe('resource registry', () => {
         'subscription_items',
         'invoice_lines',
         'simulate',
+        'crossborder_beneficiaries',
+        'crossborder_quotes',
+        'crossborder_transfers',
       ])
     })
 
@@ -209,6 +212,9 @@ describe('resource registry', () => {
         'subscription_items',
         'invoice_lines',
         'simulate',
+        'crossborder_beneficiaries',
+        'crossborder_quotes',
+        'crossborder_transfers',
       ])
     })
   })
@@ -383,6 +389,22 @@ describe('resource registry', () => {
       ['products', 'v2', ['name']],
       ['recipients', 'v2', ['entity-id', 'account-number', 'holder-name']],
       ['link_intents', 'v1', ['country', 'holder-type', 'product']],
+      [
+        'crossborder_beneficiaries',
+        'v2',
+        [
+          'holder-type',
+          'account-identifier',
+          'routing-number',
+          'bank-name',
+          'address-street-line1',
+          'address-city',
+          'address-state',
+          'address-postal-code',
+        ],
+      ],
+      ['crossborder_quotes', 'v2', ['direction', 'source-amount']],
+      ['crossborder_transfers', 'v2', ['quote-id']],
     ] as const)('%s (%s) required create flags', (name, namespace, expected) => {
       const resource = find(name, namespace)
       expect(
@@ -423,6 +445,32 @@ describe('resource registry', () => {
       expect(
         onboardings.listFlags!.filter((f) => f.required || f.pathParam).map((f) => f.name),
       ).toEqual(['entity-id'])
+    })
+
+    test.each([
+      [
+        'crossborder_beneficiaries',
+        'crossborder.beneficiaries',
+        ['create', 'get', 'list', 'delete'],
+      ],
+      ['crossborder_quotes', 'crossborder.quotes', ['create', 'get']],
+      ['crossborder_transfers', 'crossborder.transfers', ['create', 'get', 'list']],
+    ] as const)('%s uses nested sdkMethod %s', (name, sdkMethod, verbs) => {
+      const resource = find(name, 'v2')
+      expect(resource.sdkMethod).toBe(sdkMethod)
+      expect(resource.verbs).toEqual(verbs)
+    })
+
+    test.each(['accounts', 'account_numbers'])('v2 %s exposes certificate as a read', (name) => {
+      const certificate = find(name, 'v2').actions!.find((a) => a.name === 'certificate')!
+      expect(certificate.sdkMethod).toBe('certificate')
+      expect(certificate.kind).toBe('read')
+    })
+
+    test('v2 checkout_sessions confirm is an idempotent write', () => {
+      const confirm = find('checkout_sessions', 'v2').actions!.find((a) => a.name === 'confirm')!
+      expect(confirm.sdkMethod).toBe('confirm')
+      expect(confirm.idempotencyKey).toBe(true)
     })
 
     test('account_statements uses nested sdkMethod, list only, requires account-id', () => {
