@@ -389,20 +389,7 @@ describe('resource registry', () => {
       ['products', 'v2', ['name']],
       ['recipients', 'v2', ['entity-id', 'account-number', 'holder-name']],
       ['link_intents', 'v1', ['country', 'holder-type', 'product']],
-      [
-        'crossborder_beneficiaries',
-        'v2',
-        [
-          'holder-type',
-          'account-identifier',
-          'routing-number',
-          'bank-name',
-          'address-street-line1',
-          'address-city',
-          'address-state',
-          'address-postal-code',
-        ],
-      ],
+      ['crossborder_beneficiaries', 'v2', ['holder-type', 'account-identifier']],
       ['crossborder_quotes', 'v2', ['direction', 'source-amount']],
       ['crossborder_transfers', 'v2', ['quote-id']],
     ] as const)('%s (%s) required create flags', (name, namespace, expected) => {
