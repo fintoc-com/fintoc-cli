@@ -1655,7 +1655,8 @@ export const resources: ResourceDef[] = [
       {
         name: 'ui-mode',
         type: 'string',
-        description: 'UI mode for payment flow sessions (embedded, fields)',
+        description:
+          'UI mode for payment and setup flow sessions (embedded, fields; fields in test mode only)',
       },
       {
         name: 'business-profile-tax-id',
@@ -3417,26 +3418,25 @@ export const resources: ResourceDef[] = [
         name: 'account-identifier',
         type: 'string',
         required: true,
-        description: 'Account number of the beneficiary (4 to 17 digits)',
+        description:
+          'Account number of the beneficiary (4 to 17 digits for us_aba, wallet address for evm_address)',
       },
       {
         name: 'routing-number',
         type: 'string',
-        required: true,
-        description: 'Nine-digit ABA routing number of the bank',
+        description: 'Nine-digit ABA routing number of the bank (required for us_aba)',
       },
       {
         name: 'bank-name',
         type: 'string',
-        required: true,
-        description: 'Name of the bank that holds the account',
+        description: 'Name of the bank that holds the account (required for us_aba)',
       },
       {
         name: 'address-street-line1',
         type: 'string',
-        required: true,
         nestedPath: 'address.street_line1',
-        description: 'First line of the account holder street address, in the United States',
+        description:
+          'First line of the account holder street address, in the United States (required for us_aba)',
       },
       {
         name: 'address-street-line2',
@@ -3447,23 +3447,20 @@ export const resources: ResourceDef[] = [
       {
         name: 'address-city',
         type: 'string',
-        required: true,
         nestedPath: 'address.city',
-        description: 'City of the account holder address',
+        description: 'City of the account holder address (required for us_aba)',
       },
       {
         name: 'address-state',
         type: 'string',
-        required: true,
         nestedPath: 'address.state',
-        description: 'State of the account holder address (e.g., NY)',
+        description: 'State of the account holder address (e.g., NY; required for us_aba)',
       },
       {
         name: 'address-postal-code',
         type: 'string',
-        required: true,
         nestedPath: 'address.postal_code',
-        description: 'Postal code of the account holder address',
+        description: 'Postal code of the account holder address (required for us_aba)',
       },
       {
         name: 'address-country',
@@ -3474,7 +3471,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'account-scheme',
         type: 'string',
-        description: 'Scheme of the account (us_aba)',
+        description: 'Scheme of the account (us_aba, evm_address)',
       },
       {
         name: 'country',
@@ -3484,7 +3481,12 @@ export const resources: ResourceDef[] = [
       {
         name: 'currency',
         type: 'string',
-        description: 'Currency of the account (USD)',
+        description: 'Currency of the account (USD, USDT)',
+      },
+      {
+        name: 'network',
+        type: 'string',
+        description: 'Blockchain network of the wallet (polygon; required for evm_address)',
       },
     ],
     listFlags: [...CURSOR_FLAGS],
@@ -3503,7 +3505,7 @@ export const resources: ResourceDef[] = [
         name: 'direction',
         type: 'string',
         required: true,
-        description: 'Currencies to convert (mx_to_usd, usd_to_mx)',
+        description: 'Currencies to convert (mx_to_usd, usd_to_mx, mx_to_usdt, usdt_to_mx)',
       },
       {
         name: 'source-amount',
@@ -3532,7 +3534,14 @@ export const resources: ResourceDef[] = [
       {
         name: 'beneficiary-id',
         type: 'string',
-        description: 'ID of the active beneficiary that receives the funds (mx_to_usd only)',
+        description:
+          'ID of the active beneficiary that receives the funds (required for mx_to_usd and mx_to_usdt)',
+      },
+      {
+        name: 'network',
+        type: 'string',
+        description:
+          'Blockchain network where the payer sends USDT (polygon; required for usdt_to_mx)',
       },
       {
         name: 'reference',
