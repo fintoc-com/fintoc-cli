@@ -2855,7 +2855,7 @@ export const resources: ResourceDef[] = [
         name: 'holder-name',
         type: 'string',
         required: true,
-        description: 'Account holder name (up to 40 characters)',
+        description: 'Account holder name (up to 100 characters in Chile, 40 in Mexico)',
       },
       {
         name: 'holder-id',
@@ -2902,7 +2902,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'holder-name',
         type: 'string',
-        description: 'Account holder name (up to 40 characters)',
+        description: 'Account holder name (up to 100 characters in Chile, 40 in Mexico)',
       },
       {
         name: 'holder-type',
