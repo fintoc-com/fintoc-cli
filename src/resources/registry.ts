@@ -2240,6 +2240,18 @@ export const resources: ResourceDef[] = [
         description: 'ID of the payment method to charge',
       },
       {
+        name: 'off-session',
+        type: 'boolean',
+        description:
+          'Charge while the customer is absent (defaults to true; false only for CLP card payments in Chile)',
+      },
+      {
+        name: 'card-installments',
+        type: 'integer',
+        nestedPath: 'payment_method_options.card.installments',
+        description: 'Number of installments to charge the card in (only with off-session false)',
+      },
+      {
         name: 'metadata',
         type: 'map',
         description: 'Metadata to attach',
@@ -2352,6 +2364,12 @@ export const resources: ResourceDef[] = [
         nestedPath: 'payment_options.amount',
         description: 'Only payment methods that can pay this amount',
       },
+      {
+        name: 'payment-options-off-session',
+        type: 'boolean',
+        nestedPath: 'payment_options.off_session',
+        description: 'Set to false to list only cards the customer can pay with while present',
+      },
     ],
     createFlags: [
       {
@@ -2455,6 +2473,26 @@ export const resources: ResourceDef[] = [
         sdkMethod: 'mandateDocument',
         description: 'Get the download URL of the mandate contract',
         kind: 'read',
+      },
+      {
+        name: 'installments',
+        sdkMethod: 'installments',
+        description: 'Get the numbers of installments a saved card accepts for an amount',
+        kind: 'read',
+        flags: [
+          {
+            name: 'amount',
+            type: 'integer',
+            required: true,
+            description: 'Amount to charge in the smallest currency unit',
+          },
+          {
+            name: 'currency',
+            type: 'string',
+            required: true,
+            description: 'Currency code (CLP)',
+          },
+        ],
       },
     ],
   },
@@ -3560,6 +3598,24 @@ export const resources: ResourceDef[] = [
         name: 'direction',
         type: 'string',
         description: 'Filter by direction (mx_to_usd, usd_to_mx)',
+      },
+    ],
+    actions: [
+      {
+        name: 'cancel',
+        idempotencyKey: true,
+        sdkMethod: 'cancel',
+        description: 'Cancel a usdt_to_mx transfer that is waiting for its USDT',
+        confirm: true,
+        successMessage: "{resource} '{id}' canceled",
+      },
+      {
+        name: 'simulate_credit',
+        idempotencyKey: true,
+        sdkMethod: 'simulateCredit',
+        description:
+          'Simulate the credit of the pesos of a usd_to_mx or usdt_to_mx transfer (test mode)',
+        successMessage: "Credit of {resource} '{id}' simulated",
       },
     ],
   },

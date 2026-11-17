@@ -112,7 +112,7 @@ Resources follow the pattern `fintoc [v2] <resource> <action> [args] [flags]`. A
 | `v2 entities`                  | create, get, list, settlement_account                                                                                                        |
 | `v2 onboardings`               | create, get, list, submit, upload_document, add_document, delete_document, upload_shareholder_document, upload_legal_representative_document |
 | `v2 payment_intents`           | create, get, list, cancel, voucher_url, check_eligibility                                                                                    |
-| `v2 payment_methods`           | create, get, list, cancel, mandate_document                                                                                                  |
+| `v2 payment_methods`           | create, get, list, cancel, mandate_document, installments                                                                                    |
 | `v2 products`                  | create, get, list, update                                                                                                                    |
 | `v2 subscriptions`             | create, get, list, update, cancel, detach_payment_method                                                                                     |
 | `v2 invoices`                  | create, get, list, update, finalize, pay, void, mark_uncollectible, add_lines, remove_lines                                                  |
@@ -126,7 +126,7 @@ Resources follow the pattern `fintoc [v2] <resource> <action> [args] [flags]`. A
 | `v2 simulate`                  | receive_transfer                                                                                                                             |
 | `v2 crossborder_beneficiaries` | create, get, list, delete                                                                                                                    |
 | `v2 crossborder_quotes`        | create, get                                                                                                                                  |
-| `v2 crossborder_transfers`     | create, get, list                                                                                                                            |
+| `v2 crossborder_transfers`     | create, get, list, cancel, simulate_credit                                                                                                   |
 
 `organizations create` preserves the published `--products <json>` and `--metadata <json>` flags. Updating organizations requires a future SDK release; fintoc 1.31.0 only supports creation.
 
