@@ -550,6 +550,27 @@ describe('resource registry', () => {
       }
     })
 
+    test('v2 payment_methods installments is a read that requires amount and currency', () => {
+      const installments = find('payment_methods', 'v2').actions!.find(
+        (a) => a.name === 'installments',
+      )!
+      expect(installments.sdkMethod).toBe('installments')
+      expect(installments.kind).toBe('read')
+      expect(installments.flags!.filter((f) => f.required).map((f) => f.name)).toEqual([
+        'amount',
+        'currency',
+      ])
+    })
+
+    test.each([
+      ['cancel', 'cancel'],
+      ['simulate_credit', 'simulateCredit'],
+    ])('v2 crossborder_transfers %s is an idempotent write', (name, sdkMethod) => {
+      const action = find('crossborder_transfers', 'v2').actions!.find((a) => a.name === name)!
+      expect(action.sdkMethod).toBe(sdkMethod)
+      expect(action.idempotencyKey).toBe(true)
+    })
+
     test('payment_methods create requires the four consent documents as files', () => {
       const files = find('payment_methods', 'v2').createFiles!
       expect(files.map((f) => f.field)).toEqual([
