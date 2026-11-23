@@ -2431,6 +2431,12 @@ export const resources: ResourceDef[] = [
         nestedPath: 'mx_direct_debit.account_holder.email',
       },
       {
+        name: 'mx-direct-debit-account-holder-phone',
+        type: 'string',
+        description: 'Account holder phone number in E.164 format (defaults to the customer)',
+        nestedPath: 'mx_direct_debit.account_holder.phone',
+      },
+      {
         name: 'mx-direct-debit-account-holder-rfc',
         type: 'string',
         description: 'Account holder RFC (defaults to the customer)',
