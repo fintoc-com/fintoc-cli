@@ -385,7 +385,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'certificate',
         sdkMethod: 'certificate',
-        description: 'Get the certificate download URL of an account (Mexico only, live mode)',
+        description: 'Get the certificate download URL of an account (live mode only)',
         kind: 'read',
       },
     ],
@@ -905,8 +905,7 @@ export const resources: ResourceDef[] = [
       {
         name: 'certificate',
         sdkMethod: 'certificate',
-        description:
-          'Get the certificate download URL of an account number (Mexico only, live mode)',
+        description: 'Get the certificate download URL of an account number (live mode only)',
         kind: 'read',
       },
     ],
@@ -2483,7 +2482,8 @@ export const resources: ResourceDef[] = [
       {
         name: 'installments',
         sdkMethod: 'installments',
-        description: 'Get the numbers of installments a saved card accepts for an amount',
+        description:
+          'Get the numbers of installments a saved card accepts for an amount (Chile only)',
         kind: 'read',
         flags: [
           {
